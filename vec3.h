@@ -45,8 +45,8 @@ class vec3 {
         double e[3];
 };
 
-using point3 = vec3;
-using color = vec3;
+using point3 = vec3;   // 3D point
+using color = vec3;    // RGB color
 
 
 inline std::ostream& operator<<(std::ostream &out, const vec3 &v) {
