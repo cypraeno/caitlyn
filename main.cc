@@ -9,7 +9,8 @@
 
 
 // COMPILE
-// g++ -std=c++11 -O2 -o my_renderer main.cc
+// g++ -std=c++11 -O2 -o renderer main.cc
+// ./renderer >> latest.ppm
 
 color ray_color(const ray& r, const hittable& world) {
     hit_record rec;
