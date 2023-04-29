@@ -1,6 +1,7 @@
 # The Caitlyn Renderer
 Caitlyn is a ray-tracing render engine built in C++ and aimed to provide higher-level graphics for 3D film animation done in Godot. It is meant for the visual style originally developed and inspired by the Odd Tales’ “The Last Night”. It is also the main visual style used in ‘Caitlyn’, a film I (Connor :p) created in 2021.
 
+Current Progess: 9.3
 
 ## Contributing
 If you wish to contribute to this project, please email me at ctloi@uwaterloo.ca and I'll add you to RenderTeam.
