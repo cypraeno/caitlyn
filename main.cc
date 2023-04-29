@@ -1,20 +1,30 @@
 #include "general.h"
-#include "camera.h"
 
 #include "color.h"
 #include "hittable_list.h"
 #include "sphere.h"
-
 #include <iostream>
 
+#include "camera.h"
 
 // COMPILE
-// g++ -std=c++11 -O2 -o my_renderer main.cc
+// g++ -std=c++11 -O2 -o renderer main.cc
+// ./renderer >> latest.ppm
 
-color ray_color(const ray& r, const hittable& world) {
+color ray_color(const ray& r, const hittable& world, int depth, int diffuser) {
     hit_record rec;
-    if (world.hit(r, 0, infinity, rec)) {
-        return 0.5*(rec.normal + color(1,1,1));
+
+    if (depth <= 0) {
+        return color(0,0,0);
+    }
+    if (world.hit(r, 0.001, infinity, rec)) {
+        point3 target;
+        if (diffuser == 0) {
+            target = rec.p + rec.normal + random_unit_vector();
+        } else if (diffuser == 1) {
+            target = rec.p + random_in_hemisphere(rec.normal);
+        }
+        return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1, diffuser);
     }
 
     // Sky background (gradient blue-white)
@@ -28,6 +38,10 @@ int main() {
     const int image_width = 400;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
     const int samples_per_pixel = 100;
+    const int max_depth = 50;
+
+    // Other settings
+    const int diffuse = 0; // 0 = Lambertian, 1 = Hemispheric
 
     hittable_list world;
     world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
@@ -45,7 +59,7 @@ int main() {
                 auto u = (i + random_double()) / (image_width-1);
                 auto v = (j + random_double()) / (image_height-1);
                 ray r = cam.get_ray(u, v);
-                pixel_color += ray_color(r, world);
+                pixel_color += ray_color(r, world, max_depth, diffuse);
             }
             write_color(std::cout, pixel_color, samples_per_pixel);
         }
