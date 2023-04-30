@@ -90,6 +90,14 @@ class dielectric : public material {
     
     public:
         double ir;  // Index of Refraction
+
+    private:
+        static double reflectance(double cosine, double ref_idx) {
+            // Schlick's approximation for reflectance
+            auto r0 = (1 - ref_idx) / (1 + ref_idx);
+            r0 = r0*r0;
+            return r0 + (1 - r0) * pow((1 - cosine), 5);
+        }
 };
 
 #endif
