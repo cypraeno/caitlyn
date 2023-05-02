@@ -5,7 +5,8 @@ Current Progess: 9.3
 
 ## Contributing
 If you wish to contribute to this project, please email me at ctloi@uwaterloo.ca and I'll add you to RenderTeam.
-We are currently following the fantastic work of Peter Shirley and his team. Until we've sufficiently created the barebones structure of the renderer, we will not be adding any new features. Thus, any work that is getting pushed should be from https://raytracing.github.io/.
+We are currently following the fantastic work of Peter Shirley and his team. Until we've sufficiently created the barebones structure of the renderer, we will not be adding any new features.
+[_Ray Tracing in One Weekend_](https://raytracing.github.io/books/RayTracingInOneWeekend.html)
 
 Each chapter is a new branch, and must be named (shirley-chapternumberhere e.g shirley-8). Please ONLY push to the appropriate branch. Side branches for individual bug fixes may be made.
 
