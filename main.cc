@@ -11,6 +11,11 @@
 #include <chrono>
 #include <SDL.h>
 
+
+// Scene Rendering Times
+// Random Scene (CH12)
+// >> Samples = 10, Depth = 50, 211.371 seconds (May 1st 2023)
+// >> Samples = 100, Depth = 5, 724.708 seconds (May 1st 2023)
 hittable_list random_scene() {
     hittable_list world;
 
@@ -86,19 +91,35 @@ color ray_color(const ray& r, const hittable& world, int depth) {
 }
 
 int main() {
+    // Render Mode Here
+    //  Mode 0 => .ppm Image
+    //  Mode 1 => Progressive render with GUI window
+    const int MODE = 0;
+
+    // Set up Output Image here
     const auto aspect_ratio = 3.0 / 2.0;
     const int image_width = 1200;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 50;
+
+    // Render Settings
+    const int target_samples_per_pixel = 100;
     const int max_depth = 50;
     
-    // Scene Rendering Times
-    // Random Scene (CH12)
-    // >> Samples = 10, Depth = 50, 211.371 seconds
-    // >> Samples = 100, Depth = 5, 724.708 seconds
-    // >> Samples = 10, Depth = 10, 
-    auto world = random_scene();
+    // Set World
+    //auto world = random_scene();
+    hittable_list world;
 
+    auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
+    auto material_center = make_shared<lambertian>(color(0.7, 0.3, 0.3));
+    auto material_left   = make_shared<metal>(color(0.8, 0.8, 0.8), 0.3);
+    auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.7);
+
+    world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
+    world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.5, material_center));
+    world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
+    world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
+
+    // Set up Camera
     point3 lookfrom(13,2,3);
     point3 lookat(0,0,0);
     vec3 vup(0,1,0);
@@ -107,7 +128,6 @@ int main() {
 
     camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus);
 
-    std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
     // Start Render Timer
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -115,24 +135,103 @@ int main() {
     auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
     double time_seconds;
 
-    for (int j = image_height-1; j >= 0; --j) {
-        std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-        for (int i = 0; i < image_width; ++i) {
-            color pixel_color(0, 0, 0);
-            for (int s=0; s < samples_per_pixel; s++) {
-                auto u = (i + random_double()) / (image_width-1);
-                auto v = (j + random_double()) / (image_height-1);
-                ray r = cam.get_ray(u, v);
-                pixel_color += ray_color(r, world, max_depth);
-                
-            }
-            write_color(std::cout, pixel_color, samples_per_pixel);
+    int initial_samples;
+    int max_samples = target_samples_per_pixel;
+    int increment_render = 1;
 
-            current_time = std::chrono::high_resolution_clock::now();
-            elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
-            time_seconds = elapsed_time / 1000.0;
-            std::cerr << "\rScanlines remaining: " << j << ", Elapsed time: " << time_seconds << " seconds" << std::flush;
+    // SDL Declarations
+    Uint32* image_data;
+    SDL_Window* window;
+    SDL_Renderer* renderer;
+    SDL_Texture* texture;
+
+    if (MODE == 0) {
+        // Begin Render
+        std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
+        initial_samples = target_samples_per_pixel;
+    } else if (MODE == 1) {
+        if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+            std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << std::endl;
+            return 1;
+        }
+        // Create a window
+        window = SDL_CreateWindow("Ray Tracer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, image_width, image_height, SDL_WINDOW_SHOWN);
+        if (!window) {
+            std::cerr << "Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
+            return 1;
+        }
+        // Create a renderer
+        renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+        if (!renderer) {
+            std::cerr << "Renderer could not be created! SDL_Error: " << SDL_GetError() << std::endl;
+            return 1;
+        }
+        // Create a texture to store the image
+        texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, image_width, image_height);
+        if (!texture) {
+            std::cerr << "Texture could not be created! SDL_Error: " << SDL_GetError() << std::endl;
+            return 1;
+        }
+        initial_samples = 1;
+        image_data = new Uint32[image_width * image_height];
+    }
+    for (int samples_per_pixel = initial_samples; samples_per_pixel <= max_samples; samples_per_pixel += increment_render) {
+        for (int j = image_height-1; j >= 0; --j) {
+            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            for (int i = 0; i < image_width; ++i) {
+                color pixel_color(0, 0, 0);
+                for (int s=0; s < samples_per_pixel; s++) {
+                    auto u = (i + random_double()) / (image_width-1);
+                    auto v = (j + random_double()) / (image_height-1);
+                    ray r = cam.get_ray(u, v);
+                    pixel_color += ray_color(r, world, max_depth);
+                    
+                }
+                if (MODE == 0) {
+                    write_color(std::cout, pixel_color, samples_per_pixel);
+                } else if (MODE == 1) {
+                    pixel_color /= samples_per_pixel;
+                    Uint8 r = static_cast<Uint8>(256 * clamp(pixel_color.x(), 0.0, 0.999));
+                    Uint8 g = static_cast<Uint8>(256 * clamp(pixel_color.y(), 0.0, 0.999));
+                    Uint8 b = static_cast<Uint8>(256 * clamp(pixel_color.z(), 0.0, 0.999));
+                    Uint32 argb_color = (255 << 24) | (r << 16) | (g << 8) | b;
+
+                    // Store the color in the image_data array
+                    image_data[j * image_width + i] = argb_color;
+                }
+                
+
+                current_time = std::chrono::high_resolution_clock::now();
+                elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
+                time_seconds = elapsed_time / 1000.0;
+                std::cerr << "\rScanlines remaining: " << j 
+                        << ", Elapsed time: " << time_seconds 
+                        << " seconds, Samples: " << samples_per_pixel << std::flush;
+            }
+        }
+        if (MODE == 1) {
+            SDL_UpdateTexture(texture, NULL, image_data, image_width * sizeof(Uint32));
+            SDL_RenderClear(renderer);
+            SDL_RenderCopy(renderer, texture, NULL, NULL);
+            SDL_RenderPresent(renderer);
+
+            // Handle events and update the window
+            SDL_Event e;
+            while (SDL_PollEvent(&e)) {
+                if (e.type == SDL_QUIT) {
+                    break;
+                }
+            }
         }
     }
     std::cerr << "\nDone.\n";
+
+    if (MODE == 1) {
+        SDL_DestroyTexture(texture);
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+    }
+
+    delete[] image_data;
 }
