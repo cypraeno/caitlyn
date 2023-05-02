@@ -64,9 +64,12 @@ hittable_list random_scene() {
 color ray_color(const ray& r, const hittable& world, int depth) {
     hit_record rec;
 
+    // if exceed bounce limit, return black (no light)
     if (depth <= 0) {
         return color(0,0,0);
     }
+    
+    // 0.001 instead of 0 to correct for shadow acne
     if (world.hit(r, 0.001, infinity, rec)) {
         ray scattered;
         color attenuation;
@@ -87,10 +90,8 @@ int main() {
     const int image_height = static_cast<int>(image_width / aspect_ratio);
     const int samples_per_pixel = 50;
     const int max_depth = 50;
-
     
     auto world = random_scene();
-
 
     point3 lookfrom(13,2,3);
     point3 lookat(0,0,0);
