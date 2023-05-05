@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.26) # Required
+
+
 project(Caitlyn) # Required
 
 # Find Packages
 find_package(SDL2 CONFIG REQUIRED) # SDL2 line 1
-
 
 add_executable(renderer main.cc)
 target_compile_features(renderer PRIVATE cxx_std_11) # Set the C++ standard to C++11

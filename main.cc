@@ -90,11 +90,11 @@ color ray_color(const ray& r, const hittable& world, int depth) {
     return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     // Render Mode Here
     //  Mode 0 => .ppm Image
     //  Mode 1 => Progressive render with GUI window
-    const int MODE = 0;
+    const int MODE = 1;
 
     // Set up Output Image here
     const auto aspect_ratio = 3.0 / 2.0;
@@ -234,4 +234,6 @@ int main() {
     }
 
     delete[] image_data;
+
+    return 0;
 }
