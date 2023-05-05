@@ -90,11 +90,34 @@ color ray_color(const ray& r, const hittable& world, int depth) {
     return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     // Render Mode Here
     //  Mode 0 => .ppm Image
     //  Mode 1 => Progressive render with GUI window
-    const int MODE = 0;
+    int MODE = 0;
+
+    if (argc > 1) {
+        try {
+            int arg1 = std::stoi(argv[1]);
+            if (arg1 == 1) {
+                MODE = 1;
+            } else {
+                if (arg1 != 0) {
+                    std::cerr << "Please provide a valid mode. Use 0 for a standard RGB output, and 1 for GUI progressive rendering." << std::endl;
+                    return 1;
+                }
+            }
+        } catch (const std::invalid_argument& e) {
+            std::cerr << "The first argument is not a valid integer: " << e.what() << std::endl;
+            return 1;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "Please enter a valid integer: " << e.what() << std::endl;
+            return 1;
+        }
+    } else {
+        std::cerr << "Please provide a valid mode. Use 0 for a standard RGB output, and 1 for GUI progressive rendering." << std::endl;
+        return 1;
+    }
 
     // Set up Output Image here
     const auto aspect_ratio = 3.0 / 2.0;
@@ -242,4 +265,6 @@ int main() {
     }
 
     delete[] image_data;
+
+    return 0;
 }
