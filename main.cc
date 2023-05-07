@@ -167,7 +167,7 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         // Create a window
-        window = SDL_CreateWindow("Ray Tracer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, image_width, image_height, SDL_WINDOW_SHOWN);
+        window = SDL_CreateWindow("Caitlyn Raytracing GUI Viewer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, image_width, image_height, SDL_WINDOW_SHOWN);
         if (!window) {
             std::cerr << "Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
             return 1;
