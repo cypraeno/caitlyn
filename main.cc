@@ -187,7 +187,14 @@ int main(int argc, char* argv[]) {
         initial_samples = 1;
         image_data = new Uint32[image_width * image_height];
     }
+    int depth;
+    if (MODE == 0) {
+        depth = max_depth;
+    } else if (MODE == 1) {
+        depth = 1;
+    }
     for (int samples_per_pixel = initial_samples; samples_per_pixel <= max_samples; samples_per_pixel += increment_render) {
+        depth += 1;
         for (int j = image_height-1; j >= 0; --j) {
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
@@ -196,7 +203,7 @@ int main(int argc, char* argv[]) {
                     auto u = (i + random_double()) / (image_width-1);
                     auto v = (j + random_double()) / (image_height-1);
                     ray r = cam.get_ray(u, v);
-                    pixel_color += ray_color(r, world, max_depth);
+                    pixel_color += ray_color(r, world, depth);
                     
                 }
                 if (MODE == 0) {
@@ -218,7 +225,8 @@ int main(int argc, char* argv[]) {
                 time_seconds = elapsed_time / 1000.0;
                 std::cerr << "\rScanlines remaining: " << j 
                         << ", Elapsed time: " << time_seconds 
-                        << " seconds, Samples: " << samples_per_pixel << std::flush;
+                        << " seconds, Samples: " << samples_per_pixel
+                        << ", Depth: " << depth << std::flush;
             }
         }
         if (MODE == 1) {
