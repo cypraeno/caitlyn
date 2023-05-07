@@ -135,13 +135,6 @@ vec3 reflect(const vec3& v, const vec3& n) {
 
 }
 
-vec3 refract(const vec3& uv, const vec3& n, double eta_over_etap) {
-    auto cos_theta = fmin(dot(-uv, n), 1.0);
-    vec3 out_perp =  eta_over_etap * (uv + cos_theta*n);
-    vec3 out_parallel = -sqrt(fabs(1.0 - out_perp.length_squared())) * n;
-    return out_perp + out_parallel;
-}
-
 vec3 random_in_unit_disk() {
     while (true) {
         auto p = vec3(random_double(-1,1), random_double(-1,1), 0);
