@@ -2,9 +2,6 @@
     "name": "caitlyn",
     "version-string": "0.1.0",
     "dependencies": [
-      {
-        "name": "sdl2",
-        "version": "2.26.5"
-      }
+      "sdl2"
     ]
   }
