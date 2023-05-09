@@ -130,6 +130,7 @@ int main(int argc, char* argv[]) {
                 pixel_color += ray_color(r, world, max_depth);
                 
             }
+            write_color(std::cout, pixel_color, samples_per_pixel);
             current_time = std::chrono::high_resolution_clock::now();
             elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
             time_seconds = elapsed_time / 1000.0;
