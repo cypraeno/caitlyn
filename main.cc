@@ -9,7 +9,6 @@
 
 #include <iostream>
 #include <chrono>
-#include <SDL.h>
 
 
 // Scene Rendering Times
@@ -91,41 +90,13 @@ color ray_color(const ray& r, const hittable& world, int depth) {
 }
 
 int main(int argc, char* argv[]) {
-    // Render Mode Here
-    //  Mode 0 => .ppm Image
-    //  Mode 1 => Progressive render with GUI window
-    int MODE = 0;
-
-    if (argc > 1) {
-        try {
-            int arg1 = std::stoi(argv[1]);
-            if (arg1 == 1) {
-                MODE = 1;
-            } else {
-                if (arg1 != 0) {
-                    std::cerr << "Please provide a valid mode. Use 0 for a standard RGB output, and 1 for GUI progressive rendering." << std::endl;
-                    return 1;
-                }
-            }
-        } catch (const std::invalid_argument& e) {
-            std::cerr << "The first argument is not a valid integer: " << e.what() << std::endl;
-            return 1;
-        } catch (const std::out_of_range& e) {
-            std::cerr << "Please enter a valid integer: " << e.what() << std::endl;
-            return 1;
-        }
-    } else {
-        std::cerr << "Please provide a valid mode. Use 0 for a standard RGB output, and 1 for GUI progressive rendering." << std::endl;
-        return 1;
-    }
-
     // Set up Output Image here
     const auto aspect_ratio = 3.0 / 2.0;
     const int image_width = 1200;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
 
     // Render Settings
-    const int target_samples_per_pixel = 100;
+    const int samples_per_pixel = 100;
     const int max_depth = 50;
     
     // Set World
@@ -147,113 +118,28 @@ int main(int argc, char* argv[]) {
     auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
     double time_seconds;
 
-    int initial_samples;
-    int max_samples = target_samples_per_pixel;
-    int increment_render = 1;
-
-    // SDL Declarations
-    Uint32* image_data;
-    SDL_Window* window;
-    SDL_Renderer* renderer;
-    SDL_Texture* texture;
-
-    if (MODE == 0) {
-        // Begin Render
-        std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
-        initial_samples = target_samples_per_pixel;
-    } else if (MODE == 1) {
-        if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-            std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << std::endl;
-            return 1;
-        }
-        // Create a window
-        window = SDL_CreateWindow("Caitlyn Raytracing GUI Viewer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, image_width, image_height, SDL_WINDOW_SHOWN);
-        if (!window) {
-            std::cerr << "Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
-            return 1;
-        }
-        // Create a renderer
-        renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-        if (!renderer) {
-            std::cerr << "Renderer could not be created! SDL_Error: " << SDL_GetError() << std::endl;
-            return 1;
-        }
-        // Create a texture to store the image
-        texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, image_width, image_height);
-        if (!texture) {
-            std::cerr << "Texture could not be created! SDL_Error: " << SDL_GetError() << std::endl;
-            return 1;
-        }
-        initial_samples = 1;
-        image_data = new Uint32[image_width * image_height];
-    }
-    int depth;
-    if (MODE == 0) {
-        depth = max_depth;
-    } else if (MODE == 1) {
-        depth = 1;
-    }
-    for (int samples_per_pixel = initial_samples; samples_per_pixel <= max_samples; samples_per_pixel += increment_render) {
-        depth += 1;
-        for (int j = image_height-1; j >= 0; --j) {
-            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-            for (int i = 0; i < image_width; ++i) {
-                color pixel_color(0, 0, 0);
-                for (int s=0; s < samples_per_pixel; s++) {
-                    auto u = (i + random_double()) / (image_width-1);
-                    auto v = (j + random_double()) / (image_height-1);
-                    ray r = cam.get_ray(u, v);
-                    pixel_color += ray_color(r, world, depth);
-                    
-                }
-                if (MODE == 0) {
-                    write_color(std::cout, pixel_color, samples_per_pixel);
-                } else if (MODE == 1) {
-                    pixel_color /= samples_per_pixel;
-                    Uint8 r = static_cast<Uint8>(256 * clamp(pixel_color.x(), 0.0, 0.999));
-                    Uint8 g = static_cast<Uint8>(256 * clamp(pixel_color.y(), 0.0, 0.999));
-                    Uint8 b = static_cast<Uint8>(256 * clamp(pixel_color.z(), 0.0, 0.999));
-                    Uint32 argb_color = (255 << 24) | (r << 16) | (g << 8) | b;
-
-                    // Store the color in the image_data array
-                    image_data[j * image_width + i] = argb_color;
-                }
+    std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
+    for (int j = image_height-1; j >= 0; --j) {
+        std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+        for (int i = 0; i < image_width; ++i) {
+            color pixel_color(0, 0, 0);
+            for (int s=0; s < samples_per_pixel; s++) {
+                auto u = (i + random_double()) / (image_width-1);
+                auto v = (j + random_double()) / (image_height-1);
+                ray r = cam.get_ray(u, v);
+                pixel_color += ray_color(r, world, max_depth);
                 
-
-                current_time = std::chrono::high_resolution_clock::now();
-                elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
-                time_seconds = elapsed_time / 1000.0;
-                std::cerr << "\rScanlines remaining: " << j 
-                        << ", Elapsed time: " << time_seconds 
-                        << " seconds, Samples: " << samples_per_pixel
-                        << ", Depth: " << depth << std::flush;
             }
-        }
-        if (MODE == 1) {
-            SDL_UpdateTexture(texture, NULL, image_data, image_width * sizeof(Uint32));
-            SDL_RenderClear(renderer);
-            SDL_RenderCopy(renderer, texture, NULL, NULL);
-            SDL_RenderPresent(renderer);
-
-            // Handle events and update the window
-            SDL_Event e;
-            while (SDL_PollEvent(&e)) {
-                if (e.type == SDL_QUIT) {
-                    break;
-                }
-            }
+            current_time = std::chrono::high_resolution_clock::now();
+            elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
+            time_seconds = elapsed_time / 1000.0;
+            std::cerr << "\rScanlines remaining: " << j 
+                    << ", Elapsed time: " << time_seconds 
+                    << " seconds, Samples: " << samples_per_pixel
+                    << ", Depth: " << max_depth << std::flush;
         }
     }
     std::cerr << "\nDone.\n";
-
-    if (MODE == 1) {
-        SDL_DestroyTexture(texture);
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-    }
-
-    delete[] image_data;
 
     return 0;
 }
