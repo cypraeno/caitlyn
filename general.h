@@ -22,9 +22,6 @@ inline double random_double() {
     return rand() / (RAND_MAX + 1.0);
 }
 
-inline double random_double(double min, double max) {
-    return min + (max-min)*random_double();
-}
 // Added this function in for cases where range is not [0, 1)
 inline double random_double(double min, double max ) {
     static std::uniform_real_distribution<double> distribution(min, max);
