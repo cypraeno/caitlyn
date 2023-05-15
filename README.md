@@ -16,5 +16,6 @@ We are currently following the fantastic work of [Peter Shirley and his team](ht
 - Denoising
 - Plane textures and vec4 transparency
 - `dimcli` implementation.
+- Custom scene files
 
 Note: ACTIVE indicates a branch is open for this right now.
