@@ -139,11 +139,6 @@ int main() {
     render_data.max_depth = max_depth;
     render_data.buffer = std::vector<color>(image_width * image_height);
 
-    // Scene Rendering Times
-    // Random Scene (CH12)
-    // >> Samples = 10, Depth = 50, 211.371 seconds
-    // >> Samples = 100, Depth = 5, 724.708 seconds
-    // >> Samples = 10, Depth = 10, 
     
     auto world = random_scene();
     render_data.scene = world;
