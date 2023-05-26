@@ -8,7 +8,8 @@
 class sphere : public hittable {
     public:
         sphere() {}
-        sphere(point3 cen, double r, shared_ptr<material> m) : centre(cen), radius(r), mat_ptr(m) {};
+        sphere(point3 cen, double r, shared_ptr<material> m, shared_ptr<timeline> t) 
+            : centre(cen), radius(r), mat_ptr(m), hittable(t) {};
 
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const override;
     public:
@@ -18,7 +19,12 @@ class sphere : public hittable {
 };
 
 bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
-    vec3 oc = r.origin() - centre;
+    vec3 new_centre = t_line->interpolate_position(r.time());
+    //vec3 new_centre = centre;
+    //std::cerr << "\n" << centre;
+    //std::cerr << t_line->interpolate_position(r.time());
+
+    vec3 oc = r.origin() - new_centre;
     auto a = r.direction().length_squared();
     auto half_b = dot(oc, r.direction());
     auto c = oc.length_squared() - radius*radius;
@@ -36,8 +42,8 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
 
     rec.t = root; // time of the ray?
     rec.p = r.at(rec.t); // rec.t is the time value, passed to find the point of intersection
-    rec.normal = (rec.p - centre) / radius; //normal vector from the sphere
-    vec3 outward_normal = (rec.p - centre) / radius;
+    rec.normal = (rec.p - new_centre) / radius; //normal vector from the sphere
+    vec3 outward_normal = (rec.p - new_centre) / radius;
     rec.set_face_normal(r, outward_normal);
     rec.mat_ptr = mat_ptr;
 

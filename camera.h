@@ -12,7 +12,7 @@ class camera {
             double vfov, 
             double aspect_ratio,
             double aperture,
-            double focus_dist
+            double focus_dist,
             double _shutter0 = 0,
             double _shutter1 = 1) {
             
@@ -41,8 +41,8 @@ class camera {
 
 
             return ray(origin + offset, 
-            lower_left_corner + s*horizontal + t*vertical - origin - offset
-            random_double(shutter0,shutter1));
+                lower_left_corner + s*horizontal + t*vertical - origin - offset,
+                random_double(shutter0,shutter1));
         }
     private:
         point3 origin;
