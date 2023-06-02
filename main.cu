@@ -30,6 +30,25 @@ void check_cuda(cudaError_T result, char const *const func, const char *const fi
 
 
 /**
+ * determine colour of objects hit by a ray
+ * 
+ * the steps are: (1) calculate ray from eye to pixel, (2) determine objects ray intersects, &
+ * (3) compute a colour for that intersection point
+ * 
+ * @param[in] r the ray being shot out from the eye
+ * 
+ * @returns colour where ray intersects with an object
+ * 
+ * @relatesalso ray
+*/
+__device__ colour ray_colour(const ray& r) {
+    vec3 unit_direction = unit_vector(r.direction());
+    float t = 0.5f * (unit_direction.y()) + 1.0f;
+    return (1.0f - t) * colour(1.0, 1.0, 1.0) + t*colour(0.5, 0.7, 1.0);
+}
+
+
+/**
  * identify coordinates of each thread in the image (i, j) and writes it to fb[]
  * 
  * @param[out] fb the frame buffer used to store image colour data
@@ -40,14 +59,18 @@ void check_cuda(cudaError_T result, char const *const func, const char *const fi
  * 
  * @warning fb should be cudaMallocManaged()
  */
-__global__ void render(vec3 *fb, int max_x, int max_y) {
+__global__ void render(colour *fb, int max_x, int max_y, vec3 lower_left_corner, vec3 horizontal, vec3 vertical, vec3 origin) {
     int x = threadIdx.x + blockIdx.x * blockDim.x;
     int y = threadIdx.y + blockIdx.y * blockDim.y;
 
     if ((x >= max_x) || (y >= max_y)) return;
 
     int pixel_index = y*max_x + x;
-    fb[pixel_index] = vec3(float(x) / max_x, float(y) / max_y, 0.2f)
+    float u = float(i) / float(max_x);
+    float v = float(j) / float(max_y);
+    ray r(origin, lower_left_corner + u*horizontal + v*vertical);
+
+    fb[pixel_index] = ray_colour(r);
 }
 
 
@@ -65,8 +88,8 @@ int main() {
     int image_pixels = image_x * image_y;
     
     // allocate frame buffer (FB) on host to hold RGB values for GPU-CPU communication
-    vec3 *fb;
-    size_t fb_size = 3 * image_pixels * sizeof(vec3);           // each pixel contains 3 float values (RGB)
+    colour *fb;
+    size_t fb_size = 3 * image_pixels * sizeof(colour);           // each pixel contains 3 float values (RGB)
     checkCudaErrors(cudaMallocManaged((void**)&fb, fb_size));    // typecast &fb as void** due to CUDA documentation
 
     // render FB
@@ -75,7 +98,11 @@ int main() {
 
     dim3 blocks(image_x / thread_x + 1, image_y / thread_y + 1);    // blocks needed is total image pixels / threads per block
     dim3 threads(thread_x, thread_y);                               // thread_x * thread_y threads in a single block
-    render<<<blocks, threads>>>(fb, image_x, image_y);
+    render<<<blocks, threads>>>(fb, image_x, image_y, 
+                                vec3(-2.0, -1.0, -1.0),
+                                vec3(4.0, 0.0, 0.0),
+                                vec3(0.0, 2.0, 0.0),
+                                vec3(0.0, 0.0, 0.0));
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());                       // tells CPU to wait until kernal is done before accessing fb[]
 
@@ -88,10 +115,9 @@ int main() {
 
     // iterate through FB elements in intervals of 3
     for (int j = image_y-1; j >= 0; j--) {
-
         for (int i = 0; i < image_x; i++) {
             size_t pixel_index = j*image_x + i;
-            write_color(std::cout, (colour)fb[pixel_index]);
+            write_color(std::cout, fb[pixel_index]);
         }
     }
 
