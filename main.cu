@@ -30,6 +30,31 @@ void check_cuda(cudaError_T result, char const *const func, const char *const fi
 
 
 /**
+ * determine if a ray hits a given sphere
+ * 
+ * a sphere of a given radius is initialized at center, and ray r is cast at it,
+ * returning true if the ray intersects with the sphere, and false otherwise
+ * 
+ * @param[in] center the center of the sphere
+ * @param[in] radius the radius of the sphere
+ * @param[in] r the ray being cast
+ * 
+ * @returns truth value of whether r hits the sphere
+ */
+__device__ bool hit_sphere(const point3& center, double radius, const ray& r) {
+    vec3 oc = r.origin() - center;
+
+    float a = dot(r.direction(), r.direction());
+    float b = 2.0f * dot(oc, r.direction());
+    float c = dot(oc, oc) - radius*radius;
+
+    float discriminant = b*b - 4.0f*a*c;
+    
+    return (discriminant > 0.0f);
+}
+
+
+/**
  * determine colour of objects hit by a ray
  * 
  * the steps are: (1) calculate ray from eye to pixel, (2) determine objects ray intersects, &
@@ -40,8 +65,11 @@ void check_cuda(cudaError_T result, char const *const func, const char *const fi
  * @returns colour where ray intersects with an object
  * 
  * @relatesalso ray
-*/
+ */
 __device__ colour ray_colour(const ray& r) {
+    if (hit_sphere(point3(0, 0, -1), 0.5, r))
+        return color(1, 0, 0);
+
     vec3 unit_direction = unit_vector(r.direction());
     float t = 0.5f * (unit_direction.y()) + 1.0f;
     return (1.0f - t) * colour(1.0, 1.0, 1.0) + t*colour(0.5, 0.7, 1.0);
@@ -66,8 +94,8 @@ __global__ void render(colour *fb, int max_x, int max_y, vec3 lower_left_corner,
     if ((x >= max_x) || (y >= max_y)) return;
 
     int pixel_index = y*max_x + x;
-    float u = float(i) / float(max_x);
-    float v = float(j) / float(max_y);
+    float u = float(x) / float(max_x);
+    float v = float(y) / float(max_y);
     ray r(origin, lower_left_corner + u*horizontal + v*vertical);
 
     fb[pixel_index] = ray_colour(r);
@@ -98,11 +126,13 @@ int main() {
 
     dim3 blocks(image_x / thread_x + 1, image_y / thread_y + 1);    // blocks needed is total image pixels / threads per block
     dim3 threads(thread_x, thread_y);                               // thread_x * thread_y threads in a single block
+
     render<<<blocks, threads>>>(fb, image_x, image_y, 
                                 vec3(-2.0, -1.0, -1.0),
                                 vec3(4.0, 0.0, 0.0),
                                 vec3(0.0, 2.0, 0.0),
                                 vec3(0.0, 0.0, 0.0));
+    
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());                       // tells CPU to wait until kernal is done before accessing fb[]
 
