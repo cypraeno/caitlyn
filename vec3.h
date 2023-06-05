@@ -25,15 +25,15 @@ class vec3 {
     // operator overloading
     public:
 
-        __host__ __device__ inline const vec3& operator+() const { return *this; }                  // addition
-        __host__ __device__ inline vec3 operator-() const { return vec3(-e[0], -e[1], -e[2]); }     // inverse
+        __host__ __device__ inline const vec3& operator+() const { return *this; }                 // addition
+        __host__ __device__ inline vec3 operator-() const { return vec3(-e[0], -e[1], -e[2]); }    // inverse
         __host__ __device__ inline float operator[](int i) const { return e[i]; }                  // const index
         __host__ __device__ inline float& operator[](int i) { return e[i]; };                      // mutatable index
 
-        __host__ __device__ inline vec3& operator+=(const vec3 &v2);                                // self addition
-        __host__ __device__ inline vec3& operator-=(const vec3 &v2);                                // self subtraction
-        __host__ __device__ inline vec3& operator*=(const vec3 &v2);                                
-        __host__ __device__ inline vec3& operator/=(const vec3 &v2);                                // 
+        __host__ __device__ inline vec3& operator+=(const vec3 &v2);                               // self addition
+        __host__ __device__ inline vec3& operator-=(const vec3 &v2);                               // self subtraction
+        __host__ __device__ inline vec3& operator*=(const vec3 &v2);                               // self vector divide
+        __host__ __device__ inline vec3& operator/=(const vec3 &v2);                               // self vector multiply
         __host__ __device__ inline vec3& operator*=(const float t);                                // self scalar multiplcation
         __host__ __device__ inline vec3& operator/=(const float t);                                // self scalar division
 

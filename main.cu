@@ -30,49 +30,30 @@ void check_cuda(cudaError_T result, char const *const func, const char *const fi
 
 
 /**
- * determine if a ray hits a given sphere
- * 
- * a sphere of a given radius is initialized at center, and ray r is cast at it,
- * returning true if the ray intersects with the sphere, and false otherwise
- * 
- * @param[in] center the center of the sphere
- * @param[in] radius the radius of the sphere
- * @param[in] r the ray being cast
- * 
- * @returns truth value of whether r hits the sphere
- */
-__device__ bool hit_sphere(const point3& center, double radius, const ray& r) {
-    vec3 oc = r.origin() - center;
-
-    float a = dot(r.direction(), r.direction());
-    float b = 2.0f * dot(oc, r.direction());
-    float c = dot(oc, oc) - radius*radius;
-
-    float discriminant = b*b - 4.0f*a*c;
-    
-    return (discriminant > 0.0f);
-}
-
-
-/**
  * determine colour of objects hit by a ray
  * 
  * the steps are: (1) calculate ray from eye to pixel, (2) determine objects ray intersects, &
  * (3) compute a colour for that intersection point
  * 
  * @param[in] r the ray being shot out from the eye
+ * @param[in] world the series of objects in the scene
  * 
  * @returns colour where ray intersects with an object
  * 
  * @relatesalso ray
  */
-__device__ colour ray_colour(const ray& r) {
-    if (hit_sphere(point3(0, 0, -1), 0.5, r))
-        return color(1, 0, 0);
+__device__ colour ray_colour(const ray& r, hittable **world) {
+    hit_record rec;
 
-    vec3 unit_direction = unit_vector(r.direction());
-    float t = 0.5f * (unit_direction.y()) + 1.0f;
-    return (1.0f - t) * colour(1.0, 1.0, 1.0) + t*colour(0.5, 0.7, 1.0);
+    if ((*world)->hit(r, 0.0, FLT_MAX, rec)) {
+        return 0.5f*vec3(rec.normal.x() + 1.0f, rec.normal.y() + 1.0f, rec.normal.z() + 1.0f);
+    }
+
+    else {
+        vec3 unit_direction = unit_vector(r.direction());
+        float t = 0.5f*(unit_direction.y() + 1.0f);
+        return (1.0f - t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+    }
 }
 
 
@@ -82,12 +63,19 @@ __device__ colour ray_colour(const ray& r) {
  * @param[out] fb the frame buffer used to store image colour data
  * @param[in] max_x the image width in pixels
  * @param[in] max_y the image height in pixels
+ * @param[in] lower_left_corner the point where the ray is rendered
+ * @param[in] horizontal the horizontal increment which the ray is translated
+ * @param[in] vertical the vertical increment which the ray is translated
+ * @param[in] origin the point where the ray is shot from
+ * @param[in] world the series of objects in the scene
  * 
  * @note __global__ keyword used to define KERNAL FUNCTION
  * 
  * @warning fb should be cudaMallocManaged()
  */
-__global__ void render(colour *fb, int max_x, int max_y, vec3 lower_left_corner, vec3 horizontal, vec3 vertical, vec3 origin) {
+__global__ void render(colour *fb, int max_x, int max_y, 
+                       vec3 lower_left_corner, vec3 horizontal, vec3 vertical, vec3 origin,
+                       hittable **world) {
     int x = threadIdx.x + blockIdx.x * blockDim.x;
     int y = threadIdx.y + blockIdx.y * blockDim.y;
 
@@ -98,7 +86,25 @@ __global__ void render(colour *fb, int max_x, int max_y, vec3 lower_left_corner,
     float v = float(y) / float(max_y);
     ray r(origin, lower_left_corner + u*horizontal + v*vertical);
 
-    fb[pixel_index] = ray_colour(r);
+    fb[pixel_index] = ray_colour(r, world);
+}
+
+
+/// initializes the scene and a list of objecs in the scene
+__global__ void create_world(hitable **d_list, hitable **d_world) {
+    // ensures function only runs once in kernal
+    if (threadIdx.x == 0 && blockIdx.x == 0) {
+        *(d_list)   = new sphere(vec3(0,0,-1), 0.5);
+        *(d_list + 1) = new sphere(vec3(0,-100.5,-1), 100);
+        *d_world    = new hitable_list(d_list,2);
+    }
+}
+
+/// deletes the scene and objects inside
+__global__ void free_world(hitable **d_list, hitable **d_world) {
+    delete *(d_list);
+    delete *(d_list + 1);
+    delete *d_world;
 }
 
 
@@ -117,8 +123,17 @@ int main() {
     
     // allocate frame buffer (FB) on host to hold RGB values for GPU-CPU communication
     colour *fb;
-    size_t fb_size = 3 * image_pixels * sizeof(colour);           // each pixel contains 3 float values (RGB)
-    checkCudaErrors(cudaMallocManaged((void**)&fb, fb_size));    // typecast &fb as void** due to CUDA documentation
+    size_t fb_size = 3 * image_pixels * sizeof(colour);             // each pixel contains 3 float values (RGB)
+    checkCudaErrors(cudaMallocManaged((void**)&fb, fb_size));       // typecast &fb as void** due to CUDA documentation
+
+    // make world of hitables
+    hitable **d_list;
+    checkCudaErrors(cudaMalloc((void **)&d_list, 2*sizeof(hitable *)));
+    hitable **d_world;
+    checkCudaErrors(cudaMalloc((void **)&d_world, sizeof(hitable *)));
+    create_world<<<1,1>>>(d_list,d_world);
+    checkCudaErrors(cudaGetLastError());
+    checkCudaErrors(cudaDeviceSynchronize());                       // tells CPU to wait until kernal is done before beginning render
 
     // render FB
     clock_t start, stop;
@@ -131,7 +146,8 @@ int main() {
                                 vec3(-2.0, -1.0, -1.0),
                                 vec3(4.0, 0.0, 0.0),
                                 vec3(0.0, 2.0, 0.0),
-                                vec3(0.0, 0.0, 0.0));
+                                vec3(0.0, 0.0, 0.0),
+                                d_world);
     
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());                       // tells CPU to wait until kernal is done before accessing fb[]
@@ -151,5 +167,13 @@ int main() {
         }
     }
 
-    checkCudaErrors(cudaFree(fb));      // free FB memory
+    // clean up
+    checkCudaErrors(cudaDeviceSynchronize());                       // ensure all kernal processes are done before cleaning up
+    free_world<<<1,1>>>(d_list, d_world);
+    checkCudaErrors(cudaGetLastError());
+    checkCudaErrors(cudaFree(d_list));                              // free objects in scene
+    checkCudaErrors(cudaFree(d_world));                             // free scene
+    checkCudaErrors(cudaFree(fb));                                  // free FB memory
+
+    cudaDeviceReset();                                              // useful for cuda-memcheck --leak-check full
 }
