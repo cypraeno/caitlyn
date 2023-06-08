@@ -1,8 +1,14 @@
 #include <iostream>
 #include <time.h>
+#include <float.h>
+#include <curand_kernel.h>
 
 #include "vec3.h"
 #include "colour.h"
+#include "ray.h"
+#include "sphere.h"
+#include "hittable_list.h"
+#include "camera.h"
 
 
 /** 
@@ -58,53 +64,81 @@ __device__ colour ray_colour(const ray& r, hittable **world) {
 
 
 /**
+ * computes random initialization for the renderer
+ * 
+ * @param[in] max_x the image width in pixels
+ * @param[in] max_y the image height in pixels
+ * @param[out] rand_state the array of sequence numbers
+ * 
+ * @note can also be initialized at the top of render() based on preference
+*/
+__global__ render_init(int max_x, int max_y, curandState *rand_state) {
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    int j = threadIdx.y + blockIdx.y * blockDim.y;
+
+    if((i >= max_x) || (j >= max_y)) return;
+
+    int pixel_index = j*max_x + i;
+
+    //Each thread gets same seed, a different sequence number, no offset
+    curand_init(1984, pixel_index, 0, &rand_state[pixel_index]);    
+}
+
+
+/**
  * identify coordinates of each thread in the image (i, j) and writes it to fb[]
  * 
  * @param[out] fb the frame buffer used to store image colour data
  * @param[in] max_x the image width in pixels
  * @param[in] max_y the image height in pixels
- * @param[in] lower_left_corner the point where the ray is rendered
- * @param[in] horizontal the horizontal increment which the ray is translated
- * @param[in] vertical the vertical increment which the ray is translated
- * @param[in] origin the point where the ray is shot from
+ * @param[in] samples the number of samples per pixel
+ * @param[in] cam the camera where rays are shot from
  * @param[in] world the series of objects in the scene
- * 
- * @note __global__ keyword used to define KERNAL FUNCTION
+ * @param[in] rand_state the array of sequence numbers
  * 
  * @warning fb should be cudaMallocManaged()
  */
 __global__ void render(colour *fb, int max_x, int max_y, 
-                       vec3 lower_left_corner, vec3 horizontal, vec3 vertical, vec3 origin,
-                       hittable **world) {
+                      int samples, camera **cam, hittable **world, curandState *rand_state) {
     int x = threadIdx.x + blockIdx.x * blockDim.x;
     int y = threadIdx.y + blockIdx.y * blockDim.y;
 
     if ((x >= max_x) || (y >= max_y)) return;
 
     int pixel_index = y*max_x + x;
-    float u = float(x) / float(max_x);
-    float v = float(y) / float(max_y);
-    ray r(origin, lower_left_corner + u*horizontal + v*vertical);
 
-    fb[pixel_index] = ray_colour(r, world);
+    curandState local_rand_state = rand_state[pixel_index];
+    vec3 col(0, 0, 0);
+
+    for(int s=0; s < samples; s++) {
+        float u = float(x + curand_uniform(&local_rand_state)) / float(max_x);
+        float v = float(y + curand_uniform(&local_rand_state)) / float(max_y);
+        ray r = (*cam)->get_ray(u,v);
+        col += ray_colour(r, world);
+    }
+    
+    fb[pixel_index] = col/float(samples);
 }
 
 
 /// initializes the scene and a list of objecs in the scene
-__global__ void create_world(hitable **d_list, hitable **d_world) {
+__global__ void create_world(hitable **d_list, hitable **d_world, camera **d_camera) {
     // ensures function only runs once in kernal
     if (threadIdx.x == 0 && blockIdx.x == 0) {
-        *(d_list)   = new sphere(vec3(0,0,-1), 0.5);
-        *(d_list + 1) = new sphere(vec3(0,-100.5,-1), 100);
-        *d_world    = new hitable_list(d_list,2);
+        *(d_list)       = new sphere(vec3(0,0,-1), 0.5);
+        *(d_list + 1)   = new sphere(vec3(0,-100.5,-1), 100);
+        *d_world        = new hitable_list(d_list,2);
+        *d_camera       = new camera();
     }
 }
 
+
 /// deletes the scene and objects inside
-__global__ void free_world(hitable **d_list, hitable **d_world) {
+__global__ void free_world(hitable **d_list, hitable **d_world, camera **d_camera) {
     delete *(d_list);
     delete *(d_list + 1);
     delete *d_world;
+    delete *d_camera;
 }
 
 
@@ -113,10 +147,11 @@ int main() {
     // image
     const int image_x = 1200;             // image width
     const int image_y = 600;              // image height
+    const int image_s = 100;              // image samples
     const int thread_x = 8;               // thread block x dimension
     const int thread_y = 8;               // thread block y dimension
 
-    std::cerr << "Rendering a " << image_width << "x" << image_height << " image ";
+    std::cerr << "Rendering a " << image_width << "x" << image_height << " image with " << ns << " samples per pixel ";
     std::cerr << "in " << thread_x << "x" << thread_y << " blocks.\n";
 
     int image_pixels = image_x * image_y;
@@ -126,12 +161,19 @@ int main() {
     size_t fb_size = 3 * image_pixels * sizeof(colour);             // each pixel contains 3 float values (RGB)
     checkCudaErrors(cudaMallocManaged((void**)&fb, fb_size));       // typecast &fb as void** due to CUDA documentation
 
-    // make world of hitables
+    // allocate random state
+    curandState *d_rand_state;
+    checkCudaErrors(cudaMallocManaged((void **)&d_rand_state, image_pixels*sizeof(curandState)));
+
+    // initializes environment objects
     hitable **d_list;
     checkCudaErrors(cudaMalloc((void **)&d_list, 2*sizeof(hitable *)));
     hitable **d_world;
     checkCudaErrors(cudaMalloc((void **)&d_world, sizeof(hitable *)));
-    create_world<<<1,1>>>(d_list,d_world);
+    camera **d_camera;
+    checkCudaErrors(cudaMalloc((void **)&d_camera, sizeof(camera *)));
+
+    create_world<<<1,1>>>(d_list, d_world, d_camera);
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());                       // tells CPU to wait until kernal is done before beginning render
 
@@ -142,15 +184,13 @@ int main() {
     dim3 blocks(image_x / thread_x + 1, image_y / thread_y + 1);    // blocks needed is total image pixels / threads per block
     dim3 threads(thread_x, thread_y);                               // thread_x * thread_y threads in a single block
 
-    render<<<blocks, threads>>>(fb, image_x, image_y, 
-                                vec3(-2.0, -1.0, -1.0),
-                                vec3(4.0, 0.0, 0.0),
-                                vec3(0.0, 2.0, 0.0),
-                                vec3(0.0, 0.0, 0.0),
-                                d_world);
-    
+    render_init<<<blocks, threads>>>(fb, image_x, image_y, image_s, d_camera, d_world, d_rand_state);
     checkCudaErrors(cudaGetLastError());
-    checkCudaErrors(cudaDeviceSynchronize());                       // tells CPU to wait until kernal is done before accessing fb[]
+    checkCudaErrors(cudaDeviceSynchronize()); 
+
+    render<<<blocks, threads>>>(fb, image_x, image_y, d_camera, d_world, d_rand_state);
+    checkCudaErrors(cudaGetLastError());
+    checkCudaErrors(cudaDeviceSynchronize());
 
     stop = clock();
     double timer_seconds = ((double)(stop - start)) / CLOCKS_PER_SEC;
@@ -163,7 +203,7 @@ int main() {
     for (int j = image_y-1; j >= 0; j--) {
         for (int i = 0; i < image_x; i++) {
             size_t pixel_index = j*image_x + i;
-            write_color(std::cout, fb[pixel_index]);
+            write_color(std::cout, fb[pixel_index], image_s);
         }
     }
 
@@ -171,8 +211,10 @@ int main() {
     checkCudaErrors(cudaDeviceSynchronize());                       // ensure all kernal processes are done before cleaning up
     free_world<<<1,1>>>(d_list, d_world);
     checkCudaErrors(cudaGetLastError());
+    checkCudaErrors(cudaFree(d_camera));                            // free camera
     checkCudaErrors(cudaFree(d_list));                              // free objects in scene
     checkCudaErrors(cudaFree(d_world));                             // free scene
+    checkCudaErrors(cudaFree(d_rand_state));                        // free random state
     checkCudaErrors(cudaFree(fb));                                  // free FB memory
 
     cudaDeviceReset();                                              // useful for cuda-memcheck --leak-check full
