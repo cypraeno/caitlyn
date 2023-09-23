@@ -3,26 +3,22 @@
 
 #include "ray.h"
 
+class material;
+
 
 /*
  * details of a hit in a scene
  * 
  * p            point hit
  * normal       direction of the normal from p
+ * mat          material of the object
  * t            length of the ray when it hits p
- * front_face   if object is front-facing
  */
 struct hit_record {
     point3 p;
     vec3 normal;
+    material mat;
     float t;
-    bool front_face;
-
-    /// sets the values for normal and front_face 
-    inline void set_face_normal(const ray& r, const vec3& outward_normal) {
-        front_face = dot(r.direction(), outward_normal) < 0;
-        normal = front_face ? outward_normal : -outward_normal;
-    }
 };
 
 
@@ -31,7 +27,7 @@ struct hit_record {
  */
 class hittable {
     public:
-        __device__ virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
+        __device__ virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
 };
 
 

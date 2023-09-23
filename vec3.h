@@ -44,11 +44,6 @@ class vec3 {
             return sqrt(length_squared());
         }
 
-        /// return the dot product of a 3D vector.
-        __host__ __device__ float length_squared() const {
-            return e[0]*e[0] + e[1]*e[1] + e[2]*e[2];
-        }
-
     // attributes
     public:
         float e[3];

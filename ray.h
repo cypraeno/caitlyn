@@ -7,7 +7,7 @@
  * implementation of a ray
  * 
  * rays are of the form P(t) = A + tb, where A, b are 3D vector constants
-*/
+ */
 class ray {
 
     // constructors

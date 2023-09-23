@@ -9,6 +9,7 @@
 #include "sphere.h"
 #include "hittable_list.h"
 #include "camera.h"
+#include "material.h"
 
 
 /** 
@@ -134,19 +135,24 @@ __global__ void render(colour *fb, int max_x, int max_y,
 __global__ void create_world(hitable **d_list, hitable **d_world, camera **d_camera) {
     // ensures function only runs once in kernal
     if (threadIdx.x == 0 && blockIdx.x == 0) {
-        *(d_list)       = new sphere(vec3(0,0,-1), 0.5);
-        *(d_list + 1)   = new sphere(vec3(0,-100.5,-1), 100);
-        *d_world        = new hitable_list(d_list,2);
-        *d_camera       = new camera();
+        d_list[0] = new sphere(vec3(0,0,-1), 0.5,
+                               new lambertian(vec3(0.8, 0.3, 0.3)));
+        d_list[1] = new sphere(vec3(0,-100.5,-1), 100,
+                               new lambertian(vec3(0.8, 0.8, 0.0)));
+        d_list[2] = new sphere(vec3(1,0,-1), 0.5,
+                               new metal(vec3(0.8, 0.6, 0.2), 1.0));
+        d_list[3] = new sphere(vec3(-1,0,-1), 0.5,
+                                 new metal(vec3(0.8, 0.8, 0.8), 0.3));
+        *d_world  = new hitable_list(d_list,4);
+        *d_camera = new camera();
     }
 }
 
 
 /// deletes the scene and objects inside
 __global__ void free_world(hitable **d_list, hitable **d_world, camera **d_camera) {
-    delete *(d_list);
-    delete *(d_list + 1);
     delete *d_world;
+    delete *d_list;
     delete *d_camera;
 }
 
@@ -154,8 +160,8 @@ __global__ void free_world(hitable **d_list, hitable **d_world, camera **d_camer
 int main() {
 
     // image
-    const int image_x = 1200;             // image width
-    const int image_y = 600;              // image height
+    const int image_x = 1440;             // image width
+    const int image_y = 720;              // image height
     const int image_s = 100;              // image samples
     const int thread_x = 8;               // thread block x dimension
     const int thread_y = 8;               // thread block y dimension
@@ -217,13 +223,8 @@ int main() {
     }
 
     // clean up
+    free_world<<<1,1>>>(d_list, d_world, d_camera );
     checkCudaErrors(cudaDeviceSynchronize());                       // ensure all kernal processes are done before cleaning up
-    free_world<<<1,1>>>(d_list, d_world);
-    checkCudaErrors(cudaGetLastError());
-    checkCudaErrors(cudaFree(d_camera));                            // free camera
-    checkCudaErrors(cudaFree(d_list));                              // free objects in scene
-    checkCudaErrors(cudaFree(d_world));                             // free scene
-    checkCudaErrors(cudaFree(d_rand_state));                        // free random state
     checkCudaErrors(cudaFree(fb));                                  // free FB memory
 
     cudaDeviceReset();                                              // useful for cuda-memcheck --leak-check full
