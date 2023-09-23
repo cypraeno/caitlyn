@@ -10,6 +10,7 @@
 #include <iostream>
 #include <chrono>
 
+//test docker comment
 
 // Scene Rendering Times
 // Random Scene (CH12)
