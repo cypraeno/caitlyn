@@ -36,30 +36,39 @@ void check_cuda(cudaError_T result, char const *const func, const char *const fi
 
 
 /**
- * determine colour of objects hit by a ray
+ * determine colour of objects hit by a ray to a max 50 depth
  * 
  * the steps are: (1) calculate ray from eye to pixel, (2) determine objects ray intersects, &
  * (3) compute a colour for that intersection point
  * 
  * @param[in] r the ray being shot out from the eye
  * @param[in] world the series of objects in the scene
+ * @param[in] local_rand_state the CUDA random state
  * 
  * @returns colour where ray intersects with an object
  * 
  * @relatesalso ray
  */
-__device__ colour ray_colour(const ray& r, hittable **world) {
-    hit_record rec;
-
-    if ((*world)->hit(r, 0.0, FLT_MAX, rec)) {
-        return 0.5f*vec3(rec.normal.x() + 1.0f, rec.normal.y() + 1.0f, rec.normal.z() + 1.0f);
+__device__ colour ray_colour(const ray& r, hittable **world, curandState *local_rand_state) {
+    
+    ray cur_ray = r;
+    float cur_attenuation = 1.0f;
+    for (int i = 0; i < 50 ; i++) {
+        hit_record rec;
+        if ((*world)->hit(r, 0.001f, FLT_MAX, rec)) {
+            vec3 target = rec.p + rec.normal + random_in_unit_sphere(local_rand_state);
+            cur_attenuation *= 0.5f
+            cur_ray = ray(rec.p, target-rec.p)
+        }
+        else {
+            vec3 unit_direction = unit_vector(cur_ray.direction());
+            float t = 0.5f*(unit_direction.y() + 1.0f);
+            colour c = (1.0f-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+            return cur_attenuation * c;
+        }
     }
 
-    else {
-        vec3 unit_direction = unit_vector(r.direction());
-        float t = 0.5f*(unit_direction.y() + 1.0f);
-        return (1.0f - t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
-    }
+    return colour(0.0, 0.0, 0.0)    // exceeded recursion depth of 50 
 }
 
 
@@ -68,7 +77,7 @@ __device__ colour ray_colour(const ray& r, hittable **world) {
  * 
  * @param[in] max_x the image width in pixels
  * @param[in] max_y the image height in pixels
- * @param[out] rand_state the array of sequence numbers
+ * @param[out] rand_state the CUDA random state
  * 
  * @note can also be initialized at the top of render() based on preference
 */
@@ -94,7 +103,7 @@ __global__ render_init(int max_x, int max_y, curandState *rand_state) {
  * @param[in] samples the number of samples per pixel
  * @param[in] cam the camera where rays are shot from
  * @param[in] world the series of objects in the scene
- * @param[in] rand_state the array of sequence numbers
+ * @param[in] rand_state the CUDA random state
  * 
  * @warning fb should be cudaMallocManaged()
  */
