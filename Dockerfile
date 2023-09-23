@@ -9,6 +9,8 @@ FROM gcc:latest
 RUN apt-get update && \
     apt-get install -y libsdl2-dev curl zip unzip tar git wget
 
+#This is a test to push to docker
+
 # Install CMake
 ARG CMAKE_VERSION=3.26.0
 RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz && \
