@@ -10,6 +10,7 @@
 #include <iostream>
 #include <chrono>
 
+// Test 2 Edit (Sept 30th)
 
 // Scene Rendering Times
 // Random Scene (CH12)
