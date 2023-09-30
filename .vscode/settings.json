@@ -2,7 +2,8 @@
     "files.associations": {
         "charconv": "cpp",
         "iostream": "cpp",
-        "cmath": "cpp"
+        "cmath": "cpp",
+        "random": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
