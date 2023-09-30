@@ -27,4 +27,3 @@ RUN git clone https://github.com/microsoft/vcpkg && \
 
 COPY . /app
 WORKDIR /app
->>>>>>> a7ea954f565079891d413ece60b7b8f67f955b93
