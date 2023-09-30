@@ -1,7 +1,8 @@
 {
     "files.associations": {
         "charconv": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "cmath": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
