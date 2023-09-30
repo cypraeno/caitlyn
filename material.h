@@ -145,7 +145,7 @@ class metal : public material {
  /**
   * implementation of a dielectric material
   */
- class diaelectric : public material {
+ class dielectric : public material {
     public:
         __device__ diaelectric(float ri) : ref_idx(ri) {}
 
