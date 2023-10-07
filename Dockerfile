@@ -1,4 +1,5 @@
 FROM gcc:latest
+<<<<<<< HEAD
 # approved
 # Install required packages
 RUN apt-get update && \
