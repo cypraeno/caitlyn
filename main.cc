@@ -11,7 +11,7 @@
 #include <chrono>
 
 
-// Test 2 Edit (Sept 30th)
+// DOCKER TAG: cso-connor
 
 // Scene Rendering Times
 // Random Scene (CH12)
