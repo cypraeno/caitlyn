@@ -9,6 +9,10 @@ We are currently following the fantastic work of Peter Shirley and his team. Unt
 
 Each chapter is a new branch, and must be named (shirley-chapternumberhere e.g shirley-8). Please ONLY push to the appropriate branch. Side branches for individual bug fixes may be made.
 
+## CUDA-specific Instructions
+Install the CUDA Toolkit from: https://developer.nvidia.com/cuda-downloads
+Learn to use nvcc: https://cuda-tutorial.readthedocs.io/en/latest/tutorials/tutorial01/
+nvcc builds off of gcc, so the syntax is the same
 
 ## Future README
 THE BELOW TEXT IS DESCRIBING THE GOAL FINAL VERSION, NOT THE CURRENT VERSION
