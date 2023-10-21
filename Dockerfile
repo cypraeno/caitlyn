@@ -4,6 +4,7 @@ FROM gcc:latest
 # docker tag caitlyn-mcrt connortbot/caitlyn-mcrt
 # docker push connortbot/caitlyn-mcrt
 
+# This is a test to push to docker and github
 
 # Install required packages
 RUN apt-get update && \
