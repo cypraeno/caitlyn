@@ -1,6 +1,7 @@
 #ifndef GENERAL_H
 #define GENERAL_H
 
+// This is the embree branch
 #include <cmath>
 #include <limits>
 #include <memory>
