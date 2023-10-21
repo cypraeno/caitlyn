@@ -1,4 +1,8 @@
 FROM gcc:latest
+<<<<<<< HEAD
+=======
+
+>>>>>>> ca4dd0345c870a86cbe8801b0a3ebae4014b7ed1
 # approved
 # Install required packages
 RUN apt-get update && \
