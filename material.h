@@ -100,4 +100,3 @@ class dielectric : public material {
 };
 
 #endif
->>>>>>> a7ea954f565079891d413ece60b7b8f67f955b93

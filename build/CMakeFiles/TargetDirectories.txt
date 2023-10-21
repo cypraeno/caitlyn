@@ -1,0 +1,3 @@
+/app/build/CMakeFiles/caitlyn.dir
+/app/build/CMakeFiles/edit_cache.dir
+/app/build/CMakeFiles/rebuild_cache.dir

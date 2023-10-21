@@ -4,5 +4,6 @@
         "random": "cpp",
         "memory": "cpp",
         "cmath": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }
