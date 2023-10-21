@@ -26,11 +26,5 @@
 *.a
 *.lib
 
-# Executables
-*.exe
-*.out
-*.app
-
-
 # Images
 *.ppm

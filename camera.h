@@ -4,7 +4,9 @@
 #include "general.h"
 
 class camera {
+
     public:
+
         camera(
             point3 lookfrom,
             point3 lookat,
@@ -39,10 +41,11 @@ class camera {
             vec3 rd = lens_radius * random_in_unit_disk();
             vec3 offset = u * rd.x() + v * rd.y();
 
-
             return ray(origin + offset, lower_left_corner + s*horizontal + t*vertical - origin - offset, random_double(time0,time1));
         }
+    
     private:
+    
         point3 origin;
         point3 lower_left_corner;
         vec3 horizontal;
@@ -51,6 +54,5 @@ class camera {
         double lens_radius;
         double time0, time1; // shutter open -> shutter close
 };
-
 
 #endif
