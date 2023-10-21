@@ -4,20 +4,24 @@
 #include "general.h"
 #include "hittable.h"
 
-
 class sphere : public hittable {
+
     public:
+
         sphere() {}
         sphere(point3 cen, double r, shared_ptr<material> m) : centre(cen), radius(r), mat_ptr(m) {};
 
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
     public:
+
         point3 centre;
         double radius;
         shared_ptr<material> mat_ptr;
 };
 
 bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+
     vec3 oc = r.origin() - centre;
     auto a = r.direction().length_squared();
     auto half_b = dot(oc, r.direction());
@@ -28,11 +32,12 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
     auto sqrtd = sqrt(discriminant);
 
     auto root = (-half_b - sqrtd) / a;
+
+    // both roots must lie within the range
     if (root < t_min || root > t_max) {
         root = (-half_b + sqrtd) / a;
-        if (root < t_min || t_max < root)
-            return false;
-    } // both roots must lie within the range
+        if (root < t_min || t_max < root) return false;
+    } 
 
     rec.t = root; // time of the ray?
     rec.p = r.at(rec.t); // rec.t is the time value, passed to find the point of intersection
@@ -42,7 +47,6 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
     rec.mat_ptr = mat_ptr;
 
     return true;
-
 }
 
 #endif
