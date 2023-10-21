@@ -1,9 +1,11 @@
 FROM gcc:latest
-<<<<<<< HEAD
-=======
 
->>>>>>> ca4dd0345c870a86cbe8801b0a3ebae4014b7ed1
-# approved
+# docker build -t caitlyn-mcrt .
+# docker tag caitlyn-mcrt connortbot/caitlyn-mcrt
+# docker push connortbot/caitlyn-mcrt
+
+# This is a test to push to docker and github
+
 # Install required packages
 RUN apt-get update && \
     apt-get install -y curl zip unzip tar git wget
