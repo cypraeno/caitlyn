@@ -10,6 +10,7 @@
 #include <iostream>
 #include <chrono>
 
+//DOCKER TAG: cso-Dan66
 
 // Scene Rendering Times
 // Random Scene (CH12)
