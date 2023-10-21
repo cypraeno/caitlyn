@@ -4,10 +4,11 @@ FROM gcc:latest
 # docker tag caitlyn-mcrt connortbot/caitlyn-mcrt
 # docker push connortbot/caitlyn-mcrt
 
+# This is a test to push to docker and github
 
 # Install required packages
 RUN apt-get update && \
-    apt-get install -y libsdl2-dev curl zip unzip tar git wget
+    apt-get install -y curl zip unzip tar git wget
 
 # Install CMake
 ARG CMAKE_VERSION=3.26.0
@@ -20,11 +21,9 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cm
     cd .. && \
     rm -rf cmake-${CMAKE_VERSION}*
 
-# Install vcpkg
-RUN git clone https://github.com/microsoft/vcpkg && \
-    ./vcpkg/bootstrap-vcpkg.sh && \
-    ./vcpkg/vcpkg integrate install
+# -rf : r recursive f force
+# -xzvf : x extract -z gunzip (compress as extracting) -v verbose (list out extracts) -f file (follow cmake instructions)
+# bootstrap : make ready for compilation
 
 COPY . /app
 WORKDIR /app
->>>>>>> a7ea954f565079891d413ece60b7b8f67f955b93
