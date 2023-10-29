@@ -10,12 +10,11 @@ We are currently following the fantastic work of [Peter Shirley and his team](ht
 **New Developer? Check out the [wiki page for how to get started on development](https://github.com/Astro-Monkeys/caitlyn/wiki/Developers-Standard).**
 
 **CURRENT GOALS:**
-- Parallelism and GPU Acceleration via Nvidia CUDA **[ACTIVE]**
-- Dependency and compilation automation through CMake and vcpkg **[ACTIVE]**
 - Peter Shirley Book 2
 - Denoising
 - Plane textures and vec4 transparency
 - `dimcli` implementation.
 - Custom scene files
+
 
 Note: ACTIVE indicates a branch is open for this right now.
