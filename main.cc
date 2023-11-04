@@ -49,12 +49,24 @@ RTCScene initializeScene(RTCDevice device) {
         indices[0] = 0; indices[1] = 1; indices[2] = 2;
     }
 
-    rtcCommitGeometry(geom);
+    RTCGeometry sphere = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_SPHERE_POINT);
+    float* spherev = (float*)rtcSetNewGeometryBuffer(sphere, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT4, 4*sizeof(float), 1);
+    if (spherev) {
+        spherev[0] = 0;
+        spherev[1] = 0;
+        spherev[2] = 0;
+        spherev[3] = 1;
+    }
+
+    rtcCommitGeometry(sphere);
+    unsigned int sphereID = rtcAttachGeometry(scene, sphere);
+    rtcReleaseGeometry(sphere);
 
     // unsigned integer that retuns a geometry id
     // rtcAttachGeometry takes ownership of the geometry by increasing ref count thus we can release it
-    rtcAttachGeometry(scene, geom);
-    rtcReleaseGeometry(geom);
+    //rtcCommitGeometry(geom);
+    //rtcAttachGeometry(scene, geom);
+    //rtcReleaseGeometry(geom);
 
     rtcCommitScene(scene);
 
