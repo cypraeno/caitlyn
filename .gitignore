@@ -28,3 +28,6 @@
 
 # Images
 *.ppm
+
+# CMake Build Directory
+/build
