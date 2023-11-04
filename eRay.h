@@ -25,21 +25,32 @@ class Ray {
             float tnear=0.0, float tfar=numeric_limits<float>::infinity(), 
             unsigned int mask, unsigned int flags=0);
         
-        point3 getOrg() const;              /**< unique ID to discern rays */
-        vec3 getDir() const;
-        float getTime() const;
-        float getTNear() const;
-        float getTFar() const;
-        unsigned int getID() const;
-        unsigned int getMask() const;
-        unsigned int getFlags() const;
+        point3 getOrg() const;              /**< returns ray org */
+        vec3 getDir() const;                /**< returns ray dir */
+        float getTime() const;              /**< returns ray time */
+        float getTNear() const;             /**< returns ray tnear */
+        float getTFar() const;              /**< returns ray tfar */
+        unsigned int getID() const;         /**< returns ray ID */
+        unsigned int getMask() const;       /**< returns ray mask */
+        unsigned int getFlags() const;      /**< returns ray flags */
 
-        point3 at() const;
+        /**  
+         * return the point on the ray at length t
+         * 
+         * @param[in] t the length of the array from org
+         * 
+         * @return Point3 obj of the point on the ray
+         */
+        point3 at(float t) const;
 
-        void createRTCRay(struct RTCRay& rtcRay) const;
-
-
-
+        /**
+         * creates RTCRay struct based on object data
+         * 
+         * @param[out] ray the struct to store ray data
+         * 
+         * @note existing RTCRay fields will be overwritten
+        */
+        void createRTCRay(struct RTCRay& ray) const;
 
 }
 

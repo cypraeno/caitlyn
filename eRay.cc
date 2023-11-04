@@ -35,5 +35,3 @@ void Ray::createRTCRay(struct RTCRay& ray) const {
     ray.id = this->id;
     ray.flags = this->flags;
 }
-
-
