@@ -30,4 +30,4 @@
 *.ppm
 
 # CMake Build Directory
-/build
+build/
