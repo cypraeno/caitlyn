@@ -8,7 +8,7 @@
 
 using namespace std;
 
-/** implementation of a wrapper for struct RTCRay */
+/** @brief implementation of a wrapper for struct RTCRay */
 class Ray {
 
     static unsigned int id;                 /**< unique ID to discern rays */
@@ -35,7 +35,7 @@ class Ray {
         unsigned int getFlags() const;      /**< returns ray flags */
 
         /**  
-         * return the point on the ray at length t
+         * @brief return the point on the ray at length t
          * 
          * @param[in] t the length of the array from org
          * 
@@ -44,7 +44,7 @@ class Ray {
         point3 at(float t) const;
 
         /**
-         * creates RTCRay struct based on object data
+         * @brief creates RTCRay struct based on object data
          * 
          * @param[out] ray the struct to store ray data
          * 

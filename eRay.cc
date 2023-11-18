@@ -20,14 +20,14 @@ point3 Ray::at(float t) const { return this->org + t*this->dir; }
 
 void Ray::createRTCRay(struct RTCRay& ray) const {
 
-    ray.org_x = this->org.x;
-    ray.org_y = this->org.y;
-    ray.org_z = this->org.z;
+    ray.org_x = this->org.x();
+    ray.org_y = this->org.y();
+    ray.org_z = this->org.z();
     ray.tnear = this->tnear;
 
-    ray.dir_x = this->dir.x;
-    ray.dir_y = this->dir.y;
-    ray.dir_z = this->dir.z;
+    ray.dir_x = this->dir.x();
+    ray.dir_y = this->dir.y();
+    ray.dir_z = this->dir.z();
     ray.time = this->time;
 
     ray.tfar = this->tfar;
