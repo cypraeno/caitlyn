@@ -62,12 +62,6 @@ RTCScene initializeScene(RTCDevice device) {
     unsigned int sphereID = rtcAttachGeometry(scene, sphere);
     rtcReleaseGeometry(sphere);
 
-    // unsigned integer that retuns a geometry id
-    // rtcAttachGeometry takes ownership of the geometry by increasing ref count thus we can release it
-    //rtcCommitGeometry(geom);
-    //rtcAttachGeometry(scene, geom);
-    //rtcReleaseGeometry(geom);
-
     rtcCommitScene(scene);
 
     return scene;
@@ -238,6 +232,7 @@ int main() {
 
     rtcReleaseScene(scene);
     rtcReleaseDevice(device);
+    
     RenderData render_data; 
 
     const auto aspect_ratio = 3.0 / 2.0;
