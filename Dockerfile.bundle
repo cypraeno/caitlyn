@@ -1,6 +1,6 @@
 FROM gcc:latest
 
-# docker build -t caitlyn-mcrt .
+# docker build -f Dockerfile.bundled -t connortbot/caitlyn-mcrt:base .
 # docker tag caitlyn-mcrt connortbot/caitlyn-mcrt
 # docker push connortbot/caitlyn-mcrt
 
