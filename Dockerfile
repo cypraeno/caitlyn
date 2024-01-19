@@ -1,8 +1,7 @@
 FROM gcc:latest
 
-# docker build -t caitlyn-mcrt .
-# docker tag caitlyn-mcrt connortbot/caitlyn-mcrt
-# docker push connortbot/caitlyn-mcrt
+# docker build -t connnortbot/caitlyn-mcrt:TAG_NAME .
+# docker push connortbot/caitlyn-mcrt:TAG_NAME
 
 # This is a test to push to docker and github
 
@@ -24,6 +23,13 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cm
 # -rf : r recursive f force
 # -xzvf : x extract -z gunzip (compress as extracting) -v verbose (list out extracts) -f file (follow cmake instructions)
 # bootstrap : make ready for compilation
+
+# Install Embree
+ARG EMBREE_VERSION=4.3.0
+ADD https://github.com/embree/embree/releases/download/v${EMBREE_VERSION}/embree-${EMBREE_VERSION}.x86_64.linux.tar.gz /opt
+RUN cd /opt && \
+    tar xzf embree-${EMBREE_VERSION}.x86_64.linux.tar.gz
+RUN echo "source embree-${EMBREE_VERSION}.x86_64.linux/embree-vars.sh" >> /root/.profile
 
 COPY . /app
 WORKDIR /app
