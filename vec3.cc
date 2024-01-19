@@ -40,15 +40,15 @@ float vec3::length_squared() const {
 
 vec3 vec3::unit_vector() const { return *this / this->length(); }
 
-inline vec3 vec3::random() {
+vec3 vec3::random() {
     return vec3{random_float(), random_float(), random_float()};
 }
 
-inline vec3 vec3::random(float min, float max) {
+vec3 vec3::random(float min, float max) {
     return vec3{random_float(min, max), random_float(min, max), random_float(min, max)};
 }
 
-inline vec3 vec3::random_unit() { return vec3::random().unit_vector(); }
+vec3 vec3::random_unit() { return vec3::random().unit_vector(); }
 
 bool vec3::near_zero() const {
 
@@ -56,43 +56,45 @@ bool vec3::near_zero() const {
     return (fabs(this->e[0]) < s) && (fabs(this->e[1]) < s) && (fabs(this->e[2]) < s);
 }
 
-inline vec3 operator+(const vec3 &u, const vec3 &v) {
+vec3 operator+(const vec3 &u, const vec3 &v) {
     return vec3{u.x() + v.x(), u.y() + v.y(), u.z() + v.z()};
 }
 
-inline vec3 operator-(const vec3 &u, const vec3 &v) {
+vec3 operator-(const vec3 &u, const vec3 &v) {
     return vec3{u.x() - v.x(), u.y() - v.y(), u.z() - v.z()};
 }
 
-inline vec3 operator*(const vec3 &u, const vec3 &v) {
+vec3 operator*(const vec3 &u, const vec3 &v) {
     return vec3{u.x() * v.x(), u.y() * v.y(), u.z() * v.z()};
 }
 
-inline vec3 operator*(float t, const vec3 &v) {
+vec3 operator*(float t, const vec3 &v) {
     return vec3{t*v.x(), t*v.y(), t*v.z()};
 }
 
-inline vec3 operator*(const vec3 &v, float t) { return t * v; }
+vec3 operator*(const vec3 &v, float t) { return t * v; }
 
-inline vec3 operator/(vec3 v, float t) { return (1/t) * v; }
+vec3 operator/(vec3 v, float t) { return (1/t) * v; }
 
-inline float dot(const vec3 &u, const vec3 &v) {
+float dot(const vec3 &u, const vec3 &v) {
     return (u.x() * v.x() +
             u.y() * v.y() +
             u.z() * v.z());
 }
 
-inline vec3 cross(const vec3 &u, const vec3 &v) {
+vec3 cross(const vec3 &u, const vec3 &v) {
     return vec3{u.y() * v.z() - u.z() * v.y(),
                 u.z() * v.x() - u.x() * v.z(),
                 u.x() * v.y() - u.y() * v.x()};
 }
 
-inline std::ostream& operator<<(std::ostream &out, const vec3 &v) {
+std::ostream& operator<<(std::ostream &out, const vec3 &v) {
     return out << v.x() << ' ' << v.y() << ' ' << v.z();
 }
 
-inline vec3 unit_vector(vec3 v) { return v / v.length(); }
+vec3 unit_vector(vec3 v) { return v / v.length(); }
+
+vec3 random_unit_vector() { return unit_vector(random_in_unit_sphere()); }
 
 vec3 random_in_unit_sphere() { return vec3::random_unit(); }
 
@@ -110,9 +112,9 @@ vec3 random_in_unit_disk() {
     return rand_vec.unit_vector();
 }
 
-inline vec3 reflect(const vec3& v, const vec3& n) { return v - 2*n * dot(v, n); }
+vec3 reflect(const vec3& v, const vec3& n) { return v - 2*n * dot(v, n); }
 
-inline vec3 refract(const vec3& uv, const vec3& n, float etai_over_etat) {
+vec3 refract(const vec3& uv, const vec3& n, float etai_over_etat) {
 
     auto cos_theta = fmin(dot(-uv, n), 1.0);
     vec3 r_out_perp =  etai_over_etat * (uv + cos_theta*n);

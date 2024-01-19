@@ -1,5 +1,5 @@
-#ifndef vec3_H
-#define vec3_H
+#ifndef VEC3_H
+#define VEC3_H
 
 #include <cmath>
 #include <iostream>
@@ -41,17 +41,17 @@ class vec3 {
         vec3 unit_vector() const;
 
         /** @return a random vec3 object */
-        inline static vec3 random();
+        static vec3 random();
 
         /**
          * @param[in] min,max the interval that all vec3 fields will be generated between
          * 
          * @return a random vec3 object within the range of min, max 
          */
-        inline static vec3 random(float min, float max);
+        static vec3 random(float min, float max);
 
         /** @return a random unit vector */
-        inline static vec3 random_unit();
+        static vec3 random_unit();
 
         /** @return if the vec3 object is near zero */
         bool near_zero() const;
@@ -61,27 +61,28 @@ using point3 = vec3;   /**< @brief alias of vec3 for a 3D Point */
 using color = vec3;    /**< @brief alias of vec3 for RGB Colour */
 
 // non-member arithmetic overloads
-inline vec3 operator+(const vec3 &u, const vec3 &v);
-inline vec3 operator-(const vec3 &u, const vec3 &v);
-inline vec3 operator*(const vec3 &u, const vec3 &v);
-inline vec3 operator*(float t, const vec3 &v);
-inline vec3 operator*(const vec3 &v, float t);
-inline vec3 operator/(vec3 v, float t);
+vec3 operator+(const vec3 &u, const vec3 &v);
+vec3 operator-(const vec3 &u, const vec3 &v);
+vec3 operator*(const vec3 &u, const vec3 &v);
+vec3 operator*(float t, const vec3 &v);
+vec3 operator*(const vec3 &v, float t);
+vec3 operator/(vec3 v, float t);
 
 // vector multiplication
-inline float dot(const vec3 &u, const vec3 &v);
-inline vec3 cross(const vec3 &u, const vec3 &v);
+float dot(const vec3 &u, const vec3 &v);
+vec3 cross(const vec3 &u, const vec3 &v);
 
 /** @brief overloads std::ostream& operator<< to support vec3s */
-inline std::ostream& operator<<(std::ostream &out, const vec3 &v);
+std::ostream& operator<<(std::ostream &out, const vec3 &v);
 
 // random vec3 generation
+vec3 random_unit_vector();
 vec3 random_in_unit_sphere();
 vec3 random_in_hemisphere(const vec3& normal);
 vec3 random_in_unit_disk();
 
 // reflection and refraction
-inline vec3 reflect(const vec3& v, const vec3& n);
-inline vec3 refract(const vec3& uv, const vec3& n, float etai_over_etat);
+vec3 reflect(const vec3& v, const vec3& n);
+vec3 refract(const vec3& uv, const vec3& n, float etai_over_etat);
 
 #endif
