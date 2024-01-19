@@ -7,6 +7,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2") # Set the optimization level to -O
 
 # Instructions
 # Create build files:
+# mkdir build (if it does not exist already)
 # cmake -B (DIRECTORY TO CMakeLists.txt) -S build/
 # All docker tags should have the build folder to hold all the CMake files, do not build files in the same directory 
 # as all the code.
