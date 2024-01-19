@@ -192,6 +192,9 @@ int main() {
             thread.join();
     }
     threads.clear();
+    std::cout << "P3" << std::endl;
+    std::cout << image_width << ' ' << image_height << std::endl;
+    std::cout << 255 << std::endl;
     for (int j = image_height - 1; j >= 0; --j) {
         for (int i = 0; i < image_width; ++i) {
             int buffer_index = j * image_width + i;
