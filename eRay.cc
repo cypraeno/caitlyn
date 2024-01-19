@@ -2,8 +2,8 @@
 
 unsigned int Ray::id = 0; 
 
-Ray::Ray(const point3& org, const vec3& dir, float time, float tnear, float tfar, unsigned int mask, unsigned int flag) :
-    org{org}, dir{dir}, time{time}, tnear{tnear}, tfar{tfar}, mask{mask}, flag{flag} { 
+Ray::Ray(const point3& org, const vec3& dir, float time, float tnear, float tfar, unsigned int mask, unsigned int flags) :
+    org{org}, dir{dir}, time{time}, tnear{tnear}, tfar{tfar}, mask{mask}, flags{flags} { 
     
     ++this->id; 
 }

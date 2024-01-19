@@ -1,8 +1,8 @@
-#ifndef RAY_H
-#define RAY_H
+#ifndef ERAY_H
+#define ERAY_H
 
 #include <limits>
-#include <embree/rtcore.h>
+#include <embree4/rtcore.h>
 
 #include "vec3.h"
 
@@ -23,7 +23,7 @@ class Ray {
 
         Ray(const point3& org, const vec3& dir, float time=0.0, 
             float tnear=0.0, float tfar=numeric_limits<float>::infinity(), 
-            unsigned int mask, unsigned int flags=0);
+            unsigned int mask=0, unsigned int flags=0);
         
         point3 getOrg() const;              /**< returns ray org */
         vec3 getDir() const;                /**< returns ray dir */
@@ -52,6 +52,6 @@ class Ray {
         */
         void createRTCRay(struct RTCRay& ray) const;
 
-}
+};
 
 #endif
