@@ -1,6 +1,7 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+#include "ray.h"
 #include "general.h"
 
 class camera {
@@ -23,8 +24,8 @@ class camera {
             auto viewport_height = 2.0 * h;
             auto viewport_width = aspect_ratio * viewport_height;
             
-            w = unit_vector(lookfrom - lookat);
-            u = unit_vector(cross(vup, w));
+            w = (lookfrom - lookat).unit_vector();
+            u = (cross(vup, w)).unit_vector();
             v = cross(w, u);
 
             origin = lookfrom;

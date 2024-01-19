@@ -6,6 +6,8 @@
 
 #include "camera.h"
 #include "color.h"
+#include "ray.h"
+#include "vec3.h"
 #include "hittable_list.h"
 #include "material.h"
 #include "sphere.h"
@@ -46,7 +48,7 @@ bool castRay(RTCScene scene,
     }
     else
     std::cout << "Did not find any intersection" << std::endl;
-    return (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID)
+    return (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID);
 }
 
 
@@ -127,7 +129,7 @@ color ray_color(const ray& r, const hittable& world, int depth) {
     }
 
     // Sky background (gradient blue-white)
-    vec3 unit_direction = unit_vector(r.direction());
+    vec3 unit_direction = r.direction().unit_vector();
     auto t = 0.5*(unit_direction.y() + 1.0);
 
     return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
@@ -190,8 +192,8 @@ int main() {
     const auto aspect_ratio = 3.0 / 2.0;
     const int image_width = 1200;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 50;
-    const int max_depth = 50;
+    const int samples_per_pixel = 10;
+    const int max_depth = 10;
 
     render_data.image_width = image_width;
     render_data.image_height = image_height;
