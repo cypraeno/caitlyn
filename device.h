@@ -1,3 +1,5 @@
+#ifndef DEVICE_H
+#define DEVICE_H
 #include <iostream>
 
 void errorFunction(void* userPtr, enum RTCError error, const char* str) {
@@ -14,3 +16,5 @@ RTCDevice initializeDevice() {
   rtcSetDeviceErrorFunction(device, errorFunction, NULL);
   return device;
 }
+
+#endif
