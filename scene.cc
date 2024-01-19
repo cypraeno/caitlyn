@@ -33,9 +33,9 @@ RTCScene initializeScene(RTCDevice device) {
 
     // unsigned integer that retuns a geometry id
     // rtcAttachGeometry takes ownership of the geometry by increasing ref count thus we can release it
-    //rtcCommitGeometry(geom);
-    //unsigned int triangleID = rtcAttachGeometry(scene, geom);
-    //rtcReleaseGeometry(geom);
+    rtcCommitGeometry(geom);
+    unsigned int triangleID = rtcAttachGeometry(scene, geom);
+    rtcReleaseGeometry(geom);
 
     rtcCommitScene(scene);
 
