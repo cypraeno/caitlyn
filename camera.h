@@ -54,5 +54,4 @@ class camera {
         double shutter0, shutter1;
 };
 
-
 #endif
