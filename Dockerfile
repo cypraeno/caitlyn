@@ -31,5 +31,4 @@ RUN cd /opt && \
     tar xzf embree-${EMBREE_VERSION}.x86_64.linux.tar.gz
 RUN echo "source embree-${EMBREE_VERSION}.x86_64.linux/embree-vars.sh" >> /root/.profile
 
-COPY . /app
 WORKDIR /app
