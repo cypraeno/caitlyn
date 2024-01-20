@@ -15,82 +15,12 @@
 #include <iostream>
 #include <chrono>
 
-/*
-hittable_list random_scene() {
-    EXAMPLE OF CREATING ANIMATION DATA
-    // Create TimePosition structs
-    TimePosition tp1{0.0, vec3(1.0, 2.0, 3.0), 1};
-    TimePosition tp2{1.0, vec3(2.0, 3.0, 4.0), 2};
-
-    // Create a vector and add the TimePosition structs
-    std::vector<TimePosition> time_positions;
-    time_positions.push_back(tp1);
-    time_positions.push_back(tp2);
-
-    // Create a timeline object and a shared_ptr to it
-    auto timeline_ptr = std::make_shared<timeline>(time_positions);
-    auto albedo = color::random(0.5, 1);
-    auto fuzz = random_double(0, 0.5);
-    sphere_material = make_shared<metal>(albedo, fuzz);
-    world.add(make_shared<sphere>(center_here, 0.2, sphere_material, timeline_ptr));
-}
-
-/*
-hittable_list random_scene() {
-    EXAMPLE OF CREATING ANIMATION DATA
-    // Create TimePosition structs
-    TimePosition tp1{0.0, vec3(1.0, 2.0, 3.0), 1};
-    TimePosition tp2{1.0, vec3(2.0, 3.0, 4.0), 2};
-
-    // Create a vector and add the TimePosition structs
-    std::vector<TimePosition> time_positions;
-    time_positions.push_back(tp1);
-    time_positions.push_back(tp2);
-
-    // Create a timeline object and a shared_ptr to it
-    auto timeline_ptr = std::make_shared<timeline>(time_positions);
-    auto albedo = color::random(0.5, 1);
-    auto fuzz = random_double(0, 0.5);
-    sphere_material = make_shared<metal>(albedo, fuzz);
-    world.add(make_shared<sphere>(center_here, 0.2, sphere_material, timeline_ptr));
-}
-
 
 // Threading
 #include <vector>
 #include <thread>
 
-bool castRay(RTCScene scene, 
-             float ox, float oy, float oz,
-             float dx, float dy, float dz) {
-    struct RTCRayHit rayhit;
-    rayhit.ray.org_x = ox;
-    rayhit.ray.org_y = oy;
-    rayhit.ray.org_z = oz;
-    rayhit.ray.dir_x = dx;
-    rayhit.ray.dir_y = dy;
-    rayhit.ray.dir_z = dz;
-    rayhit.ray.tnear = 0;
-    rayhit.ray.tfar = std::numeric_limits<float>::infinity();
-    rayhit.ray.mask = -1;
-    rayhit.ray.flags = 0;
-    rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
-    rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
-
-    // there is an alternative called rtcintersect4/8/16
-    rtcIntersect1(scene, &rayhit);
-
-    std::cout << ox << ", " << oy << ", " << oz << ": ";
-    if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
-    std::cout << "Found intersection on geometry " << rayhit.hit.geomID << ", primitive" << rayhit.hit.primID << 
-        "at tfar=" << rayhit.ray.tfar << std::endl;
-    }
-    else
-    std::cout << "Did not find any intersection" << std::endl;
-    return (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID);
-}
-
-
+/*
 hittable_list random_scene() {
 
     hittable_list world;
@@ -150,6 +80,38 @@ hittable_list random_scene() {
     return world;
 }
 */
+
+bool castRay(RTCScene scene, 
+             float ox, float oy, float oz,
+             float dx, float dy, float dz) {
+    struct RTCRayHit rayhit;
+    rayhit.ray.org_x = ox;
+    rayhit.ray.org_y = oy;
+    rayhit.ray.org_z = oz;
+    rayhit.ray.dir_x = dx;
+    rayhit.ray.dir_y = dy;
+    rayhit.ray.dir_z = dz;
+    rayhit.ray.tnear = 0;
+    rayhit.ray.tfar = std::numeric_limits<float>::infinity();
+    rayhit.ray.mask = -1;
+    rayhit.ray.flags = 0;
+    rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+    rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+
+    // there is an alternative called rtcintersect4/8/16
+    rtcIntersect1(scene, &rayhit);
+
+    std::cout << ox << ", " << oy << ", " << oz << ": ";
+    if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
+    std::cout << "Found intersection on geometry " << rayhit.hit.geomID << ", primitive" << rayhit.hit.primID << 
+        "at tfar=" << rayhit.ray.tfar << std::endl;
+    }
+    else
+    std::cout << "Did not find any intersection" << std::endl;
+    return (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID);
+}
+
+
 hittable_list test_shutter_scene() {
     hittable_list world;
 
