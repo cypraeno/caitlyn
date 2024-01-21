@@ -95,7 +95,7 @@ class dielectric : public material {
             // If the hit comes from the outside, then 1.0 is the refracted index (air)
             double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
 
-            vec3 unit_direction = unit_vector(r_in.direction());
+            vec3 unit_direction = r_in.direction().unit_vector();
             double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
             double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
             

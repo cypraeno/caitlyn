@@ -3,7 +3,18 @@
         "iostream": "cpp",
         "random": "cpp",
         "memory": "cpp",
-        "cmath": "cpp"
+        "cmath": "cpp",
+        "limits": "cpp",
+        "xlocale": "cpp",
+        "xstring": "cpp",
+        "iosfwd": "cpp",
+        "chrono": "cpp",
+        "iterator": "cpp",
+        "thread": "cpp",
+        "xlocmon": "cpp",
+        "xlocnum": "cpp",
+        "xloctime": "cpp"
     },
-    "C_Cpp.errorSquiggles": "disabled"
+    "C_Cpp.errorSquiggles": "disabled",
+    "cmake.configureOnOpen": false
 }
