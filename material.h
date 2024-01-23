@@ -2,7 +2,7 @@
 #define MATERIAL_H
 
 #include "general.h"
-//#include "hittable.h" // not sure if this should be here? might be a more elegant way
+#include "hittable.h"
 
 class hit_record;
 
