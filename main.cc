@@ -156,7 +156,7 @@ color ray_color(const ray& r, const hittable& world, int depth) {
     if (depth <= 0) {
         return color(0,0,0);
     }
-    
+
     // 0.001 instead of 0 to correct for shadow acne
     if (world.hit(r, 0.001, infinity, rec)) {
         ray scattered;
@@ -214,28 +214,13 @@ void render_scanlines(int lines, int start_line, RenderData& data, camera cam) {
 }
 
 int main() {
-    /*
-    // CAST RAY TEST
-    RTCDevice device = initializeDevice();
-    RTCScene scene = initializeScene(device);
-
-    // This will hit the triangle at t=1.
-    castRay(scene, 0.33f, 0.33f, -1, 0, 0, 1);
-
-    // This will not hit anything.
-    castRay(scene, 1.00f, 1.00f, -1, 0, 0, 1);
-
-    rtcReleaseScene(scene);
-    rtcReleaseDevice(device);
-    */
-    
     RenderData render_data; 
 
     const auto aspect_ratio = 3.0 / 2.0;
     const int image_width = 1200;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 100;
-    const int max_depth = 50;
+    const int samples_per_pixel = 10;
+    const int max_depth = 10;
 
     render_data.image_width = image_width;
     render_data.image_height = image_height;
@@ -257,8 +242,12 @@ int main() {
 
     camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
+    // Simple usage of creating a CaitScene
+    RTCDevice device = initializeDevice();
+    CaitScene cs = CaitScene(device, cam);
+    rtcReleaseDevice(device);
 
-    // Start Render Timer
+    // Start Render Timer 
     auto start_time = std::chrono::high_resolution_clock::now();
 
     // Threading approach? : Divide the scanlines into N blocks
