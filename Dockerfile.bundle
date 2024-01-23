@@ -1,10 +1,7 @@
 FROM gcc:latest
 
-# docker build -f Dockerfile.bundled -t connortbot/caitlyn-mcrt:base .
-# docker tag caitlyn-mcrt connortbot/caitlyn-mcrt
-# docker push connortbot/caitlyn-mcrt
-
-# This is a test to push to docker and github
+# docker build -f Dockerfile.bundled -t connortbot/caitlyn-mcrt:base-vX.X.X .
+# docker push connortbot/caitlyn-mcrt:base-vX.X.X
 
 # Install required packages
 RUN apt-get update && \
