@@ -3,6 +3,9 @@
 
 #include "primitive.h"
 
+// SPHEREPRIMITIVE INTERFACE
+// The most basic sphere. Can only have its radius changed and hold a material.
+
 class SpherePrimitive : public Primitive {
     public:
     double radius;

@@ -5,6 +5,7 @@
 
 // MESH INTERFACE
 // base class for all 3d objects. Contains only two properties.
+// Parent to: Visual, Camera
 
 class Base {
     public:

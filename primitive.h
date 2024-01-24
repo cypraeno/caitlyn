@@ -3,6 +3,10 @@
 
 #include "geometry.h"
 
+// PRIMITIVE INTERFACE
+// Primitives are simple Geometry, usually requiring a small amount of instantiated RTCGeometry and materials.
+// Parent to: SpherePrimitive
+
 class Primitive : public Geometry {
     public:
     RTCGeometry geom;
