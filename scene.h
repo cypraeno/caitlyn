@@ -5,7 +5,7 @@
 #include <map>
 #include "camera.h"
 #include "material.h"
-#include "general.h"
+#include "primitive.h"
 
 // SCENE INTERFACE
 // The scene class object covers all relevant objects in a scene:
@@ -19,20 +19,22 @@
 // => Thus, a geomID tells renderer how to scatter the ray.
 
 // METHODS
-// => CaitScene can have emissives and meshes added to it.
+// => Scene can have emissives and meshes added to it.
 // => Once everything is added, the user commits the scene.
 
-class CaitScene {
+class Scene {
     public:
-    camera cam;
+    Camera cam;
     std::map<unsigned int, std::shared_ptr<material>> mat_map;
     RTCScene rtc_scene;
 
     // Default Constructor
     // requires a device to initialize RTCScene
-    CaitScene(RTCDevice device, camera cam);
-    ~CaitScene();
+    Scene(RTCDevice device, Camera cam);
+    ~Scene();
     void commitScene();
+    void releaseScene();
+    unsigned int add_primitive(Primitive &prim);
 };
 
 void add_sphere(RTCDevice device, RTCScene scene);

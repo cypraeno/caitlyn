@@ -10,6 +10,7 @@
 #include "hittable_list.h"
 #include "material.h"
 #include "sphere.h"
+#include "sphere_primitive.h"
 
 
 #include <iostream>
@@ -184,7 +185,7 @@ struct RenderData {
 };
 
 
-void render_scanlines(int lines, int start_line, RenderData& data, camera cam) {
+void render_scanlines(int lines, int start_line, RenderData& data, Camera cam) {
 
     int image_width         = data.image_width;
     int image_height        = data.image_height;
@@ -240,11 +241,21 @@ int main() {
     auto dist_to_focus = 10.0;
     auto aperture = 0.0001;
 
-    camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+    Camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
-    // Simple usage of creating a CaitScene
+    // Simple usage of creating a Scene
     RTCDevice device = initializeDevice();
-    CaitScene cs = CaitScene(device, cam);
+    Scene cs = Scene(device, cam);
+
+    // Example Usage: Instantiating a SpherePrimitive
+    auto basic_lambertian = make_shared<lambertian>(color(0.1, 0.8, 0.2));
+    SpherePrimitive sphere(vec3(0.0, 0.0, 0.0), basic_lambertian, 0.5, device);
+    unsigned int primID = cs.add_primitive(sphere);
+
+    // Finalizing the Scene
+    cs.commitScene();
+
+    // When ready to terminate
     rtcReleaseDevice(device);
 
     // Start Render Timer 
