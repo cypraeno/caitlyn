@@ -5,7 +5,7 @@
 #include <map>
 #include "camera.h"
 #include "material.h"
-#include "general.h"
+#include "primitive.h"
 
 // SCENE INTERFACE
 // The scene class object covers all relevant objects in a scene:
@@ -33,6 +33,8 @@ class Scene {
     Scene(RTCDevice device, Camera cam);
     ~Scene();
     void commitScene();
+    void releaseScene();
+    unsigned int add_primitive(Primitive &prim);
 };
 
 void add_sphere(RTCDevice device, RTCScene scene);

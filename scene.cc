@@ -4,12 +4,19 @@
 Scene::Scene(RTCDevice device, Camera cam) : cam{cam}, rtc_scene{rtcNewScene(device)} {}
 
 Scene::~Scene() {
-    if (rtc_scene) {
-        rtcReleaseScene(rtc_scene);
-    }
+    rtcReleaseScene(rtc_scene);
+}
+
+unsigned int Scene::add_primitive(Primitive &prim) {
+    unsigned int primID = rtcAttachGeometry(rtc_scene, prim.geom);
+    rtcReleaseGeometry(prim.geom);
+
+    mat_map[primID] = prim.mat_ptr;
+    return primID;
 }
 
 void Scene::commitScene() { rtcCommitScene(rtc_scene); }
+void Scene::releaseScene() { rtcReleaseScene(rtc_scene); }
 
 void add_sphere(RTCDevice device, RTCScene scene) {
     
