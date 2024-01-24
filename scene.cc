@@ -1,8 +1,35 @@
 #include "scene.h"
 #include <embree4/rtcore.h>
 
-RTCScene initializeScene(RTCDevice device) {
-    RTCScene scene = rtcNewScene(device);
+CaitScene::CaitScene(RTCDevice device, camera cam) : cam{cam}, rtc_scene{rtcNewScene(device)} {}
+
+CaitScene::~CaitScene() {
+    if (rtc_scene) {
+        rtcReleaseScene(rtc_scene);
+    }
+}
+
+void CaitScene::commitScene() { rtcCommitScene(rtc_scene); }
+
+void add_sphere(RTCDevice device, RTCScene scene) {
+    
+    RTCGeometry sphere = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_SPHERE_POINT);
+    float* spherev = (float*)rtcSetNewGeometryBuffer(sphere, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT4, 4*sizeof(float), 1);
+    if (spherev) {
+        spherev[0] = 0;
+        spherev[1] = 0;
+        spherev[2] = -1;
+        spherev[3] = 0.5;
+    }
+
+    rtcCommitGeometry(sphere);
+    unsigned int sphereID = rtcAttachGeometry(scene, sphere);
+    rtcReleaseGeometry(sphere);
+}
+
+void add_triangle(RTCDevice device, RTCScene scene) {
+    // moved code from main here to clean it up. this will be
+    // updated but just leaving to save the code.
     RTCGeometry geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_TRIANGLE);
     float* vertices = (float*) rtcSetNewGeometryBuffer(geom,
                                                      RTC_BUFFER_TYPE_VERTEX,
@@ -36,26 +63,4 @@ RTCScene initializeScene(RTCDevice device) {
     rtcCommitGeometry(geom);
     unsigned int triangleID = rtcAttachGeometry(scene, geom);
     rtcReleaseGeometry(geom);
-
-    rtcCommitScene(scene);
-
-    return scene;
 }
-
-void add_sphere(RTCDevice device, RTCScene scene) {
-    
-    RTCGeometry sphere = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_SPHERE_POINT);
-    float* spherev = (float*)rtcSetNewGeometryBuffer(sphere, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT4, 4*sizeof(float), 1);
-    if (spherev) {
-        spherev[0] = 0;
-        spherev[1] = 0;
-        spherev[2] = -1;
-        spherev[3] = 0.5;
-    }
-
-    rtcCommitGeometry(sphere);
-    unsigned int sphereID = rtcAttachGeometry(scene, sphere);
-    rtcReleaseGeometry(sphere);
-}
-
-// add_sphere(scene,sphere_width,.....)
