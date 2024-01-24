@@ -10,6 +10,7 @@
 #include "hittable_list.h"
 #include "material.h"
 #include "sphere.h"
+#include "sphere_primitive.h"
 
 
 #include <iostream>
@@ -245,6 +246,16 @@ int main() {
     // Simple usage of creating a Scene
     RTCDevice device = initializeDevice();
     Scene cs = Scene(device, cam);
+
+    // Example Usage: Instantiating a SpherePrimitive
+    auto basic_lambertian = make_shared<lambertian>(color(0.1, 0.8, 0.2));
+    SpherePrimitive sphere(vec3(0.0, 0.0, 0.0), basic_lambertian, 0.5, device);
+    unsigned int primID = cs.add_primitive(sphere);
+
+    // Finalizing the Scene
+    cs.commitScene();
+
+    // When ready to terminate
     rtcReleaseDevice(device);
 
     // Start Render Timer 
