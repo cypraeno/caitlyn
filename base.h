@@ -1,7 +1,7 @@
 #ifndef BASE_H
 #define BASE_H
 
-#include "vec3.h"
+#include "general.h"
 
 // MESH INTERFACE
 // base class for all 3d objects. Contains only two properties.
