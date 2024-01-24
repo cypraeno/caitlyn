@@ -184,7 +184,7 @@ struct RenderData {
 };
 
 
-void render_scanlines(int lines, int start_line, RenderData& data, camera cam) {
+void render_scanlines(int lines, int start_line, RenderData& data, Camera cam) {
 
     int image_width         = data.image_width;
     int image_height        = data.image_height;
@@ -240,11 +240,11 @@ int main() {
     auto dist_to_focus = 10.0;
     auto aperture = 0.0001;
 
-    camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+    Camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
-    // Simple usage of creating a CaitScene
+    // Simple usage of creating a Scene
     RTCDevice device = initializeDevice();
-    CaitScene cs = CaitScene(device, cam);
+    Scene cs = Scene(device, cam);
     rtcReleaseDevice(device);
 
     // Start Render Timer 

@@ -1,15 +1,15 @@
 #include "scene.h"
 #include <embree4/rtcore.h>
 
-CaitScene::CaitScene(RTCDevice device, camera cam) : cam{cam}, rtc_scene{rtcNewScene(device)} {}
+Scene::Scene(RTCDevice device, Camera cam) : cam{cam}, rtc_scene{rtcNewScene(device)} {}
 
-CaitScene::~CaitScene() {
+Scene::~Scene() {
     if (rtc_scene) {
         rtcReleaseScene(rtc_scene);
     }
 }
 
-void CaitScene::commitScene() { rtcCommitScene(rtc_scene); }
+void Scene::commitScene() { rtcCommitScene(rtc_scene); }
 
 void add_sphere(RTCDevice device, RTCScene scene) {
     
