@@ -175,6 +175,51 @@ color ray_color(const ray& r, const hittable& world, int depth) {
     return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
 }
 
+/** @brief recursive, shoots ray and gets its sum color through a scene. */
+color colorize_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
+    HitInfo record;
+
+    // end of recursion
+    if (depth <= 0) {
+        return color(0,0,0);
+    }
+
+    // fire ray into scene and get ID.
+    struct RTCRayHit rayhit;
+    rayhit.ray.org_x = r.origin().x();
+    rayhit.ray.org_y = r.origin().y();
+    rayhit.ray.org_z = r.origin().z();
+    rayhit.ray.dir_x = r.direction().x();
+    rayhit.ray.dir_y = r.direction().y();
+    rayhit.ray.dir_z = r.direction().z();
+    rayhit.ray.tnear = 0;
+    rayhit.ray.tfar = std::numeric_limits<float>::infinity();
+    rayhit.ray.mask = -1;
+    rayhit.ray.flags = 0;
+    rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+    rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+
+    rtcIntersect1(scene->rtc_scene, &rayhit);
+
+    // if hit is found
+    if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
+        std::cout << "bruhhh" << std::endl;
+        ray scattered;
+        color attenuation;
+
+        // get the material of the thing we just hit
+        std::shared_ptr<Geometry> geomhit = scene->geom_map[rayhit.hit.geomID];
+        std::shared_ptr<material> mat_ptr = geomhit->materialById(rayhit.hit.geomID);
+        
+    }
+
+    // Sky background (gradient blue-white)
+    vec3 unit_direction = r.direction().unit_vector();
+    auto t = 0.5*(unit_direction.y() + 1.0);
+
+    return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
+}
+
 struct RenderData {
     int image_width;
     int image_height;
@@ -245,15 +290,17 @@ int main() {
 
     // Simple usage of creating a Scene
     RTCDevice device = initializeDevice();
-    Scene cs = Scene(device, cam);
+    auto cs = make_shared<Scene>(device, cam);
 
     // Example Usage: Instantiating a SpherePrimitive
     auto basic_lambertian = make_shared<lambertian>(color(0.1, 0.8, 0.2));
     auto sphere_ptr = make_shared<SpherePrimitive>(vec3(0.0, 0.0, 0.0), basic_lambertian, 0.5, device);
-    unsigned int primID = cs.add_primitive(sphere_ptr);
+    unsigned int primID = cs->add_primitive(sphere_ptr);
 
     // Finalizing the Scene
-    cs.commitScene();
+    cs->commitScene();
+
+    colorize_ray(ray(vec3(13,2,3),vec3(-13,-2,-3),0.0), cs, 5);
 
     // When ready to terminate
     rtcReleaseDevice(device);
