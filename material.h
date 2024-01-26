@@ -3,14 +3,15 @@
 
 #include "general.h"
 #include "hittable.h"
+#include "hitinfo.h"
 
 class hit_record;
 
 class material {
 
     public:
-
         virtual bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const = 0;
+        virtual bool scatter(const ray& r_in, const HitInfo& rec, color& attenuation, ray& scattered) const {return true;};
 };
 
 class lambertian : public material {
@@ -29,6 +30,17 @@ class lambertian : public material {
             scattered = ray(rec.p, scatter_direction, r_in.time());
             attenuation = albedo;
             
+            return true;
+        }
+        virtual bool scatter(const ray& r_in, const HitInfo& rec, color& attenuation, ray& scattered) const override {
+            auto scatter_direction = rec.normal + random_unit_vector();
+
+            if (scatter_direction.near_zero()) {
+                scatter_direction = rec.normal;
+            }
+            scattered = ray(rec.pos, scatter_direction, r_in.time());
+            attenuation = albedo;
+
             return true;
         }
     

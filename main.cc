@@ -175,24 +175,68 @@ color ray_color(const ray& r, const hittable& world, int depth) {
     return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
 }
 
+/** @brief recursive, shoots ray and gets its sum color through a scene. */
+color colorize_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
+    HitInfo record;
+
+    // end of recursion
+    if (depth <= 0) {
+        return color(0,0,0);
+    }
+
+    // fire ray into scene and get ID.
+    struct RTCRayHit rayhit;
+    rayhit.ray.org_x = r.origin().x();
+    rayhit.ray.org_y = r.origin().y();
+    rayhit.ray.org_z = r.origin().z();
+    rayhit.ray.dir_x = r.direction().x();
+    rayhit.ray.dir_y = r.direction().y();
+    rayhit.ray.dir_z = r.direction().z();
+    rayhit.ray.tnear = 0.001;
+    rayhit.ray.tfar = std::numeric_limits<float>::infinity();
+    rayhit.ray.mask = -1;
+    rayhit.ray.flags = 0;
+    rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+    rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+
+    rtcIntersect1(scene->rtc_scene, &rayhit);
+
+    // if hit is found
+    if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
+        ray scattered;
+        color attenuation;
+
+        // get the material of the thing we just hit
+        std::shared_ptr<Geometry> geomhit = scene->geom_map[rayhit.hit.geomID];
+        std::shared_ptr<material> mat_ptr = geomhit->materialById(rayhit.hit.geomID);
+        record = geomhit->getHitInfo(r, r.at(rayhit.ray.tfar), rayhit.ray.tfar, rayhit.hit.geomID);
+        if (mat_ptr->scatter(r, record, attenuation, scattered)) return attenuation * colorize_ray(scattered, scene, depth-1);
+
+        return color(0,0,0);
+    }
+
+    // Sky background (gradient blue-white)
+    vec3 unit_direction = r.direction().unit_vector();
+    auto t = 0.5*(unit_direction.y() + 1.0);
+
+    return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
+}
+
 struct RenderData {
     int image_width;
     int image_height;
     int samples_per_pixel;
     int max_depth;
-    hittable_list scene;
     std::vector<color> buffer;
 };
 
 
-void render_scanlines(int lines, int start_line, RenderData& data, Camera cam) {
+void render_scanlines(int lines, int start_line, std::shared_ptr<Scene> scene_ptr, RenderData& data, Camera cam) {
 
     int image_width         = data.image_width;
     int image_height        = data.image_height;
     int samples_per_pixel   = data.samples_per_pixel;
     int max_depth           = data.max_depth;
-
-    hittable_list world     = data.scene;
 
     for (int j=start_line; j>=start_line - (lines - 1); --j) {
 
@@ -204,7 +248,7 @@ void render_scanlines(int lines, int start_line, RenderData& data, Camera cam) {
                 auto u = (i + random_double()) / (image_width-1);
                 auto v = (j + random_double()) / (image_height-1);
                 ray r = cam.get_ray(u, v);
-                pixel_color += ray_color(r, world, max_depth);  
+                pixel_color += colorize_ray(r, scene_ptr, max_depth);
             }
 
             int buffer_index = j * image_width + i;
@@ -220,40 +264,39 @@ int main() {
     const auto aspect_ratio = 3.0 / 2.0;
     const int image_width = 1200;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 10;
-    const int max_depth = 10;
+    const int samples_per_pixel = 100;
+    const int max_depth = 25;
 
     render_data.image_width = image_width;
     render_data.image_height = image_height;
     render_data.samples_per_pixel = samples_per_pixel;
     render_data.max_depth = max_depth;
     render_data.buffer = std::vector<color>(image_width * image_height);
-    
-    // Set World
-    // auto world = test_shutter_scene();
-    auto world = random_scene();
-    render_data.scene = world;
 
     // Set up Camera
     point3 lookfrom(13,2,3);
     point3 lookat(0,0,0);
     vec3 vup(0,1,0);
     auto dist_to_focus = 10.0;
-    auto aperture = 0.0001;
+    auto aperture = 0.02;
 
     Camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
     // Simple usage of creating a Scene
     RTCDevice device = initializeDevice();
-    Scene cs = Scene(device, cam);
+    auto cs = make_shared<Scene>(device, cam);
 
     // Example Usage: Instantiating a SpherePrimitive
     auto basic_lambertian = make_shared<lambertian>(color(0.1, 0.8, 0.2));
     auto sphere_ptr = make_shared<SpherePrimitive>(vec3(0.0, 0.0, 0.0), basic_lambertian, 0.5, device);
-    unsigned int primID = cs.add_primitive(sphere_ptr);
+    unsigned int primID = cs->add_primitive(sphere_ptr);
+
+    auto basic_lambertian2 = make_shared<lambertian>(color(1, 0.65, 0));
+    auto sphere2_ptr = make_shared<SpherePrimitive>(vec3(0, -50.5, 0), basic_lambertian2, 50, device);
+    unsigned int primID2 = cs->add_primitive(sphere2_ptr);
 
     // Finalizing the Scene
-    cs.commitScene();
+    cs->commitScene();
 
     // When ready to terminate
     rtcReleaseDevice(device);
@@ -273,9 +316,9 @@ int main() {
 
     for (int i=0; i < num_threads; i++) {
         // In the first thead, we want the first lines_per_thread lines to be rendered
-        threads.emplace_back(render_scanlines,lines_per_thread,(image_height-1) - (i * lines_per_thread),std::ref(render_data),cam);
+        threads.emplace_back(render_scanlines,lines_per_thread,(image_height-1) - (i * lines_per_thread), cs, std::ref(render_data),cam);
     }
-    threads.emplace_back(render_scanlines,leftOver,(image_height-1) - (num_threads * lines_per_thread),std::ref(render_data),cam);
+    threads.emplace_back(render_scanlines,leftOver,(image_height-1) - (num_threads * lines_per_thread), cs, std::ref(render_data),cam);
 
     for (auto &thread : threads) {
             thread.join();
