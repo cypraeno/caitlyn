@@ -230,6 +230,9 @@ void render_scanlines(int lines, int start_line, std::shared_ptr<Scene> scene_pt
             color buffer_pixel(pixel_color.x(), pixel_color.y(), pixel_color.z());
             data.buffer[buffer_index] = buffer_pixel;
         }
+        data.completed_lines += 1;
+        float percentage_completed = ((float)data.completed_lines / (float)data.image_height)*100.00;
+        std::cerr << "[" <<int(percentage_completed) << "%] completed" << std::endl;
     }
 }
 
@@ -298,6 +301,7 @@ int main() {
     for (auto &thread : threads) {
             thread.join();
     }
+    std::cerr << "Joining all threads" << std::endl;
     threads.clear();
     std::cout << "P3" << std::endl;
     std::cout << image_width << ' ' << image_height << std::endl;
@@ -307,6 +311,8 @@ int main() {
             int buffer_index = j * image_width + i;
             write_color(std::cout, render_data.buffer[buffer_index], samples_per_pixel);
         }
+        float percentage_completed = (((float)image_height - (float)j) / (float)image_height)*100.0;
+        std::cerr << "[" << (int)percentage_completed << "%] outputting completed" << std::endl;
     }
     auto current_time = std::chrono::high_resolution_clock::now();
     auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
