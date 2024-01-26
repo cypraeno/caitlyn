@@ -21,27 +21,20 @@
 #include <vector>
 #include <thread>
 
-
-hittable_list random_scene() {
-
-    hittable_list world;
-
-    auto create_still_timeline = [](vec3 pos) -> std::shared_ptr<timeline> {
-        TimePosition tp1{0.0, pos, 0};
-        TimePosition tp2{1.0, pos, 0};
-        std::vector<TimePosition> time_positions{tp1, tp2};
-        return std::make_shared<timeline>(time_positions);
-    };
-
-    auto create_random_timeline = [](vec3 pos) -> std::shared_ptr<timeline> {
-        double y_end = random_double(pos.y(), pos.y() + 0.5);  // Adjust range as needed
-        TimePosition tp1{0.0, pos, 0};
-        TimePosition tp2{1.0, vec3(pos.x(), y_end, pos.z()), 0};
-        std::vector<TimePosition> time_positions{tp1, tp2};
-        return std::make_shared<timeline>(time_positions);
-    };
+/** @brief Create a standardized scene benchmark for testing optimizations between different versions 
+ * 
+ * @param shared_ptr<Scene> scene_ptr Pointer to the scene that will be modified.
+ * @param RTCDevice device object for instantiation. must not be released yet.
+ * @note Benchmark v0.1.0
+ * @note Standard benchmark scene creates a large ground sphere with 1000 radius, at 0,-1000,0
+ * @note Then instantiate 22*22 sphere. In each iteration, choose randomized position and material.
+*/
+void setup_benchmark_scene(std::shared_ptr<Scene> scene_ptr, RTCDevice device) {
+    std::cerr << "Setup Benchmark Scene v0.1.0" << std::endl;
     auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
-    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material, create_still_timeline(point3(0,-1000,0))));
+    auto ground_sphere = make_shared<SpherePrimitive>(point3(0,-1000,0), ground_material, 1000, device);
+    unsigned int groundID = scene_ptr->add_primitive(ground_sphere);
+    std::cerr << "ADD PRIM :: (0,-1000,0), RADIUS 1000, LAMBERTIAN" << std::endl;
 
     for (int a = -11; a < 11; a++) {
 
@@ -56,7 +49,6 @@ hittable_list random_scene() {
                 if (choose_mat < 0.8) {
                     auto albedo = color::random() * color::random();
                     sphere_material = make_shared<lambertian>(albedo);
-                    world.add(make_shared<sphere>(center, 0.2, sphere_material, create_random_timeline(center)));
                 } 
 
                 // metal
@@ -64,14 +56,13 @@ hittable_list random_scene() {
                     auto albedo = color::random(0.5, 1);
                     auto fuzz = random_double(0, 0.5);
                     sphere_material = make_shared<metal>(albedo, fuzz);
-                    world.add(make_shared<sphere>(center, 0.2, sphere_material, create_random_timeline(center)));
                 } 
 
                 // glass
-                else {
-                    sphere_material = make_shared<dielectric>(1.5);
-                    world.add(make_shared<sphere>(center, 0.2, sphere_material, create_random_timeline(center)));
-                }
+                else { sphere_material = make_shared<dielectric>(1.5); }
+                
+                auto sphere = make_shared<SpherePrimitive>(center, sphere_material, 0.2, device);
+                scene_ptr->add_primitive(sphere);
             }
         }
     }
