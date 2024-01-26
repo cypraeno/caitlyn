@@ -203,17 +203,7 @@ int main() {
     RTCDevice device = initializeDevice();
     auto cs = make_shared<Scene>(device, cam);
 
-    // Example Usage: Instantiating a SpherePrimitive
-    auto basic_lambertian = make_shared<lambertian>(color(0.1, 0.8, 0.2));
-    auto sphere_ptr = make_shared<SpherePrimitive>(vec3(0.0, 0.0, 0.0), basic_lambertian, 0.5, device);
-    unsigned int primID = cs->add_primitive(sphere_ptr);
-
-    auto basic_lambertian2 = make_shared<lambertian>(color(1, 0.65, 0));
-    auto sphere2_ptr = make_shared<SpherePrimitive>(vec3(0, -50.5, 0), basic_lambertian2, 50, device);
-    unsigned int primID2 = cs->add_primitive(sphere2_ptr);
-
-    // Finalizing the Scene
-    cs->commitScene();
+    setup_benchmark_scene(cs, device);
 
     // When scene construction is finished, the device is no longer needed.
     rtcReleaseDevice(device);
