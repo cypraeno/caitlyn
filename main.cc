@@ -209,8 +209,7 @@ color colorize_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
         // get the material of the thing we just hit
         std::shared_ptr<Geometry> geomhit = scene->geom_map[rayhit.hit.geomID];
         std::shared_ptr<material> mat_ptr = geomhit->materialById(rayhit.hit.geomID);
-        
-
+        record = geomhit->getHitInfo(r, r.at(rayhit.ray.tfar), rayhit.ray.tfar, rayhit.hit.geomID);
         if (mat_ptr->scatter(r, record, attenuation, scattered)) return attenuation * colorize_ray(scattered, scene, depth-1);
 
         return color(0,0,0);
