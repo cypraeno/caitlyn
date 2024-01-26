@@ -221,6 +221,8 @@ int main() {
     std::vector<color> pixel_colors;
     std::vector<std::thread> threads;
 
+    render_data.completed_lines = 0;
+
     for (int i=0; i < num_threads; i++) {
         // In the first thead, we want the first lines_per_thread lines to be rendered
         threads.emplace_back(render_scanlines,lines_per_thread,(image_height-1) - (i * lines_per_thread), cs, std::ref(render_data),cam);
