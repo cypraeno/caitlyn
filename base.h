@@ -13,7 +13,7 @@ class Base {
     bool active = true;
 
     Base(vec3 position) : position{position} {}
-}
+};
 
 
 #endif
