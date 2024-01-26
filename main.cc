@@ -21,27 +21,20 @@
 #include <vector>
 #include <thread>
 
-
-hittable_list random_scene() {
-
-    hittable_list world;
-
-    auto create_still_timeline = [](vec3 pos) -> std::shared_ptr<timeline> {
-        TimePosition tp1{0.0, pos, 0};
-        TimePosition tp2{1.0, pos, 0};
-        std::vector<TimePosition> time_positions{tp1, tp2};
-        return std::make_shared<timeline>(time_positions);
-    };
-
-    auto create_random_timeline = [](vec3 pos) -> std::shared_ptr<timeline> {
-        double y_end = random_double(pos.y(), pos.y() + 0.5);  // Adjust range as needed
-        TimePosition tp1{0.0, pos, 0};
-        TimePosition tp2{1.0, vec3(pos.x(), y_end, pos.z()), 0};
-        std::vector<TimePosition> time_positions{tp1, tp2};
-        return std::make_shared<timeline>(time_positions);
-    };
+/** @brief Create a standardized scene benchmark for testing optimizations between different versions 
+ * 
+ * @param shared_ptr<Scene> scene_ptr Pointer to the scene that will be modified.
+ * @param RTCDevice device object for instantiation. must not be released yet.
+ * @note Benchmark v0.1.0
+ * @note Standard benchmark scene creates a large ground sphere with 1000 radius, at 0,-1000,0
+ * @note Then instantiate 22*22 sphere. In each iteration, choose randomized position and material.
+*/
+void setup_benchmark_scene(std::shared_ptr<Scene> scene_ptr, RTCDevice device) {
+    std::cerr << "Setup Benchmark Scene v0.1.0" << std::endl;
     auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
-    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material, create_still_timeline(point3(0,-1000,0))));
+    auto ground_sphere = make_shared<SpherePrimitive>(point3(0,-1000,0), ground_material, 1000, device);
+    unsigned int groundID = scene_ptr->add_primitive(ground_sphere);
+    std::cerr << "ADD PRIM :: (0,-1000,0), RADIUS 1000, LAMBERTIAN" << std::endl;
 
     for (int a = -11; a < 11; a++) {
 
@@ -56,7 +49,6 @@ hittable_list random_scene() {
                 if (choose_mat < 0.8) {
                     auto albedo = color::random() * color::random();
                     sphere_material = make_shared<lambertian>(albedo);
-                    world.add(make_shared<sphere>(center, 0.2, sphere_material, create_random_timeline(center)));
                 } 
 
                 // metal
@@ -64,116 +56,37 @@ hittable_list random_scene() {
                     auto albedo = color::random(0.5, 1);
                     auto fuzz = random_double(0, 0.5);
                     sphere_material = make_shared<metal>(albedo, fuzz);
-                    world.add(make_shared<sphere>(center, 0.2, sphere_material, create_random_timeline(center)));
                 } 
 
                 // glass
-                else {
-                    sphere_material = make_shared<dielectric>(1.5);
-                    world.add(make_shared<sphere>(center, 0.2, sphere_material, create_random_timeline(center)));
-                }
+                else { sphere_material = make_shared<dielectric>(1.5); }
+                
+                auto sphere = make_shared<SpherePrimitive>(center, sphere_material, 0.2, device);
+                scene_ptr->add_primitive(sphere);
             }
         }
     }
 
     auto material1 = make_shared<dielectric>(1.5);
-    world.add(make_shared<sphere>(point3(0, 1, 0), 1.0, material1, create_still_timeline(point3(0,1,0))));
+    auto sphere1 = make_shared<SpherePrimitive>(point3(0, 1, 0), material1, 1, device);
+    scene_ptr->add_primitive(sphere1);
 
     auto material2 = make_shared<lambertian>(color(0.4, 0.2, 0.1));
-    world.add(make_shared<sphere>(point3(-4, 1, 0), 1.0, material2, create_still_timeline(point3(-4,1,0))));
+    auto sphere2 = make_shared<SpherePrimitive>(point3(-4, 1, 0), material2, 1, device);
+    scene_ptr->add_primitive(sphere2);
 
     auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
-    world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3, create_still_timeline(point3(4,1,0))));
+    auto sphere3 = make_shared<SpherePrimitive>(point3(4, 1, 0), material3, 1, device);
+    scene_ptr->add_primitive(sphere3);
 
-    return world;
-}
-
-// castRay takes in an RTCScene, origin coordinates and direction coordinates of ray and casts it.
-// Returns any found intersections.
-bool castRay(RTCScene scene, 
-             float ox, float oy, float oz,
-             float dx, float dy, float dz) {
-    struct RTCRayHit rayhit;
-    rayhit.ray.org_x = ox;
-    rayhit.ray.org_y = oy;
-    rayhit.ray.org_z = oz;
-    rayhit.ray.dir_x = dx;
-    rayhit.ray.dir_y = dy;
-    rayhit.ray.dir_z = dz;
-    rayhit.ray.tnear = 0;
-    rayhit.ray.tfar = std::numeric_limits<float>::infinity();
-    rayhit.ray.mask = -1;
-    rayhit.ray.flags = 0;
-    rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
-    rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
-
-    // there is an alternative called rtcintersect4/8/16
-    rtcIntersect1(scene, &rayhit);
-
-    std::cout << ox << ", " << oy << ", " << oz << ": ";
-    if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
-    std::cout << "Found intersection on geometry " << rayhit.hit.geomID << ", primitive" << rayhit.hit.primID << 
-        "at tfar=" << rayhit.ray.tfar << std::endl;
-    }
-    else
-    std::cout << "Did not find any intersection" << std::endl;
-    return (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID);
-}
-
-
-hittable_list test_shutter_scene() {
-    hittable_list world;
-
-    TimePosition tp1{0.0, vec3(0, 1, 0), 0};
-    TimePosition tp2{1.0, vec3(0, 2, 0), 0};
-    std::vector<TimePosition> time_positions;
-    time_positions.push_back(tp1);
-    time_positions.push_back(tp2);
-    auto timeline_ptr = std::make_shared<timeline>(time_positions);
-
-    auto material3 = make_shared<lambertian>(color(0.1, 0.8, 0.2));
-    world.add(make_shared<sphere>(point3(0, 1, 0), 0.5, material3, timeline_ptr));
-
-    TimePosition tp3{0,vec3(0,-1000,0),0};
-    TimePosition tp4{1,vec3(0,-1000,0),0};
-    std::vector<TimePosition> globe_frames;
-    globe_frames.push_back(tp3);
-    globe_frames.push_back(tp4);
-    auto timeline_ptr2 = std::make_shared<timeline>(globe_frames);
-    auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
-    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material,timeline_ptr2));
-
-    return world;
+    // Finalizing the Scene
+    scene_ptr->commitScene();
+    std::cerr << "COMMIT SCENE :: complete" << std::endl;
 }
 
 // COMPILE
 // g++ -std=c++11 -O2 -o renderer main.cc
 // ./renderer >> latest.ppm
-
-color ray_color(const ray& r, const hittable& world, int depth) {
-
-    hit_record rec;
-    // if exceed bounce limit, return black (no light)
-    if (depth <= 0) {
-        return color(0,0,0);
-    }
-
-    // 0.001 instead of 0 to correct for shadow acne
-    if (world.hit(r, 0.001, infinity, rec)) {
-        ray scattered;
-        color attenuation;
-
-        if (rec.mat_ptr->scatter(r, rec, attenuation, scattered)) return attenuation * ray_color(scattered, world, depth-1);
-
-        return color(0,0,0);
-    }
-
-    // Sky background (gradient blue-white)
-    vec3 unit_direction = r.direction().unit_vector();
-    auto t = 0.5*(unit_direction.y() + 1.0);
-
-    return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
-}
 
 /** @brief recursive, shoots ray and gets its sum color through a scene. */
 color colorize_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
@@ -228,6 +141,7 @@ struct RenderData {
     int samples_per_pixel;
     int max_depth;
     std::vector<color> buffer;
+    int completed_lines;
 };
 
 
@@ -255,6 +169,9 @@ void render_scanlines(int lines, int start_line, std::shared_ptr<Scene> scene_pt
             color buffer_pixel(pixel_color.x(), pixel_color.y(), pixel_color.z());
             data.buffer[buffer_index] = buffer_pixel;
         }
+        data.completed_lines += 1;
+        float percentage_completed = ((float)data.completed_lines / (float)data.image_height)*100.00;
+        std::cerr << "[" <<int(percentage_completed) << "%] completed" << std::endl;
     }
 }
 
@@ -286,19 +203,9 @@ int main() {
     RTCDevice device = initializeDevice();
     auto cs = make_shared<Scene>(device, cam);
 
-    // Example Usage: Instantiating a SpherePrimitive
-    auto basic_lambertian = make_shared<lambertian>(color(0.1, 0.8, 0.2));
-    auto sphere_ptr = make_shared<SpherePrimitive>(vec3(0.0, 0.0, 0.0), basic_lambertian, 0.5, device);
-    unsigned int primID = cs->add_primitive(sphere_ptr);
+    setup_benchmark_scene(cs, device);
 
-    auto basic_lambertian2 = make_shared<lambertian>(color(1, 0.65, 0));
-    auto sphere2_ptr = make_shared<SpherePrimitive>(vec3(0, -50.5, 0), basic_lambertian2, 50, device);
-    unsigned int primID2 = cs->add_primitive(sphere2_ptr);
-
-    // Finalizing the Scene
-    cs->commitScene();
-
-    // When ready to terminate
+    // When scene construction is finished, the device is no longer needed.
     rtcReleaseDevice(device);
 
     // Start Render Timer 
@@ -314,6 +221,8 @@ int main() {
     std::vector<color> pixel_colors;
     std::vector<std::thread> threads;
 
+    render_data.completed_lines = 0;
+
     for (int i=0; i < num_threads; i++) {
         // In the first thead, we want the first lines_per_thread lines to be rendered
         threads.emplace_back(render_scanlines,lines_per_thread,(image_height-1) - (i * lines_per_thread), cs, std::ref(render_data),cam);
@@ -323,6 +232,7 @@ int main() {
     for (auto &thread : threads) {
             thread.join();
     }
+    std::cerr << "Joining all threads" << std::endl;
     threads.clear();
     std::cout << "P3" << std::endl;
     std::cout << image_width << ' ' << image_height << std::endl;
@@ -332,6 +242,8 @@ int main() {
             int buffer_index = j * image_width + i;
             write_color(std::cout, render_data.buffer[buffer_index], samples_per_pixel);
         }
+        float percentage_completed = (((float)image_height - (float)j) / (float)image_height)*100.0;
+        std::cerr << "[" << (int)percentage_completed << "%] outputting completed" << std::endl;
     }
     auto current_time = std::chrono::high_resolution_clock::now();
     auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
