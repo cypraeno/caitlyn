@@ -68,73 +68,20 @@ void setup_benchmark_scene(std::shared_ptr<Scene> scene_ptr, RTCDevice device) {
     }
 
     auto material1 = make_shared<dielectric>(1.5);
-    world.add(make_shared<sphere>(point3(0, 1, 0), 1.0, material1, create_still_timeline(point3(0,1,0))));
+    auto sphere1 = make_shared<SpherePrimitive>(point3(0, 1, 0), material1, 1, device);
+    scene_ptr->add_primitive(sphere1);
 
     auto material2 = make_shared<lambertian>(color(0.4, 0.2, 0.1));
-    world.add(make_shared<sphere>(point3(-4, 1, 0), 1.0, material2, create_still_timeline(point3(-4,1,0))));
+    auto sphere2 = make_shared<SpherePrimitive>(point3(-4, 1, 0), material2, 1, device);
+    scene_ptr->add_primitive(sphere2);
 
     auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
-    world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3, create_still_timeline(point3(4,1,0))));
+    auto sphere3 = make_shared<SpherePrimitive>(point3(4, 1, 0), material3, 1, device);
+    scene_ptr->add_primitive(sphere3);
 
-    return world;
-}
-
-// castRay takes in an RTCScene, origin coordinates and direction coordinates of ray and casts it.
-// Returns any found intersections.
-bool castRay(RTCScene scene, 
-             float ox, float oy, float oz,
-             float dx, float dy, float dz) {
-    struct RTCRayHit rayhit;
-    rayhit.ray.org_x = ox;
-    rayhit.ray.org_y = oy;
-    rayhit.ray.org_z = oz;
-    rayhit.ray.dir_x = dx;
-    rayhit.ray.dir_y = dy;
-    rayhit.ray.dir_z = dz;
-    rayhit.ray.tnear = 0;
-    rayhit.ray.tfar = std::numeric_limits<float>::infinity();
-    rayhit.ray.mask = -1;
-    rayhit.ray.flags = 0;
-    rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
-    rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
-
-    // there is an alternative called rtcintersect4/8/16
-    rtcIntersect1(scene, &rayhit);
-
-    std::cout << ox << ", " << oy << ", " << oz << ": ";
-    if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
-    std::cout << "Found intersection on geometry " << rayhit.hit.geomID << ", primitive" << rayhit.hit.primID << 
-        "at tfar=" << rayhit.ray.tfar << std::endl;
-    }
-    else
-    std::cout << "Did not find any intersection" << std::endl;
-    return (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID);
-}
-
-
-hittable_list test_shutter_scene() {
-    hittable_list world;
-
-    TimePosition tp1{0.0, vec3(0, 1, 0), 0};
-    TimePosition tp2{1.0, vec3(0, 2, 0), 0};
-    std::vector<TimePosition> time_positions;
-    time_positions.push_back(tp1);
-    time_positions.push_back(tp2);
-    auto timeline_ptr = std::make_shared<timeline>(time_positions);
-
-    auto material3 = make_shared<lambertian>(color(0.1, 0.8, 0.2));
-    world.add(make_shared<sphere>(point3(0, 1, 0), 0.5, material3, timeline_ptr));
-
-    TimePosition tp3{0,vec3(0,-1000,0),0};
-    TimePosition tp4{1,vec3(0,-1000,0),0};
-    std::vector<TimePosition> globe_frames;
-    globe_frames.push_back(tp3);
-    globe_frames.push_back(tp4);
-    auto timeline_ptr2 = std::make_shared<timeline>(globe_frames);
-    auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
-    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material,timeline_ptr2));
-
-    return world;
+    // Finalizing the Scene
+    scene_ptr->commitScene();
+    std::cerr << "COMMIT SCENE :: complete" << std::endl;
 }
 
 // COMPILE
