@@ -249,8 +249,8 @@ int main() {
 
     // Example Usage: Instantiating a SpherePrimitive
     auto basic_lambertian = make_shared<lambertian>(color(0.1, 0.8, 0.2));
-    SpherePrimitive sphere(vec3(0.0, 0.0, 0.0), basic_lambertian, 0.5, device);
-    unsigned int primID = cs.add_primitive(sphere);
+    auto sphere_ptr = make_shared<SpherePrimitive>(vec3(0.0, 0.0, 0.0), basic_lambertian, 0.5, device);
+    unsigned int primID = cs.add_primitive(sphere_ptr);
 
     // Finalizing the Scene
     cs.commitScene();
