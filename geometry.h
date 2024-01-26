@@ -3,6 +3,7 @@
 
 #include "visual.h"
 #include "material.h"
+#include "hitinfo.h"
 #include <embree4/rtcore.h>
 
 class Geometry : public Visual {
@@ -11,6 +12,8 @@ class Geometry : public Visual {
 
     /** @brief given a geomID (referring to ID given by scene attachment), find the material pointer. Usually called by renderer. */
     virtual shared_ptr<material> materialById(unsigned int geomID) const = 0;
+
+    virtual HitInfo getHitInfo(const ray& r, const vec3& p, unsigned int geomID) const = 0;
 };
 
 #endif
