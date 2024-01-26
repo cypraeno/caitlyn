@@ -192,7 +192,7 @@ color colorize_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
     rayhit.ray.dir_x = r.direction().x();
     rayhit.ray.dir_y = r.direction().y();
     rayhit.ray.dir_z = r.direction().z();
-    rayhit.ray.tnear = 0;
+    rayhit.ray.tnear = 0.001;
     rayhit.ray.tfar = std::numeric_limits<float>::infinity();
     rayhit.ray.mask = -1;
     rayhit.ray.flags = 0;
@@ -227,19 +227,16 @@ struct RenderData {
     int image_height;
     int samples_per_pixel;
     int max_depth;
-    hittable_list scene;
     std::vector<color> buffer;
 };
 
 
-void render_scanlines(int lines, int start_line, RenderData& data, Camera cam) {
+void render_scanlines(int lines, int start_line, std::shared_ptr<Scene> scene_ptr, RenderData& data, Camera cam) {
 
     int image_width         = data.image_width;
     int image_height        = data.image_height;
     int samples_per_pixel   = data.samples_per_pixel;
     int max_depth           = data.max_depth;
-
-    hittable_list world     = data.scene;
 
     for (int j=start_line; j>=start_line - (lines - 1); --j) {
 
@@ -251,7 +248,7 @@ void render_scanlines(int lines, int start_line, RenderData& data, Camera cam) {
                 auto u = (i + random_double()) / (image_width-1);
                 auto v = (j + random_double()) / (image_height-1);
                 ray r = cam.get_ray(u, v);
-                pixel_color += ray_color(r, world, max_depth);  
+                pixel_color += colorize_ray(r, scene_ptr, max_depth);
             }
 
             int buffer_index = j * image_width + i;
@@ -267,26 +264,21 @@ int main() {
     const auto aspect_ratio = 3.0 / 2.0;
     const int image_width = 1200;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 10;
-    const int max_depth = 10;
+    const int samples_per_pixel = 100;
+    const int max_depth = 25;
 
     render_data.image_width = image_width;
     render_data.image_height = image_height;
     render_data.samples_per_pixel = samples_per_pixel;
     render_data.max_depth = max_depth;
     render_data.buffer = std::vector<color>(image_width * image_height);
-    
-    // Set World
-    // auto world = test_shutter_scene();
-    auto world = random_scene();
-    render_data.scene = world;
 
     // Set up Camera
     point3 lookfrom(13,2,3);
     point3 lookat(0,0,0);
     vec3 vup(0,1,0);
     auto dist_to_focus = 10.0;
-    auto aperture = 0.0001;
+    auto aperture = 0.02;
 
     Camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
@@ -299,10 +291,12 @@ int main() {
     auto sphere_ptr = make_shared<SpherePrimitive>(vec3(0.0, 0.0, 0.0), basic_lambertian, 0.5, device);
     unsigned int primID = cs->add_primitive(sphere_ptr);
 
+    auto basic_lambertian2 = make_shared<lambertian>(color(1, 0.65, 0));
+    auto sphere2_ptr = make_shared<SpherePrimitive>(vec3(0, -50.5, 0), basic_lambertian2, 50, device);
+    unsigned int primID2 = cs->add_primitive(sphere2_ptr);
+
     // Finalizing the Scene
     cs->commitScene();
-
-    colorize_ray(ray(vec3(13,2,3),vec3(-13,-2,-3),0.0), cs, 5);
 
     // When ready to terminate
     rtcReleaseDevice(device);
@@ -322,9 +316,9 @@ int main() {
 
     for (int i=0; i < num_threads; i++) {
         // In the first thead, we want the first lines_per_thread lines to be rendered
-        threads.emplace_back(render_scanlines,lines_per_thread,(image_height-1) - (i * lines_per_thread),std::ref(render_data),cam);
+        threads.emplace_back(render_scanlines,lines_per_thread,(image_height-1) - (i * lines_per_thread), cs, std::ref(render_data),cam);
     }
-    threads.emplace_back(render_scanlines,leftOver,(image_height-1) - (num_threads * lines_per_thread),std::ref(render_data),cam);
+    threads.emplace_back(render_scanlines,leftOver,(image_height-1) - (num_threads * lines_per_thread), cs, std::ref(render_data),cam);
 
     for (auto &thread : threads) {
             thread.join();
