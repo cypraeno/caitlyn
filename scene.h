@@ -22,10 +22,23 @@
 // => Scene can have emissives and meshes added to it.
 // => Once everything is added, the user commits the scene.
 
+struct HitInfo {
+    point3 pos;
+    vec3 normal;
+    bool front_face;
+
+    /** @brief Given a face's outward normal and the initial ray, sets front_face to represent
+    if collision hits it from the front or not. */
+    inline void set_face_normal(const ray& r, const vec3& outward_normal) {
+        front_face = dot(r.direction(), outward_normal) < 0;
+        normal = front_face ? outward_normal : -outward_normal;
+    }
+};
+
 class Scene {
     public:
     Camera cam;
-    std::map<unsigned int, std::shared_ptr<material>> mat_map;
+    std::map<unsigned int, std::shared_ptr<Geometry>> geom_map;
     RTCScene rtc_scene;
 
     // Default Constructor
@@ -34,7 +47,7 @@ class Scene {
     ~Scene();
     void commitScene();
     void releaseScene();
-    unsigned int add_primitive(Primitive &prim);
+    unsigned int add_primitive(std::shared_ptr<Primitive> prim);
 };
 
 void add_sphere(RTCDevice device, RTCScene scene);
