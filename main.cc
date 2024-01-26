@@ -203,7 +203,6 @@ color colorize_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
 
     // if hit is found
     if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
-        std::cout << "bruhhh" << std::endl;
         ray scattered;
         color attenuation;
 
@@ -211,6 +210,10 @@ color colorize_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
         std::shared_ptr<Geometry> geomhit = scene->geom_map[rayhit.hit.geomID];
         std::shared_ptr<material> mat_ptr = geomhit->materialById(rayhit.hit.geomID);
         
+
+        if (mat_ptr->scatter(r, record, attenuation, scattered)) return attenuation * colorize_ray(scattered, scene, depth-1);
+
+        return color(0,0,0);
     }
 
     // Sky background (gradient blue-white)
