@@ -203,6 +203,7 @@ struct RenderData {
     int samples_per_pixel;
     int max_depth;
     std::vector<color> buffer;
+    int completed_lines;
 };
 
 
