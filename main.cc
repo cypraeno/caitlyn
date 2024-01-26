@@ -150,31 +150,6 @@ hittable_list test_shutter_scene() {
 // g++ -std=c++11 -O2 -o renderer main.cc
 // ./renderer >> latest.ppm
 
-color ray_color(const ray& r, const hittable& world, int depth) {
-
-    hit_record rec;
-    // if exceed bounce limit, return black (no light)
-    if (depth <= 0) {
-        return color(0,0,0);
-    }
-
-    // 0.001 instead of 0 to correct for shadow acne
-    if (world.hit(r, 0.001, infinity, rec)) {
-        ray scattered;
-        color attenuation;
-
-        if (rec.mat_ptr->scatter(r, rec, attenuation, scattered)) return attenuation * ray_color(scattered, world, depth-1);
-
-        return color(0,0,0);
-    }
-
-    // Sky background (gradient blue-white)
-    vec3 unit_direction = r.direction().unit_vector();
-    auto t = 0.5*(unit_direction.y() + 1.0);
-
-    return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
-}
-
 /** @brief recursive, shoots ray and gets its sum color through a scene. */
 color colorize_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
     HitInfo record;
@@ -298,7 +273,7 @@ int main() {
     // Finalizing the Scene
     cs->commitScene();
 
-    // When ready to terminate
+    // When scene construction is finished, the device is no longer needed.
     rtcReleaseDevice(device);
 
     // Start Render Timer 
