@@ -6,6 +6,7 @@
 #include "camera.h"
 #include "material.h"
 #include "primitive.h"
+#include "hitinfo.h"
 
 // SCENE INTERFACE
 // The scene class object covers all relevant objects in a scene:
@@ -25,7 +26,7 @@
 class Scene {
     public:
     Camera cam;
-    std::map<unsigned int, std::shared_ptr<material>> mat_map;
+    std::map<unsigned int, std::shared_ptr<Geometry>> geom_map;
     RTCScene rtc_scene;
 
     // Default Constructor
@@ -34,7 +35,7 @@ class Scene {
     ~Scene();
     void commitScene();
     void releaseScene();
-    unsigned int add_primitive(Primitive &prim);
+    unsigned int add_primitive(std::shared_ptr<Primitive> prim);
 };
 
 void add_sphere(RTCDevice device, RTCScene scene);

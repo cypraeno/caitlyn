@@ -7,11 +7,11 @@ Scene::~Scene() {
     rtcReleaseScene(rtc_scene);
 }
 
-unsigned int Scene::add_primitive(Primitive &prim) {
-    unsigned int primID = rtcAttachGeometry(rtc_scene, prim.geom);
-    rtcReleaseGeometry(prim.geom);
+unsigned int Scene::add_primitive(std::shared_ptr<Primitive> prim) {
+    unsigned int primID = rtcAttachGeometry(rtc_scene, prim->geom);
+    rtcReleaseGeometry(prim->geom);
 
-    mat_map[primID] = prim.mat_ptr;
+    geom_map[primID] = prim;
     return primID;
 }
 
