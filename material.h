@@ -2,7 +2,6 @@
 #define MATERIAL_H
 
 #include "general.h"
-#include "hittable.h"
 #include "hitinfo.h"
 
 class hit_record;
