@@ -26,9 +26,10 @@ class SpherePrimitive : public Primitive {
         return mat_ptr;
     }
 
-    HitInfo getHitInfo(const ray& r, const vec3& p, unsigned int geomID) const override {
+    HitInfo getHitInfo(const ray& r, const vec3& p, const float t, unsigned int geomID) const override {
         HitInfo record;
         record.pos = p;
+        record.t = t;
         vec3 outward_normal = (p - position) / radius;
         record.normal = outward_normal;
         record.set_face_normal(r, outward_normal);
