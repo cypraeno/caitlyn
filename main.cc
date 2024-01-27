@@ -1,15 +1,12 @@
 #include <embree4/rtcore.h>
 #include "device.h"
 #include "general.h"
-#include "timeline.h"
 #include "scene.h"
 #include "camera.h"
 #include "color.h"
 #include "ray.h"
 #include "vec3.h"
-#include "hittable_list.h"
 #include "material.h"
-#include "sphere.h"
 #include "sphere_primitive.h"
 
 
