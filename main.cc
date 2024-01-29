@@ -1,16 +1,14 @@
 #include <embree4/rtcore.h>
 #include "device.h"
 #include "general.h"
-#include "timeline.h"
 #include "scene.h"
 #include "camera.h"
 #include "color.h"
 #include "ray.h"
 #include "vec3.h"
-#include "hittable_list.h"
 #include "material.h"
-#include "sphere.h"
 #include "sphere_primitive.h"
+#include "light.h"
 
 
 #include <iostream>
@@ -79,6 +77,10 @@ void setup_benchmark_scene(std::shared_ptr<Scene> scene_ptr, RTCDevice device) {
     auto sphere3 = make_shared<SpherePrimitive>(point3(4, 1, 0), material3, 1, device);
     scene_ptr->add_primitive(sphere3);
 
+    auto lightmaterial = make_shared<emissive>(color(6,6,6));
+    auto lightsphere = make_shared<SpherePrimitive>(point3(4,1,3),lightmaterial, 0.25, device);
+    scene_ptr->add_primitive(lightsphere);
+
     // Finalizing the Scene
     scene_ptr->commitScene();
     std::cerr << "COMMIT SCENE :: complete" << std::endl;
@@ -123,9 +125,14 @@ color colorize_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
         std::shared_ptr<Geometry> geomhit = scene->geom_map[rayhit.hit.geomID];
         std::shared_ptr<material> mat_ptr = geomhit->materialById(rayhit.hit.geomID);
         record = geomhit->getHitInfo(r, r.at(rayhit.ray.tfar), rayhit.ray.tfar, rayhit.hit.geomID);
-        if (mat_ptr->scatter(r, record, attenuation, scattered)) return attenuation * colorize_ray(scattered, scene, depth-1);
+        color color_from_emission = mat_ptr->emit();
+        if (!mat_ptr->scatter(r, record, attenuation, scattered)) {
+            return color_from_emission;
+        } 
+        
+        color color_from_scatter = attenuation * colorize_ray(scattered, scene, depth-1);
 
-        return color(0,0,0);
+        return color_from_emission + color_from_scatter;
     }
 
     // Sky background (gradient blue-white)
@@ -182,7 +189,7 @@ int main() {
     const int image_width = 1200;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
     const int samples_per_pixel = 100;
-    const int max_depth = 25;
+    const int max_depth = 50;
 
     render_data.image_width = image_width;
     render_data.image_height = image_height;

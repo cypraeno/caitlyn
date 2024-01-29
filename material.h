@@ -10,6 +10,9 @@ class material {
 
     public:
         virtual bool scatter(const ray& r_in, const HitInfo& rec, color& attenuation, ray& scattered) const = 0;
+        virtual color emit() const {
+            return color(0,0,0);
+        }
 };
 
 class lambertian : public material {
