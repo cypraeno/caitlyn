@@ -14,8 +14,8 @@ class camera {
             double aspect_ratio,
             double aperture,
             double focus_dist,
-            double _shutter0 = 0,
-            double _shutter1 = 1) {
+            double _time0 = 0,
+            double _time1 = 1) {
             
             auto theta = degrees_to_radians(vfov);
             auto h = tan(theta/2);
@@ -32,8 +32,8 @@ class camera {
             lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
 
             lens_radius = aperture / 2;
-            shutter0 = _shutter0;
-            shutter1 = _shutter1;
+            time0 = _time0;
+            time1 = _time1;
         }
 
         ray get_ray(double s, double t) const {
@@ -43,7 +43,7 @@ class camera {
 
             return ray(origin + offset, 
                 lower_left_corner + s*horizontal + t*vertical - origin - offset,
-                random_double(shutter0,shutter1));
+                random_double(time0,time1));
         }
     private:
         point3 origin;

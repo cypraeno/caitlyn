@@ -20,13 +20,27 @@
 #include <vector>
 #include <thread>
 
-/*
+
 hittable_list random_scene() {
 
     hittable_list world;
 
+    auto create_still_timeline = [](vec3 pos) -> std::shared_ptr<timeline> {
+        TimePosition tp1{0.0, pos, 0};
+        TimePosition tp2{1.0, pos, 0};
+        std::vector<TimePosition> time_positions{tp1, tp2};
+        return std::make_shared<timeline>(time_positions);
+    };
+
+    auto create_random_timeline = [](vec3 pos) -> std::shared_ptr<timeline> {
+        double y_end = random_double(pos.y(), pos.y() + 0.5);  // Adjust range as needed
+        TimePosition tp1{0.0, pos, 0};
+        TimePosition tp2{1.0, vec3(pos.x(), y_end, pos.z()), 0};
+        std::vector<TimePosition> time_positions{tp1, tp2};
+        return std::make_shared<timeline>(time_positions);
+    };
     auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
-    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
+    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material, create_still_timeline(point3(0,-1000,0))));
 
     for (int a = -11; a < 11; a++) {
 
@@ -41,7 +55,7 @@ hittable_list random_scene() {
                 if (choose_mat < 0.8) {
                     auto albedo = color::random() * color::random();
                     sphere_material = make_shared<lambertian>(albedo);
-                    world.add(make_shared<sphere>(center, 0.2, sphere_material));
+                    world.add(make_shared<sphere>(center, 0.2, sphere_material, create_random_timeline(center)));
                 } 
 
                 // metal
@@ -49,38 +63,32 @@ hittable_list random_scene() {
                     auto albedo = color::random(0.5, 1);
                     auto fuzz = random_double(0, 0.5);
                     sphere_material = make_shared<metal>(albedo, fuzz);
-                    world.add(make_shared<sphere>(center, 0.2, sphere_material));
+                    world.add(make_shared<sphere>(center, 0.2, sphere_material, create_random_timeline(center)));
                 } 
 
                 // glass
                 else {
                     sphere_material = make_shared<dielectric>(1.5);
-                    world.add(make_shared<sphere>(center, 0.2, sphere_material));
+                    world.add(make_shared<sphere>(center, 0.2, sphere_material, create_random_timeline(center)));
                 }
             }
         }
     }
 
-    TimePosition tp1{0.0, vec3(0, 1, 0), 0};
-    TimePosition tp2{1.0, vec3(0, 5, 0), 0};
-    std::vector<TimePosition> time_positions;
-    time_positions.push_back(tp1);
-    time_positions.push_back(tp2);
-    auto timeline_ptr = std::make_shared<timeline>(time_positions);
-
     auto material1 = make_shared<dielectric>(1.5);
-    world.add(make_shared<sphere>(point3(0, 1, 0), 1.0, material1));
+    world.add(make_shared<sphere>(point3(0, 1, 0), 1.0, material1, create_still_timeline(point3(0,1,0))));
 
     auto material2 = make_shared<lambertian>(color(0.4, 0.2, 0.1));
-    world.add(make_shared<sphere>(point3(-4, 1, 0), 1.0, material2));
+    world.add(make_shared<sphere>(point3(-4, 1, 0), 1.0, material2, create_still_timeline(point3(-4,1,0))));
 
     auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
-    world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
+    world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3, create_still_timeline(point3(4,1,0))));
 
     return world;
 }
-*/
 
+// castRay takes in an RTCScene, origin coordinates and direction coordinates of ray and casts it.
+// Returns any found intersections.
 bool castRay(RTCScene scene, 
              float ox, float oy, float oz,
              float dx, float dy, float dz) {
@@ -206,17 +214,20 @@ void render_scanlines(int lines, int start_line, RenderData& data, camera cam) {
 }
 
 int main() {
+    /*
+    // CAST RAY TEST
     RTCDevice device = initializeDevice();
     RTCScene scene = initializeScene(device);
 
-    /* This will hit the triangle at t=1. */
+    // This will hit the triangle at t=1.
     castRay(scene, 0.33f, 0.33f, -1, 0, 0, 1);
 
-    /* This will not hit anything. */
+    // This will not hit anything.
     castRay(scene, 1.00f, 1.00f, -1, 0, 0, 1);
 
     rtcReleaseScene(scene);
     rtcReleaseDevice(device);
+    */
     
     RenderData render_data; 
 
@@ -225,8 +236,6 @@ int main() {
     const int image_height = static_cast<int>(image_width / aspect_ratio);
     const int samples_per_pixel = 100;
     const int max_depth = 50;
-    
-    auto world = test_shutter_scene();
 
     render_data.image_width = image_width;
     render_data.image_height = image_height;
@@ -235,6 +244,7 @@ int main() {
     render_data.buffer = std::vector<color>(image_width * image_height);
     
     // Set World
+    // auto world = test_shutter_scene();
     auto world = random_scene();
     render_data.scene = world;
 
