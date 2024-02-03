@@ -336,8 +336,8 @@ void two_spheres() {
 
     hittable_list world;
     auto checker = make_shared<checker_texture>(0.8, color(.2, .3, .1), color(.9, .9, .9));
-    world.add(make_shared<sphere>(point3(0,-10, 0), 10, make_shared<lambertian>(checker), create_still_timeline(point3(0,10,0))));
-    world.add(make_shared<sphere>(point3(0, 10, 0), 10, make_shared<lambertian>(checker), create_still_timeline(point3(0,-10,0))));
+    world.add(make_shared<sphere>(point3(0,-10, 0), 10, make_shared<lambertian>(checker), create_still_timeline(point3(0,-10,0))));
+    world.add(make_shared<sphere>(point3(0, 10, 0), 10, make_shared<lambertian>(checker), create_still_timeline(point3(0, 10,0))));
     render_data.scene = world;
 
     // Set up Camera
