@@ -1,3 +1,4 @@
+
 #ifndef SPHERE_H
 #define SPHERE_H
 
@@ -66,3 +67,4 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
 }
 
 #endif
+

@@ -1,3 +1,4 @@
+
 #include <embree4/rtcore.h>
 #include "device.h"
 #include "general.h"
@@ -398,3 +399,4 @@ int main() {
         case 3:  earth();          break;
     }
 }
+

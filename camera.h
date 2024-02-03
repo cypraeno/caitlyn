@@ -1,3 +1,4 @@
+
 #ifndef CAMERA_H
 #define CAMERA_H
 
@@ -55,5 +56,4 @@ class camera {
         double lens_radius;
         double time0, time1; // shutter open -> shutter close
 };
-
 #endif
