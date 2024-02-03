@@ -32,7 +32,7 @@ class checker_texture : public texture {
       : inv_scale(1.0 / _scale), even(_even), odd(_odd) {}
 
     checker_texture(double _scale, color c1, color c2)
-      : inv_scale(1.0 / _scale),
+      : inv_scale(1.0 / (_scale/2)),
         even(make_shared<solid_color>(c1)),
         odd(make_shared<solid_color>(c2))
     {}
