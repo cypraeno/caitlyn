@@ -10,7 +10,7 @@
 #include "hittable_list.h"
 #include "material.h"
 #include "sphere.h"
-
+#include "texture.h"
 
 #include <iostream>
 #include <chrono>
@@ -39,8 +39,13 @@ hittable_list random_scene() {
         std::vector<TimePosition> time_positions{tp1, tp2};
         return std::make_shared<timeline>(time_positions);
     };
-    auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
+
+    auto checker = make_shared<checker_texture>(0.32, color(.2, .3, .1), color(.9, .9, .9));
+    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(checker), create_still_timeline(point3(0,-1000,0))));
+
+    /*auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
     world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material, create_still_timeline(point3(0,-1000,0))));
+    */
 
     for (int a = -11; a < 11; a++) {
 
@@ -175,6 +180,7 @@ color ray_color(const ray& r, const hittable& world, int depth) {
 }
 
 struct RenderData {
+    int aspect_ratio;
     int image_width;
     int image_height;
     int samples_per_pixel;
@@ -213,50 +219,10 @@ void render_scanlines(int lines, int start_line, RenderData& data, camera cam) {
     }
 }
 
-int main() {
-    /*
-    // CAST RAY TEST
-    RTCDevice device = initializeDevice();
-    RTCScene scene = initializeScene(device);
-
-    // This will hit the triangle at t=1.
-    castRay(scene, 0.33f, 0.33f, -1, 0, 0, 1);
-
-    // This will not hit anything.
-    castRay(scene, 1.00f, 1.00f, -1, 0, 0, 1);
-
-    rtcReleaseScene(scene);
-    rtcReleaseDevice(device);
-    */
-    
-    RenderData render_data; 
-
-    const auto aspect_ratio = 3.0 / 2.0;
-    const int image_width = 1200;
-    const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 100;
-    const int max_depth = 50;
-
-    render_data.image_width = image_width;
-    render_data.image_height = image_height;
-    render_data.samples_per_pixel = samples_per_pixel;
-    render_data.max_depth = max_depth;
-    render_data.buffer = std::vector<color>(image_width * image_height);
-    
-    // Set World
-    // auto world = test_shutter_scene();
-    auto world = random_scene();
-    render_data.scene = world;
-
-    // Set up Camera
-    point3 lookfrom(13,2,3);
-    point3 lookat(0,0,0);
-    vec3 vup(0,1,0);
-    auto dist_to_focus = 10.0;
-    auto aperture = 0.0001;
-
-    camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
-
+void output(RenderData& render_data, camera& cam) {
+    int image_height = render_data.image_height;
+    int image_width = render_data.image_width;
+    int samples_per_pixel = render_data.samples_per_pixel;
 
     // Start Render Timer
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -295,4 +261,140 @@ int main() {
     double time_seconds = elapsed_time / 1000.0;
 
     std::cerr << "\nCompleted render of scene. Render time: " << time_seconds << " seconds" << "\n";
+}
+
+void random_spheres() {
+    /*
+    // CAST RAY TEST
+    RTCDevice device = initializeDevice();
+    RTCScene scene = initializeScene(device);
+
+    // This will hit the triangle at t=1.
+    castRay(scene, 0.33f, 0.33f, -1, 0, 0, 1);
+
+    // This will not hit anything.
+    castRay(scene, 1.00f, 1.00f, -1, 0, 0, 1);
+
+    rtcReleaseScene(scene);
+    rtcReleaseDevice(device);
+    */
+    
+    RenderData render_data; 
+
+    const auto aspect_ratio = 3.0 / 2.0;
+    const int image_width = 1200;
+    const int image_height = static_cast<int>(image_width / aspect_ratio);
+    const int samples_per_pixel = 100;
+    const int max_depth = 50;
+
+    render_data.aspect_ratio = aspect_ratio;
+    render_data.image_width = image_width;
+    render_data.image_height = image_height;
+    render_data.samples_per_pixel = samples_per_pixel;
+    render_data.max_depth = max_depth;
+    render_data.buffer = std::vector<color>(image_width * image_height);
+    
+    // Set World
+    // auto world = test_shutter_scene();
+    auto world = random_scene();
+    render_data.scene = world;
+
+    // Set up Camera
+    point3 lookfrom(13,2,3);
+    point3 lookat(0,0,0);
+    vec3 vup(0,1,0);
+    auto dist_to_focus = 10.0;
+    auto aperture = 0.0001;
+    camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
+    output(render_data, cam);
+}
+
+void two_spheres() {
+
+    RenderData render_data; 
+
+    const auto aspect_ratio = 16.0 / 9.0;
+    const int image_width = 400;
+    const int image_height = static_cast<int>(image_width / aspect_ratio);
+    const int samples_per_pixel = 100;
+    const int max_depth = 50;
+
+    render_data.image_width = image_width;
+    render_data.image_height = image_height;
+    render_data.samples_per_pixel = samples_per_pixel;
+    render_data.max_depth = max_depth;
+    render_data.buffer = std::vector<color>(image_width * image_height);
+    
+    // Set World
+    auto create_still_timeline = [](vec3 pos) -> std::shared_ptr<timeline> {
+        TimePosition tp1{0.0, pos, 0};
+        TimePosition tp2{1.0, pos, 0};
+        std::vector<TimePosition> time_positions{tp1, tp2};
+        return std::make_shared<timeline>(time_positions);
+    };
+
+    hittable_list world;
+    auto checker = make_shared<checker_texture>(0.8, color(.2, .3, .1), color(.9, .9, .9));
+    world.add(make_shared<sphere>(point3(0,-10, 0), 10, make_shared<lambertian>(checker), create_still_timeline(point3(0,10,0))));
+    world.add(make_shared<sphere>(point3(0, 10, 0), 10, make_shared<lambertian>(checker), create_still_timeline(point3(0,-10,0))));
+    render_data.scene = world;
+
+    // Set up Camera
+    point3 lookfrom(13,2,3);
+    point3 lookat(0,0,0);
+    vec3 vup(0,1,0);
+    auto dist_to_focus = 10.0;
+    auto aperture = 0.0001;
+
+    camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
+    output(render_data, cam);
+}
+
+void earth() {
+
+    RenderData render_data; 
+
+    const auto aspect_ratio = 16.0 / 9.0;
+    const int image_width = 400;
+    const int image_height = static_cast<int>(image_width / aspect_ratio);
+    const int samples_per_pixel = 100;
+    const int max_depth = 50;
+
+    render_data.image_width = image_width;
+    render_data.image_height = image_height;
+    render_data.samples_per_pixel = samples_per_pixel;
+    render_data.max_depth = max_depth;
+    render_data.buffer = std::vector<color>(image_width * image_height);
+
+    // Set World
+    auto create_still_timeline = [](vec3 pos) -> std::shared_ptr<timeline> {
+        TimePosition tp1{0.0, pos, 0};
+        TimePosition tp2{1.0, pos, 0};
+        std::vector<TimePosition> time_positions{tp1, tp2};
+        return std::make_shared<timeline>(time_positions);
+    };
+    auto earth_texture = make_shared<image_texture>("earthmap.jpg");
+    auto earth_surface = make_shared<lambertian>(earth_texture);
+    auto globe = make_shared<sphere>(point3(0,0,0), 2, earth_surface, create_still_timeline(point3(0,0,0)));
+    render_data.scene = hittable_list(globe);
+
+    // Set up Camera
+    point3 lookfrom(0,0,12);
+    point3 lookat(0,0,0);
+    vec3 vup(0,1,0);
+    auto dist_to_focus = 10.0;
+    auto aperture = 0.0001;
+    camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
+    output(render_data, cam);
+}
+
+int main() {
+    switch (2) {
+        case 1:  random_spheres(); break;
+        case 2:  two_spheres();    break;
+        case 3:  earth();          break;
+    }
 }
