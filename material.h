@@ -1,3 +1,4 @@
+
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
@@ -17,7 +18,6 @@ class material {
 class lambertian : public material {
 
     public:
-
         lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
         lambertian(shared_ptr<texture> a) : albedo(a) {}
 
@@ -25,15 +25,14 @@ class lambertian : public material {
 
             auto scatter_direction = rec.normal + random_unit_vector();
 
-            if (scatter_direction.near_zero()) {
+            if (scatter_direction.near_zero()) 
                 scatter_direction = rec.normal;
-            }
+            
             scattered = ray(rec.p, scatter_direction, r_in.time());
             attenuation = albedo->value(rec.u, rec.v, rec.p);
-            
             return true;
         }
-    
+
     private:
     shared_ptr<texture> albedo;
 };

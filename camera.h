@@ -1,9 +1,11 @@
+
 #ifndef CAMERA_H
 #define CAMERA_H
 
 #include "ray.h"
 #include "general.h"
-
+#include "hittable.h"
+#include "color.h"
 class camera {
     public:
         camera(
@@ -54,5 +56,4 @@ class camera {
         double lens_radius;
         double time0, time1; // shutter open -> shutter close
 };
-
 #endif
