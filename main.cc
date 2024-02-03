@@ -20,11 +20,6 @@
 #include <vector>
 #include <thread>
 
-
-hittable_list random_scene() {
-
-    hittable_list world;
-
     auto create_still_timeline = [](vec3 pos) -> std::shared_ptr<timeline> {
         TimePosition tp1{0.0, pos, 0};
         TimePosition tp2{1.0, pos, 0};
@@ -40,6 +35,10 @@ hittable_list random_scene() {
         return std::make_shared<timeline>(time_positions);
     };
 
+hittable_list random_scene() {
+
+    hittable_list world;
+    
     auto checker = make_shared<checker_texture>(0.32, color(.2, .3, .1), color(.9, .9, .9));
     world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(checker), create_still_timeline(point3(0,-1000,0))));
 
@@ -189,6 +188,16 @@ struct RenderData {
     std::vector<color> buffer;
 };
 
+void setRenderData(RenderData& render_data, const auto aspect_ratio, const int image_width,
+    const int samples_per_pixel, const int max_depth) {
+    const int image_height = static_cast<int>(image_width / aspect_ratio);
+    render_data.aspect_ratio = aspect_ratio;
+    render_data.image_width = image_width;
+    render_data.image_height = image_height;
+    render_data.samples_per_pixel = samples_per_pixel;
+    render_data.max_depth = max_depth;
+    render_data.buffer = std::vector<color>(image_width * image_height);
+}
 
 void render_scanlines(int lines, int start_line, RenderData& data, camera cam) {
 
@@ -264,40 +273,14 @@ void output(RenderData& render_data, camera& cam) {
 }
 
 void random_spheres() {
-    /*
-    // CAST RAY TEST
-    RTCDevice device = initializeDevice();
-    RTCScene scene = initializeScene(device);
-
-    // This will hit the triangle at t=1.
-    castRay(scene, 0.33f, 0.33f, -1, 0, 0, 1);
-
-    // This will not hit anything.
-    castRay(scene, 1.00f, 1.00f, -1, 0, 0, 1);
-
-    rtcReleaseScene(scene);
-    rtcReleaseDevice(device);
-    */
-    
+    // Set RenderData
     RenderData render_data; 
-
     const auto aspect_ratio = 3.0 / 2.0;
-    const int image_width = 1200;
-    const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 100;
-    const int max_depth = 50;
+    setRenderData(render_data, aspect_ratio, 1200, 100, 50);
 
-    render_data.aspect_ratio = aspect_ratio;
-    render_data.image_width = image_width;
-    render_data.image_height = image_height;
-    render_data.samples_per_pixel = samples_per_pixel;
-    render_data.max_depth = max_depth;
-    render_data.buffer = std::vector<color>(image_width * image_height);
-    
     // Set World
     // auto world = test_shutter_scene();
-    auto world = random_scene();
-    render_data.scene = world;
+    render_data.scene = random_scene();
 
     // Set up Camera
     point3 lookfrom(13,2,3);
@@ -311,34 +294,15 @@ void random_spheres() {
 }
 
 void two_spheres() {
-
+    // Set RenderData
     RenderData render_data; 
-
     const auto aspect_ratio = 16.0 / 9.0;
-    const int image_width = 400;
-    const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 100;
-    const int max_depth = 50;
-
-    render_data.image_width = image_width;
-    render_data.image_height = image_height;
-    render_data.samples_per_pixel = samples_per_pixel;
-    render_data.max_depth = max_depth;
-    render_data.buffer = std::vector<color>(image_width * image_height);
+    setRenderData(render_data, aspect_ratio, 400, 100, 50);
     
     // Set World
-    auto create_still_timeline = [](vec3 pos) -> std::shared_ptr<timeline> {
-        TimePosition tp1{0.0, pos, 0};
-        TimePosition tp2{1.0, pos, 0};
-        std::vector<TimePosition> time_positions{tp1, tp2};
-        return std::make_shared<timeline>(time_positions);
-    };
-
-    hittable_list world;
     auto checker = make_shared<checker_texture>(0.8, color(.2, .3, .1), color(.9, .9, .9));
-    world.add(make_shared<sphere>(point3(0,-10, 0), 10, make_shared<lambertian>(checker), create_still_timeline(point3(0,-10,0))));
-    world.add(make_shared<sphere>(point3(0, 10, 0), 10, make_shared<lambertian>(checker), create_still_timeline(point3(0, 10,0))));
-    render_data.scene = world;
+    render_data.scene.add(make_shared<sphere>(point3(0,-10, 0), 10, make_shared<lambertian>(checker), create_still_timeline(point3(0,-10,0))));
+    render_data.scene.add(make_shared<sphere>(point3(0, 10, 0), 10, make_shared<lambertian>(checker), create_still_timeline(point3(0, 10,0))));
 
     // Set up Camera
     point3 lookfrom(13,2,3);
@@ -346,35 +310,18 @@ void two_spheres() {
     vec3 vup(0,1,0);
     auto dist_to_focus = 10.0;
     auto aperture = 0.0001;
-
     camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
     output(render_data, cam);
 }
 
 void earth() {
-
+    // Set RenderData
     RenderData render_data; 
-
     const auto aspect_ratio = 16.0 / 9.0;
-    const int image_width = 400;
-    const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 100;
-    const int max_depth = 50;
-
-    render_data.image_width = image_width;
-    render_data.image_height = image_height;
-    render_data.samples_per_pixel = samples_per_pixel;
-    render_data.max_depth = max_depth;
-    render_data.buffer = std::vector<color>(image_width * image_height);
+    setRenderData(render_data, aspect_ratio, 400, 100, 50);
 
     // Set World
-    auto create_still_timeline = [](vec3 pos) -> std::shared_ptr<timeline> {
-        TimePosition tp1{0.0, pos, 0};
-        TimePosition tp2{1.0, pos, 0};
-        std::vector<TimePosition> time_positions{tp1, tp2};
-        return std::make_shared<timeline>(time_positions);
-    };
     auto earth_texture = make_shared<image_texture>("earthmap.jpg");
     auto earth_surface = make_shared<lambertian>(earth_texture);
     auto globe = make_shared<sphere>(point3(0,0,0), 2, earth_surface, create_still_timeline(point3(0,0,0)));
@@ -392,7 +339,7 @@ void earth() {
 }
 
 int main() {
-    switch (2) {
+    switch (3) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
