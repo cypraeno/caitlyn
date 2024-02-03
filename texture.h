@@ -66,8 +66,8 @@ class image_texture : public texture {
         if(u < 0) u = 0;
         else if(u > 1) u = 1;
         // v = 1.0 - interval(0,1).clamp(v);  // Flip V to image coordinates
-        if(v < 0) v = 1;
-        else if(v > 1) v = 0;
+        if(v < 0) v = 0;
+        else if(v > 1) v = 1;
         else v = 1 - v;
         auto i = static_cast<int>(u * image.width());
         auto j = static_cast<int>(v * image.height());
