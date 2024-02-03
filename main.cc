@@ -21,20 +21,20 @@
 #include <vector>
 #include <thread>
 
-    auto create_still_timeline = [](vec3 pos) -> std::shared_ptr<timeline> {
-        TimePosition tp1{0.0, pos, 0};
-        TimePosition tp2{1.0, pos, 0};
-        std::vector<TimePosition> time_positions{tp1, tp2};
-        return std::make_shared<timeline>(time_positions);
-    };
+auto create_still_timeline = [](vec3 pos) -> std::shared_ptr<timeline> {
+    TimePosition tp1{0.0, pos, 0};
+    TimePosition tp2{1.0, pos, 0};
+    std::vector<TimePosition> time_positions{tp1, tp2};
+    return std::make_shared<timeline>(time_positions);
+};
 
-    auto create_random_timeline = [](vec3 pos) -> std::shared_ptr<timeline> {
-        double y_end = random_double(pos.y(), pos.y() + 0.5);  // Adjust range as needed
-        TimePosition tp1{0.0, pos, 0};
-        TimePosition tp2{1.0, vec3(pos.x(), y_end, pos.z()), 0};
-        std::vector<TimePosition> time_positions{tp1, tp2};
-        return std::make_shared<timeline>(time_positions);
-    };
+auto create_random_timeline = [](vec3 pos) -> std::shared_ptr<timeline> {
+    double y_end = random_double(pos.y(), pos.y() + 0.5);  // Adjust range as needed
+    TimePosition tp1{0.0, pos, 0};
+    TimePosition tp2{1.0, vec3(pos.x(), y_end, pos.z()), 0};
+    std::vector<TimePosition> time_positions{tp1, tp2};
+    return std::make_shared<timeline>(time_positions);
+};
 
 hittable_list random_scene() {
 
