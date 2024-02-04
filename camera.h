@@ -4,8 +4,7 @@
 
 #include "ray.h"
 #include "general.h"
-#include "hittable.h"
-#include "color.h"
+
 class camera {
     public:
         camera(
