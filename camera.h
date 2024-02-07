@@ -55,11 +55,12 @@ class camera {
             }
 
             // 0.001 instead of 0 to correct for shadow acne
-            if (world.hit(r, interval(0, +infinity) rec)) {
+            if (world.hit(r, interval(0.001, +infinity) rec)) {
                 ray scattered;
                 color attenuation;
 
-                if (rec.mat_ptr->scatter(r, rec, attenuation, scattered)) return attenuation * ray_color(scattered, world, depth-1);
+                if (rec.mat_ptr->scatter(r, rec, attenuation, scattered)) 
+                    return attenuation * ray_color(scattered, world, depth-1);
 
                 return color(0,0,0);
             }
