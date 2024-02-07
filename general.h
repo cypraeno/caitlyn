@@ -27,13 +27,6 @@ inline float random_float() { return rand() / (RAND_MAX + 1.0); }
 
 inline float random_float(float min, float max) { return min + (max-min)*random_double(); }
 
-inline double clamp(double x, double min, double max) {
-    if (x < min) return min;
-    if (x > max) return max;
-    
-    return x;
-}
-
 #include "vec3.h"
 
 #endif
