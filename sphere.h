@@ -18,7 +18,7 @@ class sphere : public hittable {
         shared_ptr<material> mat_ptr;
 };
 
-bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+bool sphere::hit(const ray& r, Interval ray_t, hit_record& rec) const override {
     vec3 new_centre = t_line->interpolate_position(r.time());
     //vec3 new_centre = centre;
     //std::cerr << "\n" << centre;
@@ -34,9 +34,9 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
     auto sqrtd = sqrt(discriminant);
 
     auto root = (-half_b - sqrtd) / a;
-    if (root < t_min || root > t_max) {
+    if (!ray_t.surrounds(root)) {
         root = (-half_b + sqrtd) / a;
-        if (root < t_min || t_max < root)
+        if (!rayt.surrounds(root))
             return false;
     } // both roots must lie within the range
 
