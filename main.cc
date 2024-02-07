@@ -8,6 +8,7 @@
 #include "vec3.h"
 #include "material.h"
 #include "sphere_primitive.h"
+#include "intersects.h"
 
 
 #include <iostream>
@@ -96,18 +97,7 @@ color colorize_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
 
     // fire ray into scene and get ID.
     struct RTCRayHit rayhit;
-    rayhit.ray.org_x = r.origin().x();
-    rayhit.ray.org_y = r.origin().y();
-    rayhit.ray.org_z = r.origin().z();
-    rayhit.ray.dir_x = r.direction().x();
-    rayhit.ray.dir_y = r.direction().y();
-    rayhit.ray.dir_z = r.direction().z();
-    rayhit.ray.tnear = 0.001;
-    rayhit.ray.tfar = std::numeric_limits<float>::infinity();
-    rayhit.ray.mask = -1;
-    rayhit.ray.flags = 0;
-    rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
-    rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+    setupRayHit1(rayhit, r);
 
     rtcIntersect1(scene->rtc_scene, &rayhit);
 
