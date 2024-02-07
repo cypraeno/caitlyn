@@ -23,7 +23,7 @@ class hittable {
     public:
         hittable() {}
         hittable(shared_ptr<timeline> t) : t_line(t) {}
-        virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
+        virtual bool hit(const ray& r, Interval ray_t, hit_record& rec) const = 0;
     public:
         shared_ptr<timeline> t_line;
 };

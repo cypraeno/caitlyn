@@ -27,11 +27,11 @@ class hittable_list : public hittable {
         std::vector<shared_ptr<hittable>> objects;
 };
 
-bool hittable_list::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+bool hittable_list::hit(const ray& r, interval ray_t, hit_record& rec) const override {
 
     hit_record temp_rec;
     bool hit_anything = false;
-    auto closest_so_far = t_max;
+    auto closest_so_far = ray_t.max;
 
     for (const auto& object : objects) {
         if (object->hit(r, t_min, closest_so_far, temp_rec)) {
