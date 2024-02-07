@@ -8,6 +8,8 @@
 #include <cstdlib>
 #include <random>
 
+#include "interval.h"
+
 using std::shared_ptr;
 using std::make_shared;
 using std::sqrt;
