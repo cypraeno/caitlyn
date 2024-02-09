@@ -4,6 +4,9 @@ cmake_minimum_required(VERSION 3.26) # Required
 project(Caitlyn VERSION 0.1.0) # Required
 set(CMAKE_BUILD_TYPE Debug)
 
+# Include SIMD Configuration
+include(${CMAKE_CURRENT_SOURCE_DIR}/SIMDConfig.cmake)
+
 # EMBREE CONFIG
 set(embree_DIR ../opt/lib/cmake/embree-4.3.0/)
 # set(TBB_DIR ../opt/lib/cmake/tbb/) haven't installed TBB, doesn't exist
