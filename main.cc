@@ -10,6 +10,7 @@
 #include "hittable_list.h"
 #include "material.h"
 #include "sphere.h"
+#include "bvh.h"
 
 
 #include <iostream>
@@ -209,7 +210,7 @@ int main() {
     const auto aspect_ratio = 3.0 / 2.0;
     const int image_width = 1200;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 100;
+    const int samples_per_pixel = 50;
     const int max_depth = 50;
 
     render_data.image_width = image_width;
@@ -221,6 +222,10 @@ int main() {
     // Set World
     // auto world = test_shutter_scene();
     auto world = random_scene();
+
+    // set up bounding boxes
+    world = hittable_list(make_shared<bvh_node>(world));
+
     render_data.scene = world;
 
     // Set up Camera

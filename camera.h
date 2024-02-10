@@ -3,6 +3,7 @@
 
 #include "ray.h"
 #include "general.h"
+#include "hittable.h"
 
 class camera {
     public:
@@ -55,7 +56,7 @@ class camera {
             }
 
             // 0.001 instead of 0 to correct for shadow acne
-            if (world.hit(r, interval(0.001, +infinity) rec)) {
+            if (world.hit(r, interval(0.001, +infinity), rec)) {
                 ray scattered;
                 color attenuation;
 

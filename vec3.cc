@@ -97,8 +97,10 @@ vec3 unit_vector(vec3 v) { return v / v.length(); }
 vec3 random_unit_vector() { return unit_vector(random_in_unit_sphere()); }
 
 vec3 random_in_unit_sphere() { 
-    vec3 p;
-    while (p = vec3::random(-1, 1); p.length_squared() >= 1) {}
+    vec3 p = vec3::random(-1, 1);
+    while (p.length_squared() >= 1) {
+        vec3 p = vec3::random(-1, 1);
+    }
     return p;
  }
 
