@@ -46,7 +46,7 @@ bool sphere::hit(const ray& r, interval ray_t, hit_record& rec) const {
     auto root = (-half_b - sqrtd) / a;
     if (!ray_t.surrounds(root)) {
         root = (-half_b + sqrtd) / a;
-        if (!rayt.surrounds(root))
+        if (!ray_t.surrounds(root))
             return false;
     } // both roots must lie within the range
 

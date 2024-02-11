@@ -51,9 +51,7 @@ class camera {
 
             hit_record rec;
             // if exceed bounce limit, return black (no light)
-            if (depth <= 0) {
-                return color(0,0,0);
-            }
+            if (depth <= 0) return color(0,0,0);
 
             // 0.001 instead of 0 to correct for shadow acne
             if (world.hit(r, interval(0.001, +infinity), rec)) {

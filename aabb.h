@@ -45,11 +45,11 @@ public:
             if (inv_direction < 0) std::swap(t0, t1);
 
             if (t0 > ray_t.min) ray_t.min = t0;
-            if (t1 < may_t.max) ray_t.max = t1;
+            if (t1 < ray_t.max) ray_t.max = t1;
 
-            if (ray_t.max <= ray_t.min) return false
+            if (ray_t.max <= ray_t.min) return false;
         }
-        
+
         return true;
     }
 };
