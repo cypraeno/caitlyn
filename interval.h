@@ -24,9 +24,9 @@ class interval {
 
         bool surrounds(double x) const { return this->min < x && x < this->max; }
 
-        inline double clamp(double x, double min, double max) {
-            if (x < min) return min;
-            if (x > max) return max;
+        inline double clamp(double x) const {
+            if (x < this->min) return this->min;
+            if (x > this->max) return this->max;
             return x;
         }
 
