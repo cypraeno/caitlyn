@@ -159,6 +159,29 @@ struct RenderData {
     std::vector<color> buffer;
 };
 
+ color ray_color(const ray& r, const hittable& world, int depth) {
+
+    hit_record rec;
+    // if exceed bounce limit, return black (no light)
+    if (depth <= 0) return color(0,0,0);
+
+    // 0.001 instead of 0 to correct for shadow acne
+    if (world.hit(r, interval(0.001, +infinity), rec)) {
+        ray scattered;
+        color attenuation;
+
+        if (rec.mat_ptr->scatter(r, rec, attenuation, scattered)) 
+            return attenuation * ray_color(scattered, world, depth-1);
+
+        return color(0,0,0);
+    }
+
+    // Sky background (gradient blue-white)
+    vec3 unit_direction = r.direction().unit_vector();
+    auto t = 0.5*(unit_direction.y() + 1.0);
+
+    return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
+}
 
 void render_scanlines(int lines, int start_line, RenderData& data, camera cam) {
 
@@ -179,7 +202,7 @@ void render_scanlines(int lines, int start_line, RenderData& data, camera cam) {
                 auto u = (i + random_double()) / (image_width-1);
                 auto v = (j + random_double()) / (image_height-1);
                 ray r = cam.get_ray(u, v);
-                pixel_color += cam.ray_color(r, world, max_depth);  
+                pixel_color += ray_color(r, world, max_depth);  
             }
 
             int buffer_index = j * image_width + i;
