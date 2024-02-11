@@ -179,7 +179,7 @@ void render_scanlines(int lines, int start_line, RenderData& data, camera cam) {
                 auto u = (i + random_double()) / (image_width-1);
                 auto v = (j + random_double()) / (image_height-1);
                 ray r = cam.get_ray(u, v);
-                pixel_color += ray_color(r, world, max_depth);  
+                pixel_color += cam.ray_color(r, world, max_depth);  
             }
 
             int buffer_index = j * image_width + i;
