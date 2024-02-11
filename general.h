@@ -8,8 +8,6 @@
 #include <cstdlib>
 #include <random>
 
-#include "interval.h"
-
 using std::shared_ptr;
 using std::make_shared;
 using std::sqrt;
@@ -27,16 +25,9 @@ inline float random_float() { return rand() / (RAND_MAX + 1.0); }
 
 inline float random_float(float min, float max) { return min + (max-min)*random_double(); }
 
-inline double clamp(double x, double min, double max) {
-    if (x < min) return min;
-    if (x > max) return max;
-    
-    return x;
-}
-
 inline int random_int(int min, int max) { return static_cast<int>(random_double(min, max+1)); }
 
-
+#include "interval.h"
 #include "vec3.h"
 
 #endif

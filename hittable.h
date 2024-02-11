@@ -3,7 +3,6 @@
 
 #include "general.h"
 #include "aabb.h"
-#include "interval.h"
 
 class material;
 class timeline;
