@@ -33,17 +33,23 @@ public:
     }
 
     bool hit(const ray& r, interval ray_t) const {
+
         for (int a = 0; a < 3; a++) {
-            // get min t and max t for each axis (ie. where they hit in terms of t)
-            auto t0 = fmin((axis(a).min - r.origin()[a]) / r.direction()[a],
-                           (axis(a).max - r.origin()[a]) / r.direction()[a]);
-            auto t1 = fmax((axis(a).min - r.origin()[a]) / r.direction()[a],
-                           (axis(a).max - r.origin()[a]) / r.direction()[a]);
-            ray_t.min = fmax(t0, ray_t.min);
-            ray_t.max = fmin(t1, ray_t.max);
-            if (ray_t.max <= ray_t.min)
-                return false;
+
+            auto inv_direction = 1 / r.direction()[a];
+            auto orig = r.origin()[a];
+
+            auto t0 = (this->axis(a).min - orig) * inv_direction;
+            auto t1 = (this->axis(a).max - orig) * inv_direction;
+
+            if (inv_direction < 0) std::swap(t0, t1);
+
+            if (t0 > ray_t.min) ray_t.min = t0;
+            if (t1 < may_t.max) ray_t.max = t1;
+
+            if (ray_t.max <= ray_t.min) return false
         }
+        
         return true;
     }
 };
