@@ -1,9 +1,9 @@
-
 #ifndef CAMERA_H
 #define CAMERA_H
 
 #include "ray.h"
 #include "general.h"
+#include "hittable.h"
 
 class camera {
     public:
@@ -46,6 +46,7 @@ class camera {
                 lower_left_corner + s*horizontal + t*vertical - origin - offset,
                 random_double(time0,time1));
         }
+
     private:
         point3 origin;
         point3 lower_left_corner;
@@ -55,4 +56,5 @@ class camera {
         double lens_radius;
         double time0, time1; // shutter open -> shutter close
 };
+
 #endif

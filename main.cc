@@ -12,6 +12,8 @@
 #include "material.h"
 #include "sphere.h"
 #include "texture.h"
+#include "bvh.h"
+
 
 #include <iostream>
 #include <chrono>
@@ -21,8 +23,6 @@
 #include <vector>
 #include <thread>
 
-        TimePosition tp1{0.0, pos, 0};
-        TimePosition tp2{1.0, vec3(pos.x(), y_end, pos.z()), 0};
 auto create_still_timeline = [](vec3 pos) -> std::shared_ptr<timeline> {
     TimePosition tp1{0.0, pos, 0};
     TimePosition tp2{1.0, pos, 0};
@@ -156,20 +156,30 @@ hittable_list test_shutter_scene() {
 // g++ -std=c++11 -O2 -o renderer main.cc
 // ./renderer >> latest.ppm
 
-color ray_color(const ray& r, const hittable& world, int depth) {
+struct RenderData {
+    int aspect_ratio;
+    int image_width;
+    int image_height;
+    int samples_per_pixel;
+    int max_depth;
+    hittable_list scene;
+    std::vector<color> buffer;
+    int completed_lines;
+};
+
+ color ray_color(const ray& r, const hittable& world, int depth) {
 
     hit_record rec;
     // if exceed bounce limit, return black (no light)
-    if (depth <= 0) {
-        return color(0,0,0);
-    }
-    
+    if (depth <= 0) return color(0,0,0);
+
     // 0.001 instead of 0 to correct for shadow acne
-    if (world.hit(r, 0.001, infinity, rec)) {
+    if (world.hit(r, interval(0.001, +infinity), rec)) {
         ray scattered;
         color attenuation;
 
-        if (rec.mat_ptr->scatter(r, rec, attenuation, scattered)) return attenuation * ray_color(scattered, world, depth-1);
+        if (rec.mat_ptr->scatter(r, rec, attenuation, scattered)) 
+            return attenuation * ray_color(scattered, world, depth-1);
 
         return color(0,0,0);
     }
@@ -180,17 +190,6 @@ color ray_color(const ray& r, const hittable& world, int depth) {
 
     return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
 }
-
-struct RenderData {
-    int aspect_ratio;
-    int image_width;
-    int image_height;
-    int samples_per_pixel;
-    int max_depth;
-    hittable_list scene;
-    std::vector<color> buffer;
-};
-
 void setRenderData(RenderData& render_data, const float aspect_ratio, const int image_width,
     const int samples_per_pixel, const int max_depth) {
     const int image_height = static_cast<int>(image_width / aspect_ratio);
@@ -228,6 +227,8 @@ void render_scanlines(int lines, int start_line, RenderData& data, camera cam) {
             color buffer_pixel(pixel_color.x(), pixel_color.y(), pixel_color.z());
             data.buffer[buffer_index] = buffer_pixel;
         }
+        data.completed_lines += 1;
+        std::cerr << "[" << ((float)data.completed_lines / (float)(image_height))*100.0 << "%]" << std::endl;
     }
 }
 
@@ -282,8 +283,10 @@ void random_spheres() {
     setRenderData(render_data, aspect_ratio, 1200, 100, 50);
 
     // Set World
-    // auto world = test_shutter_scene();
-    render_data.scene = random_scene();
+    auto world = random_scene();
+    world = hittable_list(make_shared<bvh_node>(world));
+    render_data.scene = world;
+    
 
     // Set up Camera
     point3 lookfrom(13,2,3);
@@ -306,6 +309,7 @@ void two_spheres() {
     auto checker = make_shared<checker_texture>(0.8, color(.2, .3, .1), color(.9, .9, .9));
     render_data.scene.add(make_shared<sphere>(point3(0,-10, 0), 10, make_shared<lambertian>(checker), create_still_timeline(point3(0,-10,0))));
     render_data.scene.add(make_shared<sphere>(point3(0, 10, 0), 10, make_shared<lambertian>(checker), create_still_timeline(point3(0, 10,0))));
+    render_data.scene = hittable_list(make_shared<bvh_node>(render_data.scene));
 
     // Set up Camera
     point3 lookfrom(13,2,3);
@@ -329,6 +333,7 @@ void earth() {
     auto earth_surface = make_shared<lambertian>(earth_texture);
     auto globe = make_shared<sphere>(point3(0,0,0), 2, earth_surface, create_still_timeline(point3(0,0,0)));
     render_data.scene = hittable_list(globe);
+    render_data.scene = hittable_list(make_shared<bvh_node>(render_data.scene));
 
     // Set up Camera
     point3 lookfrom(0,0,12);

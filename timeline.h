@@ -11,6 +11,7 @@ struct TimePosition {
     int transition;
 };
 
+/** @brief only instantiate with 2 time positions (ie vector of size 2) */
 class timeline {
     public:
         timeline(std::vector<TimePosition> tp) : motion(tp) {};
