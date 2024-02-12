@@ -1,14 +1,14 @@
 FROM gcc:latest
 
-# docker build -f Dockerfile.bundled -t connortbot/caitlyn-mcrt:base .
-# docker tag caitlyn-mcrt connortbot/caitlyn-mcrt
-# docker push connortbot/caitlyn-mcrt
+# cypraeno base development image
+# VERSION: v0.2.1
 
-# This is a test to push to docker and github
+# docker build -f Dockerfile.base -t connortbot/caitlyn-mcrt:base-vX.X.X .
+# docker push connortbot/caitlyn-mcrt:base-vX.X.X
 
 # Install required packages
 RUN apt-get update && \
-    apt-get install -y curl zip unzip tar git wget
+    apt-get install -y curl zip unzip tar git wget valgrind
 
 # Install CMake
 ARG CMAKE_VERSION=3.26.0
@@ -24,5 +24,12 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cm
 # -rf : r recursive f force
 # -xzvf : x extract -z gunzip (compress as extracting) -v verbose (list out extracts) -f file (follow cmake instructions)
 # bootstrap : make ready for compilation
+
+# Install Embree
+ARG EMBREE_VERSION=4.3.0
+ADD https://github.com/embree/embree/releases/download/v${EMBREE_VERSION}/embree-${EMBREE_VERSION}.x86_64.linux.tar.gz /opt
+RUN cd /opt && \
+    tar xzf embree-${EMBREE_VERSION}.x86_64.linux.tar.gz
+RUN echo "source embree-${EMBREE_VERSION}.x86_64.linux/embree-vars.sh" >> /root/.profile
 
 WORKDIR /app

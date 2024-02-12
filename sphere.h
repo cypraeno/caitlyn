@@ -1,3 +1,4 @@
+
 #ifndef SPHERE_H
 #define SPHERE_H
 
@@ -8,7 +9,6 @@
 
 class sphere : public hittable {
     public:
-        sphere() {}
         sphere(point3 cen, double r, shared_ptr<material> m, shared_ptr<timeline> t) 
             : center1(cen), center2(t->motion.back().position), radius(r), mat_ptr(m), hittable(t) {
                 auto rvec = vec3(radius, radius, radius);
@@ -25,6 +25,21 @@ class sphere : public hittable {
         double radius;
         shared_ptr<material> mat_ptr;
         aabb bbox;
+ /* private: */
+        static void get_sphere_uv(const point3& p, double& u, double& v) {
+        // p: a given point on the sphere of radius one, centered at the origin.
+        // u: returned value [0,1] of angle around the Y axis from X=-1.
+        // v: returned value [0,1] of angle from Y=-1 to Y=+1.
+        //     <1 0 0> yields <0.50 0.50>       <-1  0  0> yields <0.00 0.50>
+        //     <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
+        //     <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
+
+        auto theta = acos(-p.y());
+        auto phi = atan2(-p.z(), p.x()) + pi;
+
+        u = phi / (2*pi);
+        v = theta / pi;
+    }
 };
 
 
@@ -55,10 +70,11 @@ bool sphere::hit(const ray& r, interval ray_t, hit_record& rec) const {
     rec.normal = (rec.p - new_center) / radius; //normal vector from the sphere
     vec3 outward_normal = (rec.p - new_center) / radius;
     rec.set_face_normal(r, outward_normal);
+    get_sphere_uv(outward_normal, rec.u, rec.v);
     rec.mat_ptr = mat_ptr;
 
     return true;
-
 }
 
 #endif
+
