@@ -176,6 +176,7 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
     for (int j=start_line; j>=start_line - (lines - 1); --j) {
         for (int s=0; s < samples_per_pixel; s++) {
             std::vector<RayQueue> queue;
+            std::vector<color> temp_buffer;
             std::vector<RayQueue> current(4); // size = 4 only
             for (int i=image_width-1; i>=0; --i) {
                 auto u = (i + random_double()) / (image_width-1);
@@ -195,7 +196,14 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
             }
 
             while (!queue.empty()) {
-                // start block rendering
+                setupRayHit4(rayhit, current);
+                rtcIntersect4(scene->rtc_scene, &rayhit);
+                
+                HitInfo record;
+
+                for (int i=0; i<4; i++) {
+                    // process each ray by editing the temp_buffer and updating current queue
+                }
             }
         }
     }
