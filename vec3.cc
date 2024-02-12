@@ -99,9 +99,10 @@ vec3 random_unit_vector() { return unit_vector(random_in_unit_sphere()); }
 vec3 random_in_unit_sphere() { 
     vec3 p = vec3::random(-1, 1);
     while (p.length_squared() >= 1) {
-        vec3 p = vec3::random(-1, 1);
+        p = vec3::random(-1, 1);
     }
     return p;
+    //return vec3::random_unit();
  }
 
 vec3 random_in_hemisphere(const vec3& normal) {
