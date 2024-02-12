@@ -157,6 +157,7 @@ struct RenderData {
     int max_depth;
     hittable_list scene;
     std::vector<color> buffer;
+    int completed_lines;
 };
 
  color ray_color(const ray& r, const hittable& world, int depth) {
@@ -209,6 +210,8 @@ void render_scanlines(int lines, int start_line, RenderData& data, camera cam) {
             color buffer_pixel(pixel_color.x(), pixel_color.y(), pixel_color.z());
             data.buffer[buffer_index] = buffer_pixel;
         }
+        data.completed_lines += 1;
+        std::cerr << "[" << ((float)data.completed_lines / (float)(image_height))*100.0 << "%]" << std::endl;
     }
 }
 
@@ -241,6 +244,7 @@ int main() {
     render_data.samples_per_pixel = samples_per_pixel;
     render_data.max_depth = max_depth;
     render_data.buffer = std::vector<color>(image_width * image_height);
+    render_data.completed_lines = 0;
     
     // Set World
     // auto world = test_shutter_scene();
