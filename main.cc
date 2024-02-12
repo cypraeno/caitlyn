@@ -162,6 +162,45 @@ void render_scanlines(int lines, int start_line, std::shared_ptr<Scene> scene_pt
     }
 }
 
+struct RayQueue {
+    int index;
+    int depth;
+    ray r;
+};
+void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scene_ptr, RenderData& data, Camera cam) {
+    int image_width         = data.image_width;
+    int image_height        = data.image_height;
+    int samples_per_pixel   = data.samples_per_pixel;
+    int max_depth           = data.max_depth;
+    
+    for (int j=start_line; j>=start_line - (lines - 1); --j) {
+        for (int s=0; s < samples_per_pixel; s++) {
+            std::vector<RayQueue> queue;
+            std::vector<RayQueue> current(4); // size = 4 only
+            for (int i=image_width-1; i>=0; --i) {
+                auto u = (i + random_double()) / (image_width-1);
+                auto v = (j + random_double()) / (image_height-1);
+                ray r = cam.get_ray(u, v);
+                
+                RayQueue q = { i, 0, r };
+                queue.push_back(q);
+            }
+
+            RTCRayHit4 rayhit;
+
+            for (int i=0; i<4; i++) {
+                RayQueue back = queue.back();
+                queue.pop_back();
+                current.push_back(back);
+            }
+
+            while (!queue.empty()) {
+                // start block rendering
+            }
+        }
+    }
+}
+
 int main() {
     RenderData render_data; 
 
