@@ -23,8 +23,6 @@
 #include <vector>
 #include <thread>
 
-        TimePosition tp1{0.0, pos, 0};
-        TimePosition tp2{1.0, vec3(pos.x(), y_end, pos.z()), 0};
 auto create_still_timeline = [](vec3 pos) -> std::shared_ptr<timeline> {
     TimePosition tp1{0.0, pos, 0};
     TimePosition tp2{1.0, pos, 0};
@@ -311,6 +309,7 @@ void two_spheres() {
     auto checker = make_shared<checker_texture>(0.8, color(.2, .3, .1), color(.9, .9, .9));
     render_data.scene.add(make_shared<sphere>(point3(0,-10, 0), 10, make_shared<lambertian>(checker), create_still_timeline(point3(0,-10,0))));
     render_data.scene.add(make_shared<sphere>(point3(0, 10, 0), 10, make_shared<lambertian>(checker), create_still_timeline(point3(0, 10,0))));
+    render_data.scene = hittable_list(make_shared<bvh_node>(render_data.scene));
 
     // Set up Camera
     point3 lookfrom(13,2,3);
@@ -334,6 +333,7 @@ void earth() {
     auto earth_surface = make_shared<lambertian>(earth_texture);
     auto globe = make_shared<sphere>(point3(0,0,0), 2, earth_surface, create_still_timeline(point3(0,0,0)));
     render_data.scene = hittable_list(globe);
+    render_data.scene = hittable_list(make_shared<bvh_node>(render_data.scene));
 
     // Set up Camera
     point3 lookfrom(0,0,12);
