@@ -174,9 +174,10 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
     int max_depth           = data.max_depth;
     
     for (int j=start_line; j>=start_line - (lines - 1); --j) {
+        std::vector<color> full_buffer(image_width);
         for (int s=0; s < samples_per_pixel; s++) {
             std::vector<RayQueue> queue;
-            std::vector<color> temp_buffer;
+            std::vector<color> temp_buffer(image_width);
             std::vector<RayQueue> current(4); // size = 4 only
             for (int i=image_width-1; i>=0; --i) {
                 auto u = (i + random_double()) / (image_width-1);
@@ -195,6 +196,7 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                 current.push_back(back);
             }
 
+            int current_index_last_completed = -1;
             while (!queue.empty()) {
                 setupRayHit4(rayhit, current);
                 rtcIntersect4(scene->rtc_scene, &rayhit);
@@ -216,14 +218,15 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                             temp_buffer[current_index] *= attenuation;
                             
                             if (current[i].depth + 1 == max_depth) { // reached max depth, replace with next in queue
-                                // check if theres even any more to do, if not then start doing colorize_ray calls on the remaining pixels.
+                                // check if theres even any more to do, if not then break out.
                                 if ((int)queue.size() >= 1) { // at least one remaining
                                     // replace finished RayQueue with next
                                     RayQueue back = queue.back();
                                     queue.pop_back();
                                     current[i] = back;
                                 } else { // no more remaining
-                                    // colorize_ray calls
+                                    current_index_last_completed = i;
+                                    break;
                                 }
                             } else { // not finished depth wise
                                 current[i].depth += 1;
@@ -238,10 +241,45 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
 
                         color multiplier = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
                         temp_buffer[current_index] *= multiplier;
+                        
+                        // check if theres even any more to do, if not then break out.
+                        if ((int)queue.size() >= 1) { // at least one remaining
+                            // replace finished RayQueue with next
+                            RayQueue back = queue.back();
+                            queue.pop_back();
+                            current[i] = back;
+                        } else { // no more remaining
+                            current_index_last_completed = i;
+                            break;
+                        }
                     }
                 }
             }
+            if (current_index_last_completed != -1) {
+                // if this runs, it means we reached a max depth or didn't hit anything on the ith
+                // block of the current queue. Thus, we call colorize_ray on the remaining.
+                // It means that in block size N, there are N - 1 pixels that are still going;
+                // all the onesb before ith, and all the ones after.
+                for (int i=0; i<4; i++) {
+                    if (i != current_index_last_completed) {
+                        ray current_ray = current[i].r;
+                        int current_index = current[i].index;
+                        temp_buffer[current_index] = colorize_ray(current_ray, scene_ptr, max_depth);
+                    }
+                }
+            }
+            for (int i=0; i<image_width; ++i) {
+                full_buffer[i] += temp_buffer[i];
+            }
         }
+        for (int i=0; i<image_width; ++i) {
+            int buffer_index = j * image_width + i;
+            color buffer_pixel(full_buffer[i].x(), full_buffer[i].y(), full_buffer[i].z());
+            data.buffer[buffer_index] = buffer_pixel;
+        }
+        data.completed_lines += 1;
+        float percentage_completed = ((float)data.completed_lines / (float)data.image_height)*100.00;
+        std::cerr << "[" <<int(percentage_completed) << "%] completed" << std::endl;
     }
 }
 
