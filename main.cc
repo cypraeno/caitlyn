@@ -202,7 +202,43 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                 HitInfo record;
 
                 for (int i=0; i<4; i++) {
+                    ray current_ray = current[i].r;
+                    int current_index = current[i].index;
                     // process each ray by editing the temp_buffer and updating current queue
+                    if (rayhit.hit.geomID[i] != RTC_INVALID_GEOMETRY_ID) { // hit
+                        ray scattered;
+                        ray attenuation;
+
+                        std::shared_ptr<Geometry> geomhit = scene_ptr->geom_map[rayhit.hit.geomID[i]];
+                        std::shared_ptr<material> mat_ptr = geomhit->materialById(rayhit.hit.geomID[i]);
+                        record = geomhit->getHitInfo(current_ray, current_ray.at(rayhit.ray.tfar[i]), rayhit.ray.tfar[i], rayhit.hit.geomID[i]);
+                        if (mat_ptr->scatter(current_ray, record, attenuation, scattered)) {
+                            temp_buffer[current_index] *= attenuation;
+                            
+                            if (current[i].depth + 1 == max_depth) { // reached max depth, replace with next in queue
+                                // check if theres even any more to do, if not then start doing colorize_ray calls on the remaining pixels.
+                                if ((int)queue.size() >= 1) { // at least one remaining
+                                    // replace finished RayQueue with next
+                                    RayQueue back = queue.back();
+                                    queue.pop_back();
+                                    current[i] = back;
+                                } else { // no more remaining
+                                    // colorize_ray calls
+                                }
+                            } else { // not finished depth wise
+                                current[i].depth += 1;
+                                current[i].ray = scattered;
+                            }
+                        }
+
+                    } else { // no hit
+                        // Sky background (gradient blue-white)
+                        vec3 unit_direction = current_ray.direction().unit_vector();
+                        auto t = 0.5*(unit_direction.y() + 1.0);
+
+                        color multiplier = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
+                        temp_buffer[current_index] *= multiplier;
+                    }
                 }
             }
         }
