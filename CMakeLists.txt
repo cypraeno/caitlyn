@@ -20,6 +20,17 @@ TARGET_LINK_LIBRARIES(caitlyn embree)
 target_compile_features(caitlyn PUBLIC cxx_std_11) # Set the C++ standard to C++11
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2") # Set the optimization level to -O2
 
+# Set EMBREE_MAX_ISA based on compiler support
+if(COMPILER_SUPPORTS_AVX512)
+  target_compile_definitions(caitlyn PRIVATE EMBREE_MAX_ISA=AVX512)
+elseif(COMPILER_SUPPORTS_AVX2)
+  target_compile_definitions(caitlyn PRIVATE EMBREE_MAX_ISA=AVX2)
+elseif(COMPILER_SUPPORTS_AVX)
+  target_compile_definitions(caitlyn PRIVATE EMBREE_MAX_ISA=AVX)
+elseif(COMPILER_SUPPORTS_SSE42)
+  target_compile_definitions(caitlyn PRIVATE EMBREE_MAX_ISA=SSE4.2)
+endif()
+
 # Instructions
 # Create build files:
 # mkdir build (if it does not exist already)
