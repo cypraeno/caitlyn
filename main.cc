@@ -197,9 +197,14 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
             }
 
             int current_index_last_completed = -1;
+            int mask[4] = {-1, -1, -1, -1};
             while (!queue.empty()) {
-                setupRayHit4(rayhit, current);
-                rtcIntersect4(scene->rtc_scene, &rayhit);
+                std::vector<ray> rays;
+                for (int i=0; i<(int)current.size(); i++) {
+                    rays.push_back(current[i].r);
+                }
+                setupRayHit4(rayhit, rays);
+                rtcIntersect4(mask, scene_ptr->rtc_scene, &rayhit);
                 
                 HitInfo record;
 
@@ -209,13 +214,13 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                     // process each ray by editing the temp_buffer and updating current queue
                     if (rayhit.hit.geomID[i] != RTC_INVALID_GEOMETRY_ID) { // hit
                         ray scattered;
-                        ray attenuation;
+                        color attenuation;
 
                         std::shared_ptr<Geometry> geomhit = scene_ptr->geom_map[rayhit.hit.geomID[i]];
                         std::shared_ptr<material> mat_ptr = geomhit->materialById(rayhit.hit.geomID[i]);
                         record = geomhit->getHitInfo(current_ray, current_ray.at(rayhit.ray.tfar[i]), rayhit.ray.tfar[i], rayhit.hit.geomID[i]);
                         if (mat_ptr->scatter(current_ray, record, attenuation, scattered)) {
-                            temp_buffer[current_index] *= attenuation;
+                            temp_buffer[current_index] = temp_buffer[current_index] * attenuation;
                             
                             if (current[i].depth + 1 == max_depth) { // reached max depth, replace with next in queue
                                 // check if theres even any more to do, if not then break out.
@@ -225,12 +230,11 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                                     queue.pop_back();
                                     current[i] = back;
                                 } else { // no more remaining
-                                    current_index_last_completed = i;
-                                    break;
+                                    mask[i] = 0; // disable this part of the packet from running
                                 }
                             } else { // not finished depth wise
                                 current[i].depth += 1;
-                                current[i].ray = scattered;
+                                current[i].r = scattered;
                             }
                         }
 
@@ -240,7 +244,7 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                         auto t = 0.5*(unit_direction.y() + 1.0);
 
                         color multiplier = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
-                        temp_buffer[current_index] *= multiplier;
+                        temp_buffer[current_index] = temp_buffer[current_index] * multiplier;
                         
                         // check if theres even any more to do, if not then break out.
                         if ((int)queue.size() >= 1) { // at least one remaining
@@ -249,12 +253,12 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                             queue.pop_back();
                             current[i] = back;
                         } else { // no more remaining
-                            current_index_last_completed = i;
-                            break;
+                            mask[i] = 0;
                         }
                     }
                 }
             }
+            /*
             if (current_index_last_completed != -1) {
                 // if this runs, it means we reached a max depth or didn't hit anything on the ith
                 // block of the current queue. Thus, we call colorize_ray on the remaining.
@@ -268,6 +272,7 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                     }
                 }
             }
+            */
             for (int i=0; i<image_width; ++i) {
                 full_buffer[i] += temp_buffer[i];
             }
@@ -333,9 +338,9 @@ int main() {
 
     for (int i=0; i < num_threads; i++) {
         // In the first thead, we want the first lines_per_thread lines to be rendered
-        threads.emplace_back(render_scanlines,lines_per_thread,(image_height-1) - (i * lines_per_thread), cs, std::ref(render_data),cam);
+        threads.emplace_back(render_scanlines_sse,lines_per_thread,(image_height-1) - (i * lines_per_thread), cs, std::ref(render_data),cam);
     }
-    threads.emplace_back(render_scanlines,leftOver,(image_height-1) - (num_threads * lines_per_thread), cs, std::ref(render_data),cam);
+    threads.emplace_back(render_scanlines_sse,leftOver,(image_height-1) - (num_threads * lines_per_thread), cs, std::ref(render_data),cam);
 
     for (auto &thread : threads) {
             thread.join();
