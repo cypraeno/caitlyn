@@ -166,6 +166,9 @@ struct RayQueue {
     int index;
     int depth;
     ray r;
+    void print() {
+        std::cerr << index << ":" << depth << " ";
+    }
 };
 void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scene_ptr, RenderData& data, Camera cam) {
     int image_width         = data.image_width;
@@ -183,7 +186,6 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                 auto u = (i + random_double()) / (image_width-1);
                 auto v = (j + random_double()) / (image_height-1);
                 ray r = cam.get_ray(u, v);
-                
                 RayQueue q = { i, 0, r };
                 queue.push_back(q);
             }
@@ -193,24 +195,25 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
             for (int i=0; i<4; i++) {
                 RayQueue back = queue.back();
                 queue.pop_back();
-                current.push_back(back);
+                current[i] = back;
             }
 
             int current_index_last_completed = -1;
             int mask[4] = {-1, -1, -1, -1};
-            while (!queue.empty()) {
+            while (mask[0] != 0 or mask[1] != 0 or mask[2] != 0 or mask[3] != 0) {
                 std::vector<ray> rays;
                 for (int i=0; i<(int)current.size(); i++) {
                     rays.push_back(current[i].r);
                 }
                 setupRayHit4(rayhit, rays);
                 rtcIntersect4(mask, scene_ptr->rtc_scene, &rayhit);
-                
+
                 HitInfo record;
 
                 for (int i=0; i<4; i++) {
                     ray current_ray = current[i].r;
                     int current_index = current[i].index;
+
                     // process each ray by editing the temp_buffer and updating current queue
                     if (rayhit.hit.geomID[i] != RTC_INVALID_GEOMETRY_ID) { // hit
                         ray scattered;
@@ -220,8 +223,11 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                         std::shared_ptr<material> mat_ptr = geomhit->materialById(rayhit.hit.geomID[i]);
                         record = geomhit->getHitInfo(current_ray, current_ray.at(rayhit.ray.tfar[i]), rayhit.ray.tfar[i], rayhit.hit.geomID[i]);
                         if (mat_ptr->scatter(current_ray, record, attenuation, scattered)) {
-                            temp_buffer[current_index] = temp_buffer[current_index] * attenuation;
-                            
+                            if (current[current_index].depth == 0) {
+                                temp_buffer[current_index] = attenuation;
+                            } else {
+                                temp_buffer[current_index] = temp_buffer[current_index] * attenuation;
+                            }
                             if (current[i].depth + 1 == max_depth) { // reached max depth, replace with next in queue
                                 // check if theres even any more to do, if not then break out.
                                 if ((int)queue.size() >= 1) { // at least one remaining
@@ -237,42 +243,43 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                                 current[i].r = scattered;
                             }
                         }
-
                     } else { // no hit
                         // Sky background (gradient blue-white)
                         vec3 unit_direction = current_ray.direction().unit_vector();
                         auto t = 0.5*(unit_direction.y() + 1.0);
 
                         color multiplier = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
-                        temp_buffer[current_index] = temp_buffer[current_index] * multiplier;
+                        if (current[current_index].depth == 0) {
+                            temp_buffer[current_index] = multiplier;
+                        } else {
+                            temp_buffer[current_index] = temp_buffer[current_index] * multiplier;
+                        }
                         
                         // check if theres even any more to do, if not then break out.
                         if ((int)queue.size() >= 1) { // at least one remaining
+                            for (int l=0; l<(int)current.size(); l++) {
+                                current[l].print();
+                            }
+                            std::cerr << "replace after no hit " << i << " ";
                             // replace finished RayQueue with next
                             RayQueue back = queue.back();
                             queue.pop_back();
                             current[i] = back;
+                            for (int l=0; l<(int)current.size(); l++) {
+                                current[l].print();
+                            }
+                            std::cerr << std::endl;
                         } else { // no more remaining
+                            std::cerr << "queue empty, mask out " << current_index << std::endl;
+                            for (int l=0; l<(int)current.size(); l++) {
+                                current[l].print();
+                            }
+                            std::cerr << std::endl;
                             mask[i] = 0;
                         }
                     }
                 }
             }
-            /*
-            if (current_index_last_completed != -1) {
-                // if this runs, it means we reached a max depth or didn't hit anything on the ith
-                // block of the current queue. Thus, we call colorize_ray on the remaining.
-                // It means that in block size N, there are N - 1 pixels that are still going;
-                // all the onesb before ith, and all the ones after.
-                for (int i=0; i<4; i++) {
-                    if (i != current_index_last_completed) {
-                        ray current_ray = current[i].r;
-                        int current_index = current[i].index;
-                        temp_buffer[current_index] = colorize_ray(current_ray, scene_ptr, max_depth);
-                    }
-                }
-            }
-            */
             for (int i=0; i<image_width; ++i) {
                 full_buffer[i] += temp_buffer[i];
             }
@@ -292,10 +299,10 @@ int main() {
     RenderData render_data; 
 
     const auto aspect_ratio = 3.0 / 2.0;
-    const int image_width = 1200;
+    const int image_width = 6;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 100;
-    const int max_depth = 25;
+    const int samples_per_pixel = 1;
+    const int max_depth = 3;
 
     render_data.image_width = image_width;
     render_data.image_height = image_height;
@@ -323,7 +330,9 @@ int main() {
 
     // Start Render Timer 
     auto start_time = std::chrono::high_resolution_clock::now();
-
+    render_data.completed_lines = 0;
+    render_scanlines_sse(image_height,image_height-1,cs,render_data,cam);
+    /*
     // Threading approach? : Divide the scanlines into N blocks
     const int num_threads = std::thread::hardware_concurrency() - 1;
     // Image height is the number of scanlines, suppose image_height = 800
@@ -347,6 +356,7 @@ int main() {
     }
     std::cerr << "Joining all threads" << std::endl;
     threads.clear();
+    */
     std::cout << "P3" << std::endl;
     std::cout << image_width << ' ' << image_height << std::endl;
     std::cout << 255 << std::endl;

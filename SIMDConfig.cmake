@@ -1,10 +1,10 @@
 include(CheckCXXCompilerFlag)
 
 # Check and add support for various SIMD instructions
-check_cxx_compiler_flag("-mavx512f" COMPILER_SUPPORTS_AVX512)
-if(COMPILER_SUPPORTS_AVX512)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx512f")
-endif()
+#check_cxx_compiler_flag("-mavx512f" COMPILER_SUPPORTS_AVX512)
+#if(COMPILER_SUPPORTS_AVX512)
+#  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx512f")
+#endif()
 
 check_cxx_compiler_flag("-mavx2" COMPILER_SUPPORTS_AVX2)
 if(COMPILER_SUPPORTS_AVX2)
