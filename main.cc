@@ -166,9 +166,6 @@ struct RayQueue {
     int index;
     int depth;
     ray r;
-    void print() {
-        std::cerr << index << ":" << depth << " ";
-    }
 };
 void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scene_ptr, RenderData& data, Camera cam) {
     int image_width         = data.image_width;
@@ -211,6 +208,7 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                 HitInfo record;
 
                 for (int i=0; i<4; i++) {
+                    if (mask[i] == 0) { continue; }
                     ray current_ray = current[i].r;
                     int current_index = current[i].index;
 
@@ -223,7 +221,7 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                         std::shared_ptr<material> mat_ptr = geomhit->materialById(rayhit.hit.geomID[i]);
                         record = geomhit->getHitInfo(current_ray, current_ray.at(rayhit.ray.tfar[i]), rayhit.ray.tfar[i], rayhit.hit.geomID[i]);
                         if (mat_ptr->scatter(current_ray, record, attenuation, scattered)) {
-                            if (current[current_index].depth == 0) {
+                            if (current[i].depth == 0) {
                                 temp_buffer[current_index] = attenuation;
                             } else {
                                 temp_buffer[current_index] = temp_buffer[current_index] * attenuation;
@@ -249,7 +247,7 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                         auto t = 0.5*(unit_direction.y() + 1.0);
 
                         color multiplier = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
-                        if (current[current_index].depth == 0) {
+                        if (current[i].depth == 0) {
                             temp_buffer[current_index] = multiplier;
                         } else {
                             temp_buffer[current_index] = temp_buffer[current_index] * multiplier;
@@ -257,24 +255,11 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                         
                         // check if theres even any more to do, if not then break out.
                         if ((int)queue.size() >= 1) { // at least one remaining
-                            for (int l=0; l<(int)current.size(); l++) {
-                                current[l].print();
-                            }
-                            std::cerr << "replace after no hit " << i << " ";
                             // replace finished RayQueue with next
                             RayQueue back = queue.back();
                             queue.pop_back();
                             current[i] = back;
-                            for (int l=0; l<(int)current.size(); l++) {
-                                current[l].print();
-                            }
-                            std::cerr << std::endl;
                         } else { // no more remaining
-                            std::cerr << "queue empty, mask out " << current_index << std::endl;
-                            for (int l=0; l<(int)current.size(); l++) {
-                                current[l].print();
-                            }
-                            std::cerr << std::endl;
                             mask[i] = 0;
                         }
                     }
@@ -299,9 +284,9 @@ int main() {
     RenderData render_data; 
 
     const auto aspect_ratio = 3.0 / 2.0;
-    const int image_width = 6;
+    const int image_width = 420;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 1;
+    const int samples_per_pixel = 2;
     const int max_depth = 3;
 
     render_data.image_width = image_width;
