@@ -58,7 +58,7 @@ void setupRayHit8(struct RTCRayHit8& rayhit, std::vector<ray>& rays) {
 }
 
 /** @brief modifies given RTCRayHit object to be ready for rtcIntersect16 usage*/
-void setupRayHit4(struct RTCRayHit16& rayhit, std::vector<ray>& rays) {
+void setupRayHit16(struct RTCRayHit16& rayhit, std::vector<ray>& rays) {
     int ix = 0;
     for(auto r: rays) {
         rayhit.ray.org_x[ix] = r.origin().x();

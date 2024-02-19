@@ -162,14 +162,155 @@ void render_scanlines(int lines, int start_line, std::shared_ptr<Scene> scene_pt
     }
 }
 
+struct RayQueue {
+    int index;
+    int depth;
+    ray r;
+};
+
+/**
+ * @brief Calculates colours of the given RenderData's buffer according to the assigned lines of pixels.
+ * 
+ * @note is one of many planned functions supporting SSE, AVX, AVX512 i.e 4/8/16 packet size
+*/
+void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scene_ptr, RenderData& data, Camera cam) {
+    int image_width         = data.image_width;
+    int image_height        = data.image_height;
+    int samples_per_pixel   = data.samples_per_pixel;
+    int max_depth           = data.max_depth;
+    
+    for (int j=start_line; j>=start_line - (lines - 1); --j) {
+        std::vector<color> full_buffer(image_width);
+        for (int s=0; s < samples_per_pixel; s++) {
+            std::vector<RayQueue> queue;
+            std::vector<color> temp_buffer(image_width);
+            std::vector<RayQueue> current(4); // size = 4 only
+            for (int i=image_width-1; i>=0; --i) {
+                auto u = (i + random_double()) / (image_width-1);
+                auto v = (j + random_double()) / (image_height-1);
+                ray r = cam.get_ray(u, v);
+                RayQueue q = { i, 0, r };
+                queue.push_back(q);
+            }
+
+            RTCRayHit4 rayhit;
+
+            for (int i=0; i<4; i++) {
+                RayQueue back = queue.back();
+                queue.pop_back();
+                current[i] = back;
+            }
+
+            int mask[4] = {-1, -1, -1, -1};
+            while (mask[0] != 0 or mask[1] != 0 or mask[2] != 0 or mask[3] != 0) {
+                std::vector<ray> rays;
+                for (int i=0; i<(int)current.size(); i++) {
+                    rays.push_back(current[i].r);
+                }
+                setupRayHit4(rayhit, rays);
+                rtcIntersect4(mask, scene_ptr->rtc_scene, &rayhit);
+
+                HitInfo record;
+
+                for (int i=0; i<4; i++) {
+                    if (mask[i] == 0) { continue; }
+                    ray current_ray = current[i].r;
+                    int current_index = current[i].index;
+
+                    // process each ray by editing the temp_buffer and updating current queue
+                    if (rayhit.hit.geomID[i] != RTC_INVALID_GEOMETRY_ID) { // hit
+                        ray scattered;
+                        color attenuation;
+                        std::shared_ptr<Geometry> geomhit = scene_ptr->geom_map[rayhit.hit.geomID[i]];
+                        std::shared_ptr<material> mat_ptr = geomhit->materialById(rayhit.hit.geomID[i]);
+                        record = geomhit->getHitInfo(current_ray, current_ray.at(rayhit.ray.tfar[i]), rayhit.ray.tfar[i], rayhit.hit.geomID[i]);
+                        if (mat_ptr->scatter(current_ray, record, attenuation, scattered)) {
+                            if (current[i].depth == 0) {
+                                temp_buffer[current_index] = attenuation;
+                            } else {
+                                temp_buffer[current_index] = temp_buffer[current_index] * attenuation;
+                            }
+                            if (current[i].depth + 1 == max_depth) { // reached max depth, replace with next in queue
+                                // check if theres even any more to do, if not then break out.
+                                if (queue.empty()) {
+                                    mask[i] = 0; // disable this part of the packet from running
+                                } else {
+                                    // replace finished RayQueue with next
+                                    RayQueue back = queue.back();
+                                    queue.pop_back();
+                                    current[i] = back;
+                                }
+                            } else { // not finished depth wise
+                                current[i].depth += 1;
+                                current[i].r = scattered;
+                            }
+                        } else {
+                            if (current[i].depth == 0) {
+                                temp_buffer[current_index] = color(0,0,0);
+                            } else {
+                                temp_buffer[current_index] = temp_buffer[current_index] * color(0,0,0);
+                            }
+                            if (current[i].depth + 1 == max_depth) { // reached max depth, replace with next in queue
+                                // check if theres even any more to do, if not then break out.
+                                if (queue.empty()) {
+                                    mask[i] = 0; // disable this part of the packet from running
+                                } else {
+                                    // replace finished RayQueue with next
+                                    RayQueue back = queue.back();
+                                    queue.pop_back();
+                                    current[i] = back;
+                                }
+                            } else { // not finished depth wise
+                                current[i].depth += 1;
+                                current[i].r = scattered;
+                            }
+                        }
+                    } else { // no hit
+                        // Sky background (gradient blue-white)
+                        vec3 unit_direction = current_ray.direction().unit_vector();
+                        auto t = 0.5*(unit_direction.y() + 1.0);
+
+                        color multiplier = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
+                        if (current[i].depth == 0) {
+                            temp_buffer[current_index] = multiplier;
+                        } else {
+                            temp_buffer[current_index] = temp_buffer[current_index] * multiplier;
+                        }
+                        // check if theres even any more to do, if not then break out.
+                        if (queue.empty()) {
+                            mask[i] = 0; // disable this part of the packet from running
+                        } else {
+                            // replace finished RayQueue with next
+                            RayQueue back = queue.back();
+                            queue.pop_back();
+                            current[i] = back;
+                        }
+                    }
+                }
+            }
+            for (int i=0; i<image_width; ++i) {
+                full_buffer[i] += temp_buffer[i];
+            }
+        }
+        for (int i=0; i<image_width; ++i) {
+            int buffer_index = j * image_width + i;
+            color buffer_pixel(full_buffer[i].x(), full_buffer[i].y(), full_buffer[i].z());
+            data.buffer[buffer_index] = buffer_pixel;
+        }
+        data.completed_lines += 1;
+        float percentage_completed = ((float)data.completed_lines / (float)data.image_height)*100.00;
+        std::cerr << "[" <<int(percentage_completed) << "%] completed" << std::endl;
+    }
+}
+
 int main() {
     RenderData render_data; 
 
     const auto aspect_ratio = 3.0 / 2.0;
     const int image_width = 1200;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 100;
-    const int max_depth = 25;
+    const int samples_per_pixel = 50;
+    const int max_depth = 50;
 
     render_data.image_width = image_width;
     render_data.image_height = image_height;
@@ -197,9 +338,12 @@ int main() {
 
     // Start Render Timer 
     auto start_time = std::chrono::high_resolution_clock::now();
+    render_data.completed_lines = 0;
+    //render_scanlines_sse(image_height,image_height-1,cs,render_data,cam);
 
     // Threading approach? : Divide the scanlines into N blocks
     const int num_threads = std::thread::hardware_concurrency() - 1;
+    std::cerr << num_threads << std::endl;
     // Image height is the number of scanlines, suppose image_height = 800
     const int lines_per_thread = image_height / num_threads;
     const int leftOver = image_height % num_threads;
@@ -212,15 +356,16 @@ int main() {
 
     for (int i=0; i < num_threads; i++) {
         // In the first thead, we want the first lines_per_thread lines to be rendered
-        threads.emplace_back(render_scanlines,lines_per_thread,(image_height-1) - (i * lines_per_thread), cs, std::ref(render_data),cam);
+        threads.emplace_back(render_scanlines_sse,lines_per_thread,(image_height-1) - (i * lines_per_thread), cs, std::ref(render_data),cam);
     }
-    threads.emplace_back(render_scanlines,leftOver,(image_height-1) - (num_threads * lines_per_thread), cs, std::ref(render_data),cam);
+    threads.emplace_back(render_scanlines_sse,leftOver,(image_height-1) - (num_threads * lines_per_thread), cs, std::ref(render_data),cam);
 
     for (auto &thread : threads) {
             thread.join();
     }
     std::cerr << "Joining all threads" << std::endl;
     threads.clear();
+
     std::cout << "P3" << std::endl;
     std::cout << image_width << ' ' << image_height << std::endl;
     std::cout << 255 << std::endl;
