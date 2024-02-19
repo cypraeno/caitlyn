@@ -301,10 +301,10 @@ int main() {
     RenderData render_data; 
 
     const auto aspect_ratio = 3.0 / 2.0;
-    const int image_width = 420;
+    const int image_width = 1200;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 2;
-    const int max_depth = 3;
+    const int samples_per_pixel = 50;
+    const int max_depth = 50;
 
     render_data.image_width = image_width;
     render_data.image_height = image_height;
@@ -333,10 +333,11 @@ int main() {
     // Start Render Timer 
     auto start_time = std::chrono::high_resolution_clock::now();
     render_data.completed_lines = 0;
-    render_scanlines_sse(image_height,image_height-1,cs,render_data,cam);
-    /*
+    //render_scanlines_sse(image_height,image_height-1,cs,render_data,cam);
+
     // Threading approach? : Divide the scanlines into N blocks
     const int num_threads = std::thread::hardware_concurrency() - 1;
+    std::cerr << num_threads << std::endl;
     // Image height is the number of scanlines, suppose image_height = 800
     const int lines_per_thread = image_height / num_threads;
     const int leftOver = image_height % num_threads;
@@ -358,7 +359,7 @@ int main() {
     }
     std::cerr << "Joining all threads" << std::endl;
     threads.clear();
-    */
+
     std::cout << "P3" << std::endl;
     std::cout << image_width << ' ' << image_height << std::endl;
     std::cout << 255 << std::endl;
