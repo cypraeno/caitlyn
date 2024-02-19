@@ -167,6 +167,12 @@ struct RayQueue {
     int depth;
     ray r;
 };
+
+/**
+ * @brief Calculates colours of the given RenderData's buffer according to the assigned lines of pixels.
+ * 
+ * @note is one of many planned functions supporting SSE, AVX, AVX512 i.e 4/8/16 packet size
+*/
 void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scene_ptr, RenderData& data, Camera cam) {
     int image_width         = data.image_width;
     int image_height        = data.image_height;
