@@ -195,7 +195,6 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                 current[i] = back;
             }
 
-            int current_index_last_completed = -1;
             int mask[4] = {-1, -1, -1, -1};
             while (mask[0] != 0 or mask[1] != 0 or mask[2] != 0 or mask[3] != 0) {
                 std::vector<ray> rays;
@@ -216,7 +215,6 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                     if (rayhit.hit.geomID[i] != RTC_INVALID_GEOMETRY_ID) { // hit
                         ray scattered;
                         color attenuation;
-
                         std::shared_ptr<Geometry> geomhit = scene_ptr->geom_map[rayhit.hit.geomID[i]];
                         std::shared_ptr<material> mat_ptr = geomhit->materialById(rayhit.hit.geomID[i]);
                         record = geomhit->getHitInfo(current_ray, current_ray.at(rayhit.ray.tfar[i]), rayhit.ray.tfar[i], rayhit.hit.geomID[i]);
@@ -228,13 +226,33 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                             }
                             if (current[i].depth + 1 == max_depth) { // reached max depth, replace with next in queue
                                 // check if theres even any more to do, if not then break out.
-                                if ((int)queue.size() >= 1) { // at least one remaining
+                                if (queue.empty()) {
+                                    mask[i] = 0; // disable this part of the packet from running
+                                } else {
                                     // replace finished RayQueue with next
                                     RayQueue back = queue.back();
                                     queue.pop_back();
                                     current[i] = back;
-                                } else { // no more remaining
+                                }
+                            } else { // not finished depth wise
+                                current[i].depth += 1;
+                                current[i].r = scattered;
+                            }
+                        } else {
+                            if (current[i].depth == 0) {
+                                temp_buffer[current_index] = color(0,0,0);
+                            } else {
+                                temp_buffer[current_index] = temp_buffer[current_index] * color(0,0,0);
+                            }
+                            if (current[i].depth + 1 == max_depth) { // reached max depth, replace with next in queue
+                                // check if theres even any more to do, if not then break out.
+                                if (queue.empty()) {
                                     mask[i] = 0; // disable this part of the packet from running
+                                } else {
+                                    // replace finished RayQueue with next
+                                    RayQueue back = queue.back();
+                                    queue.pop_back();
+                                    current[i] = back;
                                 }
                             } else { // not finished depth wise
                                 current[i].depth += 1;
@@ -252,15 +270,14 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                         } else {
                             temp_buffer[current_index] = temp_buffer[current_index] * multiplier;
                         }
-                        
                         // check if theres even any more to do, if not then break out.
-                        if ((int)queue.size() >= 1) { // at least one remaining
+                        if (queue.empty()) {
+                            mask[i] = 0; // disable this part of the packet from running
+                        } else {
                             // replace finished RayQueue with next
                             RayQueue back = queue.back();
                             queue.pop_back();
                             current[i] = back;
-                        } else { // no more remaining
-                            mask[i] = 0;
                         }
                     }
                 }
