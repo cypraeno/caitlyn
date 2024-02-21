@@ -31,3 +31,4 @@
 
 # CMake Build Directory
 build/
+.vscode/settings.json
