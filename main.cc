@@ -280,12 +280,107 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
         std::cerr << "[" <<int(percentage_completed) << "%] completed" << std::endl;
     }
 }
+
+/**
+ * @brief Calculates colours of the given RenderData's buffer according to the assigned lines of pixels.
+ * 
+ * @note for AVX 8-RayQueue packets scanline rendering
+*/
+void render_scanlines_avx(int lines, int start_line, std::shared_ptr<Scene> scene_ptr, RenderData& data, Camera cam) {
+    int image_width         = data.image_width;
+    int image_height        = data.image_height;
+    int samples_per_pixel   = data.samples_per_pixel;
+    int max_depth           = data.max_depth;
+
+    const int PACKET_SIZE = 8;
+
+    std::vector<color> full_buffer(image_width);
+
+    std::vector<RayQueue> queue;
+    queue.reserve(image_width);
+
+    std::vector<color> temp_buffer(image_width);
+    std::vector<RayQueue> current(PACKET_SIZE); // size = 8 only
+
+    int mask[PACKET_SIZE];
+    std::fill(mask, mask+PACKET_SIZE, -1);
+    
+    for (int j=start_line; j>=start_line - (lines - 1); --j) {
+        std::fill(full_buffer.begin(), full_buffer.end(), color(0, 0, 0));
+        for (int s=0; s < samples_per_pixel; s++) {
+            std::fill(temp_buffer.begin(), temp_buffer.end(), color(0, 0, 0));
+            queue.clear();
+            for (int i=image_width-1; i>=0; --i) {
+                auto u = (i + random_double()) / (image_width-1);
+                auto v = (j + random_double()) / (image_height-1);
+                ray r = cam.get_ray(u, v);
+                RayQueue q = { i, 0, r };
+                queue.push_back(q);
+            }
+
+            RTCRayHit8 rayhit;
+
+            for (int i=0; i<PACKET_SIZE; i++) {
+                RayQueue back = queue.back();
+                queue.pop_back();
+                current[i] = back;
+            }
+
+            std::fill(std::begin(mask), std::end(mask), -1);
+            bool maskContainsActive = true;
+            while (maskContainsActive) {
+                maskContainsActive = false;
+                for (int p=0; p<PACKET_SIZE; p++) {
+                    if (mask[p] == -1) { maskContainsActive = true; }
+                    break;
+                }
+
+                std::vector<ray> rays;
+                for (int i=0; i<(int)current.size(); i++) {
+                    rays.push_back(current[i].r);
+                }
+                setupRayHit8(rayhit, rays);
+                rtcIntersect8(mask, scene_ptr->rtc_scene, &rayhit);
+
+                HitInfo record;
+
+                for (int i=0; i<PACKET_SIZE; i++) {
+                    if (mask[i] == 0) { continue; }
+                    ray current_ray = current[i].r;
+                    int current_index = current[i].index;
+
+                    // process each ray by editing the temp_buffer and updating current queue
+                    if (rayhit.hit.geomID[i] != RTC_INVALID_GEOMETRY_ID) { // hit
+                        ray scattered;
+                        color attenuation;
+                        std::shared_ptr<Geometry> geomhit = scene_ptr->geom_map[rayhit.hit.geomID[i]];
+                        std::shared_ptr<material> mat_ptr = geomhit->materialById(rayhit.hit.geomID[i]);
+                        record = geomhit->getHitInfo(current_ray, current_ray.at(rayhit.ray.tfar[i]), rayhit.ray.tfar[i], rayhit.hit.geomID[i]);
+                        if (!mat_ptr->scatter(current_ray, record, attenuation, scattered)) { attenuation = color(0,0,0); }
+                        if (current[i].depth == 0) { temp_buffer[current_index] = attenuation; }
+                        else { temp_buffer[current_index] = temp_buffer[current_index] * attenuation; }
+                        if (current[i].depth + 1 == max_depth) { // reached max depth, replace with next in queue
+                            completeRayQueueTask(current, temp_buffer, full_buffer, queue, mask, i, current_index);
+                        } else { // not finished depth wise
+                            current[i].depth += 1;
+                            current[i].r = scattered;
+                        }
+                    } else { // no hit
+                        // Sky background (gradient blue-white)
+                        vec3 unit_direction = current_ray.direction().unit_vector();
+                        auto t = 0.5*(unit_direction.y() + 1.0);
+
+                        color multiplier = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
+                        if (current[i].depth == 0) { temp_buffer[current_index] = multiplier; } 
+                        else { temp_buffer[current_index] = temp_buffer[current_index] * multiplier; }
+                        completeRayQueueTask(current, temp_buffer, full_buffer, queue, mask, i, current_index);
+                    }
+                }
             }
         }
         for (int i=0; i<image_width; ++i) {
             int buffer_index = j * image_width + i;
-            color buffer_pixel(full_buffer[i].x(), full_buffer[i].y(), full_buffer[i].z());
-            data.buffer[buffer_index] = buffer_pixel;
+            data.buffer[buffer_index] = color(full_buffer[i].x(), full_buffer[i].y(), full_buffer[i].z());
         }
         data.completed_lines += 1;
         float percentage_completed = ((float)data.completed_lines / (float)data.image_height)*100.00;
