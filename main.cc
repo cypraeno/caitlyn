@@ -208,9 +208,6 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
     for (int j=start_line; j>=start_line - (lines - 1); --j) {
         std::fill(full_buffer.begin(), full_buffer.end(), color(0, 0, 0));
         for (int s=0; s < samples_per_pixel; s++) {
-            std::vector<RayQueue> queue;
-            std::vector<color> temp_buffer(image_width);
-            std::vector<RayQueue> current(4); // size = 4 only
             std::fill(temp_buffer.begin(), temp_buffer.end(), color(0, 0, 0));
             queue.clear();
             for (int i=image_width-1; i>=0; --i) {
