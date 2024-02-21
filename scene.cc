@@ -1,7 +1,10 @@
 #include "scene.h"
 #include <embree4/rtcore.h>
 
-Scene::Scene(RTCDevice device, Camera cam) : cam{cam}, rtc_scene{rtcNewScene(device)} {}
+Scene::Scene(RTCDevice device, Camera cam) : cam{cam}, rtc_scene{rtcNewScene(device)} {
+    rtcSetSceneBuildQuality(rtc_scene, RTC_BUILD_QUALITY_HIGH);
+    rtcSetSceneFlags(rtc_scene, RTC_SCENE_FLAG_DYNAMIC);
+}
 
 Scene::~Scene() {
     rtcReleaseScene(rtc_scene);

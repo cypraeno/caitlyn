@@ -19,6 +19,7 @@ class SpherePrimitive : public Primitive {
             spherev[2] = position.z();
             spherev[3] = radius;
         }
+        rtcSetGeometryBuildQuality(geom, RTC_BUILD_QUALITY_HIGH);
         rtcCommitGeometry(geom);
     }
 
