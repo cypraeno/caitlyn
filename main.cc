@@ -401,7 +401,7 @@ void render_scanlines_avx(int lines, int start_line, std::shared_ptr<Scene> scen
     }
 }
 
-void output(RenderData& render_data, camera& cam) {
+void output(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_ptr) {
     int image_height = render_data.image_height;
     int image_width = render_data.image_width;
     int samples_per_pixel = render_data.samples_per_pixel;
@@ -411,7 +411,7 @@ void output(RenderData& render_data, camera& cam) {
     render_data.completed_lines = 0;
 
     // To render entire thing without multithreading, uncomment this line and comment out num_threads -> threads.clear()
-    //render_scanlines_sse(image_height,image_height-1,cs,render_data,cam);
+    //render_scanlines_sse(image_height,image_height-1,scene_ptr,render_data,cam);
 
     // Threading approach? : Divide the scanlines into N blocks
     const int num_threads = std::thread::hardware_concurrency() - 1;
@@ -428,9 +428,9 @@ void output(RenderData& render_data, camera& cam) {
 
     for (int i=0; i < num_threads; i++) {
         // In the first thead, we want the first lines_per_thread lines to be rendered
-        threads.emplace_back(render_scanlines,lines_per_thread,(image_height-1) - (i * lines_per_thread), cs, std::ref(render_data),cam);
+        threads.emplace_back(render_scanlines,lines_per_thread,(image_height-1) - (i * lines_per_thread), scene_ptr, std::ref(render_data),cam);
     }
-    threads.emplace_back(render_scanlines,leftOver,(image_height-1) - (num_threads * lines_per_thread), cs, std::ref(render_data),cam);
+    threads.emplace_back(render_scanlines,leftOver,(image_height-1) - (num_threads * lines_per_thread), scene_ptr, std::ref(render_data),cam);
 
     for (auto &thread : threads) {
             thread.join();
@@ -473,14 +473,14 @@ void random_spheres() {
 
     // Simple usage of creating a Scene
     RTCDevice device = initializeDevice();
-    auto cs = make_shared<Scene>(device, cam);
+    auto scene_ptr = make_shared<Scene>(device, cam);
 
-    setup_benchmark_scene(cs, device);
+    setup_benchmark_scene(scene_ptr, device);
 
     // When scene construction is finished, the device is no longer needed.
     rtcReleaseDevice(device);
 
-    output(render_data, cam);
+    output(render_data, cam, scene_ptr);
 }
 
 void two_spheres() {
@@ -512,7 +512,7 @@ void two_spheres() {
 
     rtcReleaseDevice(device);
 
-    output(render_data, cam);
+    output(render_data, cam, scene_ptr);
 }
 
 void earth() {
@@ -543,7 +543,7 @@ void earth() {
     // When scene construction is finished, the device is no longer needed.
     rtcReleaseDevice(device);
 
-    output(render_data, cam);
+    output(render_data, cam, scene_ptr);
 }
 
 int main() {

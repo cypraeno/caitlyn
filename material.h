@@ -3,6 +3,7 @@
 
 #include "general.h"
 #include "hitinfo.h"
+#include "texture.h"
 
 class hit_record;
 
