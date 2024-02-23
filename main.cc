@@ -1,3 +1,4 @@
+
 #include <embree4/rtcore.h>
 #include "device.h"
 #include "general.h"
@@ -7,8 +8,10 @@
 #include "ray.h"
 #include "vec3.h"
 #include "material.h"
+
 #include "sphere_primitive.h"
 #include "intersects.h"
+#include "texture.h"
 
 
 #include <iostream>
@@ -131,6 +134,15 @@ struct RenderData {
     int completed_lines;
 };
 
+void setRenderData(RenderData& render_data, const float aspect_ratio, const int image_width,
+    const int samples_per_pixel, const int max_depth) {
+    const int image_height = static_cast<int>(image_width / aspect_ratio);
+    render_data.image_width = image_width;
+    render_data.image_height = image_height;
+    render_data.samples_per_pixel = samples_per_pixel;
+    render_data.max_depth = max_depth;
+    render_data.buffer = std::vector<color>(image_width * image_height);
+}
 
 void render_scanlines(int lines, int start_line, std::shared_ptr<Scene> scene_ptr, RenderData& data, Camera cam) {
 
@@ -157,6 +169,7 @@ void render_scanlines(int lines, int start_line, std::shared_ptr<Scene> scene_pt
             data.buffer[buffer_index] = buffer_pixel;
         }
         data.completed_lines += 1;
+
         float percentage_completed = ((float)data.completed_lines / (float)data.image_height)*100.00;
         std::cerr << "[" <<int(percentage_completed) << "%] completed" << std::endl;
     }
@@ -388,42 +401,16 @@ void render_scanlines_avx(int lines, int start_line, std::shared_ptr<Scene> scen
     }
 }
 
-int main() {
-    RenderData render_data; 
-
-    const auto aspect_ratio = 3.0 / 2.0;
-    const int image_width = 1200;
-    const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 50;
-    const int max_depth = 50;
-
-    render_data.image_width = image_width;
-    render_data.image_height = image_height;
-    render_data.samples_per_pixel = samples_per_pixel;
-    render_data.max_depth = max_depth;
-    render_data.buffer = std::vector<color>(image_width * image_height);
-
-    // Set up Camera
-    point3 lookfrom(13,2,3);
-    point3 lookat(0,0,0);
-    vec3 vup(0,1,0);
-    auto dist_to_focus = 10.0;
-    auto aperture = 0.02;
-
-    Camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
-
-    // Simple usage of creating a Scene
-    RTCDevice device = initializeDevice();
-    auto cs = make_shared<Scene>(device, cam);
-
-    setup_benchmark_scene(cs, device);
-
-    // When scene construction is finished, the device is no longer needed.
-    rtcReleaseDevice(device);
+void output(RenderData& render_data, camera& cam) {
+    int image_height = render_data.image_height;
+    int image_width = render_data.image_width;
+    int samples_per_pixel = render_data.samples_per_pixel;
 
     // Start Render Timer 
     auto start_time = std::chrono::high_resolution_clock::now();
     render_data.completed_lines = 0;
+
+    // To render entire thing without multithreading, uncomment this line and comment out num_threads -> threads.clear()
     //render_scanlines_sse(image_height,image_height-1,cs,render_data,cam);
 
     // Threading approach? : Divide the scanlines into N blocks
@@ -441,9 +428,9 @@ int main() {
 
     for (int i=0; i < num_threads; i++) {
         // In the first thead, we want the first lines_per_thread lines to be rendered
-        threads.emplace_back(render_scanlines_sse,lines_per_thread,(image_height-1) - (i * lines_per_thread), cs, std::ref(render_data),cam);
+        threads.emplace_back(render_scanlines,lines_per_thread,(image_height-1) - (i * lines_per_thread), cs, std::ref(render_data),cam);
     }
-    threads.emplace_back(render_scanlines_sse,leftOver,(image_height-1) - (num_threads * lines_per_thread), cs, std::ref(render_data),cam);
+    threads.emplace_back(render_scanlines,leftOver,(image_height-1) - (num_threads * lines_per_thread), cs, std::ref(render_data),cam);
 
     for (auto &thread : threads) {
             thread.join();
@@ -468,3 +455,102 @@ int main() {
 
     std::cerr << "\nCompleted render of scene. Render time: " << time_seconds << " seconds" << "\n";
 }
+
+void random_spheres() {
+    RenderData render_data; 
+
+    const auto aspect_ratio = 3.0 / 2.0;
+    setRenderData(render_data, aspect_ratio, 1200, 50, 50);
+
+    // Set up Camera
+    point3 lookfrom(13,2,3);
+    point3 lookat(0,0,0);
+    vec3 vup(0,1,0);
+    auto dist_to_focus = 10.0;
+    auto aperture = 0.02;
+
+    Camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
+    // Simple usage of creating a Scene
+    RTCDevice device = initializeDevice();
+    auto cs = make_shared<Scene>(device, cam);
+
+    setup_benchmark_scene(cs, device);
+
+    // When scene construction is finished, the device is no longer needed.
+    rtcReleaseDevice(device);
+
+    output(render_data, cam);
+}
+
+void two_spheres() {
+    // Set RenderData
+    RenderData render_data; 
+    const auto aspect_ratio = 16.0 / 9.0;
+    setRenderData(render_data, aspect_ratio, 400, 100, 50);
+
+    // Set up Camera
+    point3 lookfrom(13,2,3);
+    point3 lookat(0,0,0);
+    vec3 vup(0,1,0);
+    auto dist_to_focus = 10.0;
+    auto aperture = 0.0001;
+    
+    Camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
+    // Simple usage of creating a Scene
+    RTCDevice device = initializeDevice();
+    auto scene_ptr = make_shared<Scene>(device, cam);
+
+    // Set World
+    auto checker = make_shared<checker_texture>(0.8, color(.2, .3, .1), color(.9, .9, .9));
+    auto checkered_surface = make_shared<lambertian>(checker);
+    auto sphere1 = make_shared<SpherePrimitive>(point3(0,-10, 0), checkered_surface, 10, device);
+    auto sphere2 = make_shared<SpherePrimitive>(point3(0,10, 0), checkered_surface, 10, device);
+    scene_ptr->add_primitive(sphere1);
+    scene_ptr->add_primitive(sphere2);
+
+    rtcReleaseDevice(device);
+
+    output(render_data, cam);
+}
+
+void earth() {
+    // Set RenderData
+    RenderData render_data; 
+    const auto aspect_ratio = 16.0 / 9.0;
+    setRenderData(render_data, aspect_ratio, 400, 100, 50);
+
+    // Set up Camera
+    point3 lookfrom(0,0,12);
+    point3 lookat(0,0,0);
+    vec3 vup(0,1,0);
+    auto dist_to_focus = 10.0;
+    auto aperture = 0.0001;
+    
+    Camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
+    // Simple usage of creating a Scene
+    RTCDevice device = initializeDevice();
+    auto scene_ptr = make_shared<Scene>(device, cam);
+
+    // Set World
+    auto earth_texture = make_shared<image_texture>("../images/earthmap.jpg");
+    auto earth_surface = make_shared<lambertian>(earth_texture);
+    auto globe = make_shared<SpherePrimitive>(point3(0,0,0), earth_surface, 2, device);
+    unsigned int groundID = scene_ptr->add_primitive(globe);
+
+    // When scene construction is finished, the device is no longer needed.
+    rtcReleaseDevice(device);
+
+    output(render_data, cam);
+}
+
+int main() {
+    switch (3) {
+        case 1:  random_spheres(); break;
+        case 2:  two_spheres();    break;
+        case 3:  earth();          break;
+    }
+}
+

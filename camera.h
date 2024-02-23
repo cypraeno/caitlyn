@@ -45,6 +45,7 @@ class Camera : Base {
                 lower_left_corner + s*horizontal + t*vertical - position - offset,
                 random_double(time0,time1));
         }
+
     private:
         point3 lower_left_corner;
         vec3 horizontal;
