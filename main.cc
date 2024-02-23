@@ -346,11 +346,19 @@ void earth() {
     output(render_data, cam);
 }
 
+/* void boxes(){
+    color white(1,1,1);
+
+    world.add(box(point3(130, 0, 65), point3(295, 165, 230), white));
+    world.add(box(point3(265, 0, 295), point3(430, 330, 460), white));
+} */
+
 int main() {
     switch (3) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
+        case 4: boxes():           break;
     }
 }
 

@@ -33,6 +33,14 @@ class interval {
         static const interval empty, universe;
 };
 
+interval operator+(const interval& ival, double displacement) {
+    return interval(ival.min + displacement, ival.max + displacement);
+}
+
+interval operator+(double displacement, const interval& ival) {
+    return ival + displacement;
+}
+
 const static interval empty (+infinity, -infinity);
 const static interval universe (-infinity, +infinity);
 
