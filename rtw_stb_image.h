@@ -6,7 +6,6 @@
     #pragma warning (push, 0)
 #endif
 
-#define STB_IMAGE_IMPLEMENTATION
 #define STBI_FAILURE_USERMSG
 #include "external/stb_image.h"
 
@@ -36,7 +35,7 @@ class rtw_image {
         std::cerr << "ERROR: Could not load image file '" << image_filename << "'.\n";
     }
 
-    ~rtw_image() { STBI_FREE(data); }
+    ~rtw_image() { free(data); }
 
     bool load(const std::string filename) {
         // Loads image data from the given file name. Returns true if the load succeeded.

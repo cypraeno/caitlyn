@@ -1,3 +1,5 @@
+#define STB_IMAGE_IMPLEMENTATION
+#include "rtw_stb_image.h"
 
 #include <embree4/rtcore.h>
 #include "device.h"
@@ -415,7 +417,7 @@ void output(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_p
 
     // Threading approach? : Divide the scanlines into N blocks
     const int num_threads = std::thread::hardware_concurrency() - 1;
-    std::cerr << num_threads << std::endl;
+
     // Image height is the number of scanlines, suppose image_height = 800
     const int lines_per_thread = image_height / num_threads;
     const int leftOver = image_height % num_threads;
@@ -487,7 +489,7 @@ void two_spheres() {
     // Set RenderData
     RenderData render_data; 
     const auto aspect_ratio = 16.0 / 9.0;
-    setRenderData(render_data, aspect_ratio, 400, 100, 50);
+    setRenderData(render_data, aspect_ratio, 400, 50, 50);
 
     // Set up Camera
     point3 lookfrom(13,2,3);
@@ -510,6 +512,8 @@ void two_spheres() {
     scene_ptr->add_primitive(sphere1);
     scene_ptr->add_primitive(sphere2);
 
+    scene_ptr->commitScene();
+
     rtcReleaseDevice(device);
 
     output(render_data, cam, scene_ptr);
@@ -519,7 +523,7 @@ void earth() {
     // Set RenderData
     RenderData render_data; 
     const auto aspect_ratio = 16.0 / 9.0;
-    setRenderData(render_data, aspect_ratio, 400, 100, 50);
+    setRenderData(render_data, aspect_ratio, 400, 50, 50);
 
     // Set up Camera
     point3 lookfrom(0,0,12);
@@ -540,6 +544,8 @@ void earth() {
     auto globe = make_shared<SpherePrimitive>(point3(0,0,0), earth_surface, 2, device);
     unsigned int groundID = scene_ptr->add_primitive(globe);
 
+    scene_ptr->commitScene();
+
     // When scene construction is finished, the device is no longer needed.
     rtcReleaseDevice(device);
 
@@ -547,7 +553,7 @@ void earth() {
 }
 
 int main() {
-    switch (3) {
+    switch (1) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
