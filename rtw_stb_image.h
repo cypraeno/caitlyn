@@ -35,7 +35,7 @@ class rtw_image {
         std::cerr << "ERROR: Could not load image file '" << image_filename << "'.\n";
     }
 
-    ~rtw_image() { free(data); }
+    ~rtw_image();
 
     bool load(const std::string filename) {
         // Loads image data from the given file name. Returns true if the load succeeded.
