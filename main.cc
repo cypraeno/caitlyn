@@ -11,6 +11,7 @@
 #include "hittable_list.h"
 #include "material.h"
 #include "sphere.h"
+#include "quad.h"
 #include "texture.h"
 #include "bvh.h"
 
