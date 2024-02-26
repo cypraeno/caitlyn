@@ -1,6 +1,6 @@
 #include "aabb.h"
 
-aabb::pad() {
+aabb aabb::pad() {
     double delta = 0.0001;
     interval new_x = (x.size() >= delta) ? x : x.expand(delta);
     interval new_y = (y.size() >= delta) ? y : y.expand(delta);

@@ -10,11 +10,11 @@ quad::quad(const point3& _Q, const vec3& _u, const vec3& _v, shared_ptr<material
         this->set_bounding_box();
     }
 
-virtual void quad::set_bounding_box() {
+void quad::set_bounding_box() {
     this->bbox = aabb(Q, Q + u + v).pad();
 }
 
-virtual bool is_interior(double a, double b, hit_record& rec) const {
+bool quad::is_interior(double a, double b, hit_record& rec) const {
     
     if ((a < 0) || (1 < a) || (b < 0) || (1 < b)) return false;
 
@@ -23,7 +23,7 @@ virtual bool is_interior(double a, double b, hit_record& rec) const {
     return true;
 }
 
-bool quad::hit(const ray& r, interval ray_t, hit_record& rec) const override {
+bool quad::hit(const ray& r, interval ray_t, hit_record& rec) const {
     
     // return false (no hit) if ray parallel to plane (dot product ~0)
     float denom = dot(this->normal, r.direction());
@@ -36,7 +36,7 @@ bool quad::hit(const ray& r, interval ray_t, hit_record& rec) const override {
     // return false if hit point lies outside planar shape
     point3 intersection = r.at(t);
     vec3 planar_hitpoint = intersection - this->Q;
-    float alpha = dot(this->w, corss(planar_hitpoint, this->v));
+    float alpha = dot(this->w, cross(planar_hitpoint, this->v));
     float beta = dot(this->w, cross(this->u, planar_hitpoint));
 
     if (!this->is_interior(alpha, beta, rec)) return false;
@@ -44,7 +44,7 @@ bool quad::hit(const ray& r, interval ray_t, hit_record& rec) const override {
     // ray hits 2D shape: set hit record and return true
     rec.t = t;
     rec.p = intersection;
-    rec.mat = this->mat;
+    rec.mat_ptr = this->mat;
     rec.set_face_normal(r, this->normal);
 
     return true;
@@ -56,5 +56,5 @@ vec3 quad::get_u() const { return this->u; }
 vec3 quad::get_v() const { return this->v; }
 vec3 quad::get_w() const { return this->w; }
 vec3 quad::get_normal() const { return this->normal; }
-shared_ptr<material> get_mat() const { return this->mat; }
-aabb quad::bounding_box() const override { return this->bbox; }
+shared_ptr<material> quad::get_mat() const { return this->mat; }
+aabb quad::bounding_box() const { return this->bbox; }
