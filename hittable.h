@@ -89,7 +89,7 @@ class rotate_y : public hittable {
         p[2] = -sin_theta*rec.p[0] + cos_theta*rec.p[2];
 
         // Change the normal from object space to world space
-        auto normal = rec.normal
+        auto normal = rec.normal;
         normal[0] =  cos_theta*rec.normal[0] + sin_theta*rec.normal[2];
         normal[2] = -sin_theta*rec.normal[0] + cos_theta*rec.normal[2];
 
@@ -106,6 +106,36 @@ class rotate_y : public hittable {
         double sin_theta;
         double cos_theta;
         aabb bbox;
+};
+
+class translate : public hittable {
+  public:
+    translate(shared_ptr<hittable> p, const vec3& displacement)
+      : object(p), offset(displacement)
+    {
+        bbox = object->bounding_box() + offset;
+    }
+
+    bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+        // Move the ray backwards by the offset
+        ray offset_r(r.origin() - offset, r.direction(), r.time());
+
+        // Determine where (if any) an intersection occurs along the offset ray
+        if (!object->hit(offset_r, ray_t, rec))
+            return false;
+
+        // Move the intersection point forwards by the offset
+        rec.p += offset;
+
+        return true;
+    }
+
+    aabb bounding_box() const override { return bbox; }
+
+  private:
+    shared_ptr<hittable> object;
+    vec3 offset;
+    aabb bbox;
 };
 
 #endif

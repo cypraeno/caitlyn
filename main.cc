@@ -353,12 +353,85 @@ void earth() {
     world.add(box(point3(265, 0, 295), point3(430, 330, 460), white));
 } */
 
+void instances() {
+    // // Set RenderData
+    // RenderData render_data; 
+    // const auto aspect_ratio = 16.0 / 9.0;
+    // setRenderData(render_data, aspect_ratio, 400, 100, 50);
+    
+    // // Set World
+    // auto checker = make_shared<checker_texture>(0.8, color(.2, .3, .1), color(.9, .9, .9));
+    // // shared_ptr<hittable> sphere1 = make_shared<sphere>(point3(0,0,0), 2, make_shared<lambertian>(checker), create_still_timeline(point3(0,0,0)));
+    // // sphere1 = make_shared<translate>(sphere1, vec3(265,0,295));  // Translate first
+    // // sphere1 = make_shared<rotate_y>(sphere1, 15);               // Rotate second
+    // // render_data.scene = hittable_list(sphere1);
+    // auto sphere1 = (make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
+    // auto sphere2 = (make_shared<sphere>(point3(0,2,0), 2, make_shared<lambertian>(checker)));
+    // render_data.scene = hittable_list(sphere1);
+    // render_data.scene = hittable_list(sphere2);
+
+
+
+    // // Set up Camera
+    // point3 lookfrom(13,2,3);
+    // point3 lookat(0,0,0);
+    // vec3 vup(0,1,0);
+    // auto dist_to_focus = 10.0;
+    // auto aperture = 0.0001;
+    // camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
+    // output(render_data, cam);
+
+// Set RenderData
+    RenderData render_data; 
+    const auto aspect_ratio = 3.0 / 2.0;
+    setRenderData(render_data, aspect_ratio, 1200, 100, 50);
+
+    // Set World
+    hittable_list world;
+
+    // Ground
+    auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5)); // Solid gray Lambertian material
+    world.add(make_shared<sphere>(point3(0, -1000, 0), 1000, ground_material, create_still_timeline(point3(0, -1000, 0))));
+
+    // First Sphere with instance transformations
+    point3 center1(0, 0.2, 0);
+    auto material1 = make_shared<lambertian>(color(0.8, 0.4, 0.4)); // Reddish Lambertian material
+    shared_ptr<hittable> sphere1 = make_shared<sphere>(center1, 0.2, material1, create_still_timeline(center1));
+    sphere1 = make_shared<translate>(sphere1, vec3(1, 0, 0)); // Translate by (1, 0, 0)
+    sphere1 = make_shared<rotate_y>(sphere1, 45); // Rotate around y-axis by 45 degrees
+    world.add(sphere1);
+    
+    // Second Sphere with instance transformations
+    point3 center2(0, 0.6, 0); // Placed above the first sphere
+    auto material2 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0); // Metal material
+    shared_ptr<hittable> sphere2 = make_shared<sphere>(center2, 0.4, material2, create_still_timeline(center2));
+    sphere2 = make_shared<translate>(sphere2, vec3(-1, 0, 0)); // Translate by (-1, 0, 0)
+    sphere2 = make_shared<rotate_y>(sphere2, -45); // Rotate around y-axis by -45 degrees
+    world.add(sphere2);
+
+    world = hittable_list(make_shared<bvh_node>(world));
+    render_data.scene = world;
+    
+    // Set up Camera
+    point3 lookfrom(13,2,3);
+    point3 lookat(0,0,0);
+    vec3 vup(0,1,0);
+    auto dist_to_focus = 10.0;
+    auto aperture = 0.0001;
+    camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
+    output(render_data, cam);
+    
+    }
+
+
 int main() {
-    switch (3) {
+    switch (4) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
-        case 4: boxes():           break;
+        case 4: instances();      break;
     }
 }
 
