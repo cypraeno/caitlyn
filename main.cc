@@ -11,6 +11,7 @@
 #include "hittable_list.h"
 #include "material.h"
 #include "sphere.h"
+#include "quad.h"
 #include "texture.h"
 #include "bvh.h"
 
@@ -346,11 +347,42 @@ void earth() {
     output(render_data, cam);
 }
 
+void quads() {
+    RenderData render_data; 
+    const auto aspect_ratio = 16.0 / 9.0;
+    setRenderData(render_data, aspect_ratio, 400, 100, 50);
+
+    // Materials
+    auto left_red     = make_shared<lambertian>(color(1.0, 0.2, 0.2));
+    auto back_green   = make_shared<lambertian>(color(0.2, 1.0, 0.2));
+    auto right_blue   = make_shared<lambertian>(color(0.2, 0.2, 1.0));
+    auto upper_orange = make_shared<lambertian>(color(1.0, 0.5, 0.0));
+    auto lower_teal   = make_shared<lambertian>(color(0.2, 0.8, 0.8));
+
+    // Quads
+    render_data.scene.add(make_shared<quad>(point3(-3,-2, 5), vec3(0, 0,-4), vec3(0, 4, 0), left_red));
+    render_data.scene.add(make_shared<quad>(point3(-2,-2, 0), vec3(4, 0, 0), vec3(0, 4, 0), back_green));
+    render_data.scene.add(make_shared<quad>(point3( 3,-2, 1), vec3(0, 0, 4), vec3(0, 4, 0), right_blue));
+    render_data.scene.add(make_shared<quad>(point3(-2, 3, 1), vec3(4, 0, 0), vec3(0, 0, 4), upper_orange));
+    render_data.scene.add(make_shared<quad>(point3(-2,-3, 5), vec3(4, 0, 0), vec3(0, 0,-4), lower_teal));
+
+    // Set up Camera
+    point3 lookfrom(0, 0 , 9);
+    point3 lookat(0,0,0);
+    vec3 vup(0,1,0);
+    double vfov = 80;
+    double aperture = 0.0001;
+    double dist_to_focus = 10.0;
+
+    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+}
+
 int main() {
     switch (3) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
+        case 4:  quads();          break;
     }
 }
 

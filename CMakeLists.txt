@@ -9,7 +9,7 @@ set(embree_DIR ../opt/lib/cmake/embree-4.3.0/)
 # set(TBB_DIR ../opt/lib/cmake/tbb/) haven't installed TBB, doesn't exist
 FIND_PACKAGE(embree 4 REQUIRED)
 
-add_executable(caitlyn vec3.cc scene.cc main.cc) # Required
+add_executable(caitlyn vec3.cc scene.cc aabb.cc quad.cc main.cc) # Required
 
 # EMBREE CONFIG
 TARGET_LINK_LIBRARIES(caitlyn embree)

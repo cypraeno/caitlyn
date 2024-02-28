@@ -52,6 +52,11 @@ public:
 
         return true;
     }
+
+    /**
+     * @return aabb padded to prevent zero thickness
+     */
+    aabb pad();
 };
 
 
