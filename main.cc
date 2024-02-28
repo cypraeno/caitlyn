@@ -9,6 +9,7 @@
 #include "material.h"
 
 #include "sphere_primitive.h"
+#include "quad_primitive.h"
 #include "intersects.h"
 #include "texture.h"
 
@@ -549,11 +550,58 @@ void earth() {
     output(render_data, cam, scene_ptr);
 }
 
+void quads() {
+    RenderData render_data; 
+    const auto aspect_ratio = 16.0 / 9.0;
+    setRenderData(render_data, aspect_ratio, 400, 100, 50);
+
+    // Set up Camera
+    point3 lookfrom(0, 0, 9);
+    point3 lookat(0,0,0);
+    vec3 vup(0,1,0);
+    double vfov = 80;
+    double aperture = 0.0001;
+    double dist_to_focus = 10.0;
+
+    Camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
+    // Simple usage of creating a Scene
+    RTCDevice device = initializeDevice();
+    auto scene_ptr = make_shared<Scene>(device, cam);
+
+    // Materials
+    auto left_red     = make_shared<lambertian>(color(1.0, 0.2, 0.2));
+    auto back_green   = make_shared<lambertian>(color(0.2, 1.0, 0.2));
+    auto right_blue   = make_shared<lambertian>(color(0.2, 0.2, 1.0));
+    auto upper_orange = make_shared<lambertian>(color(1.0, 0.5, 0.0));
+    auto lower_teal   = make_shared<lambertian>(color(0.2, 0.8, 0.8));
+
+    // Quads
+    auto quad1 = make_shared<QuadPrimitive>(point3(-3,-2, 5), vec3(0, 0,-4), vec3(0, 4, 0), left_red, device);
+    auto quad2 = make_shared<QuadPrimitive>(point3(-2,-2, 0), vec3(4, 0, 0), vec3(0, 4, 0), back_green, device);
+    auto quad3 = make_shared<QuadPrimitive>(point3( 3,-2, 1), vec3(0, 0, 4), vec3(0, 4, 0), right_blue, device);
+    auto quad4 = make_shared<QuadPrimitive>(point3(-2, 3, 1), vec3(4, 0, 0), vec3(0, 0, 4), upper_orange, device);
+    auto quad5 = make_shared<QuadPrimitive>(point3(-2,-3, 5), vec3(4, 0, 0), vec3(0, 0,-4), lower_teal, device);
+
+    scene_ptr->add_primitive(quad1);
+    scene_ptr->add_primitive(quad2);
+    scene_ptr->add_primitive(quad3);
+    scene_ptr->add_primitive(quad4);
+    scene_ptr->add_primitive(quad5);
+    
+    scene_ptr->commitScene();
+
+    rtcReleaseDevice(device);
+
+    output(render_data, cam, scene_ptr);
+}
+
 int main() {
-    switch (1) {
+    switch (4) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
+        case 4:  quads();          break;
     }
 }
 
