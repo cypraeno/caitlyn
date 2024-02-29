@@ -11,6 +11,7 @@
 #include "camera.h"
 #include "material.h"
 #include "sphere_primitive.h"
+#include "quad_primitive.h"
 #include "scene.h"
 
 class CSRParser {
@@ -54,6 +55,11 @@ public:
                 getline(file, position); getline(file, material); getline(file, radius);
                 auto sphere = make_shared<SpherePrimitive>(readXYZProperty(position), materials[readStringProperty(material)], readDoubleProperty(radius), device);
                 scene_ptr->add_primitive(sphere);
+            } else if (startsWith(line, "Quad")) {
+                std::string position, u, v, material;
+                getline(file, position); getline(file, u); getline(file, v); getline(file, material);
+                auto quad = make_shared<QuadPrimitive>(readXYZProperty(position), readXYZProperty(u), readXYZProperty(v), materials[readStringProperty(material)], device);
+                scene_ptr->add_primitive(quad);
             }
         }
 
@@ -71,12 +77,15 @@ private:
         return tokens;
     }
 
+
     std::string trim(const std::string& str) {
-        size_t first = str.find_first_not_of(' ');
+        // Include '\r' and '\n' in the character set for trimming
+        size_t first = str.find_first_not_of(" \r\n");
         if (std::string::npos == first) {
-            return str;
+            // Return an empty string if only whitespace characters are found
+            return "";
         }
-        size_t last = str.find_last_not_of(' ');
+        size_t last = str.find_last_not_of(" \r\n");
         return str.substr(first, (last - first + 1));
     }
 
