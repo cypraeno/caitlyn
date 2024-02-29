@@ -551,7 +551,6 @@ void earth() {
     output(render_data, cam, scene_ptr);
 }
 
-<<<<<<< HEAD
 /**
  * @brief loads "example.csr" in the same directory.
  * @note ONLY SUPPORTS LAMBERTIAN SOLID COLOURS, AND SPHERES.
@@ -569,7 +568,8 @@ void load_example() {
     rtcReleaseDevice(device);
 
     output(render_data, scene_ptr->cam, scene_ptr);
-=======
+}
+
 void quads() {
     RenderData render_data; 
     const auto aspect_ratio = 16.0 / 9.0;
@@ -614,19 +614,15 @@ void quads() {
     rtcReleaseDevice(device);
 
     output(render_data, cam, scene_ptr);
->>>>>>> CA-102-embree-week
 }
 
 int main() {
-    switch (4) {
+    switch (5) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
-<<<<<<< HEAD
-        case 4:  load_example();   break;
-=======
         case 4:  quads();          break;
->>>>>>> CA-102-embree-week
+        case 5:  load_example();   break;
     }
 }
 
