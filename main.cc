@@ -1,5 +1,5 @@
 #include <embree4/rtcore.h>
-#include "csr_parser.h"
+#include "CSRParser.h"
 #include "device.h"
 #include "general.h"
 #include "scene.h"

@@ -15,10 +15,21 @@
 #include "quad_primitive.h"
 #include "scene.h"
 
+/**
+ * @class CSRParser
+ * @brief A parser that constructs Scene objects by reading a given CSR (Caitlyn Scene Representation) file.
+ *
+ * Call parseCSR(parseCSR(const std::string& filePath, RTCDevice device) to get a std::shared_ptr<Scene>
+ * parseCSR does NOT validate the formatting and structure of the CSR file, and may result in a seg fault.
+*/
 class CSRParser {
 public:
     std::ifstream file;
 
+    /**
+     * @brief Parses a CSR file and returns a std::shared_ptr<Scene> WITHOUT the scene committed.
+     * The user must call scene_ptr->commitScene(); and rtcReleaseDevice(device);.
+    */
     std::shared_ptr<Scene> parseCSR(const std::string& filePath, RTCDevice device) {
         file = std::ifstream(filePath);
         std::string line;
