@@ -36,7 +36,7 @@ class SpherePrimitive : public Primitive {
         record.set_face_normal(r, outward_normal);
 
         double u, v;
-        get_sphere_uv(p, u, v);
+        get_sphere_uv(outward_normal, u, v);
         record.u = u;
         record.v = v;
 

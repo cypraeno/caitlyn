@@ -1,4 +1,5 @@
 #include <embree4/rtcore.h>
+#include "CSRParser.h"
 #include "device.h"
 #include "general.h"
 #include "scene.h"
@@ -550,6 +551,24 @@ void earth() {
     output(render_data, cam, scene_ptr);
 }
 
+/**
+ * @brief loads "example.csr" in the same directory.
+ * @note see example.csr in cypraeno/csr_schema repository
+*/
+void load_example() {
+    RenderData render_data;
+    const auto aspect_ratio = 16.0 / 9.0;
+    setRenderData(render_data, aspect_ratio, 400, 50, 50);
+    std::string filePath = "example.csr";
+    RTCDevice device = initializeDevice();
+    CSRParser parser;
+    auto scene_ptr = parser.parseCSR(filePath, device);
+    scene_ptr->commitScene();
+    rtcReleaseDevice(device);
+
+    output(render_data, scene_ptr->cam, scene_ptr);
+}
+
 void quads() {
     RenderData render_data; 
     const auto aspect_ratio = 16.0 / 9.0;
@@ -597,11 +616,12 @@ void quads() {
 }
 
 int main() {
-    switch (4) {
+    switch (5) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
         case 4:  quads();          break;
+        case 5:  load_example();   break;
     }
 }
 
