@@ -29,8 +29,8 @@ public:
             throw std::runtime_error("Could not open file: " + filePath);
         }
 
-        // Read in versionn
-        getline(file, line);
+        // Read in version
+        getNextLine(file, line);
         if (trim(line) != "version 0.1.0") {
             throw std::runtime_error("Unsupported version or missing version marker");
         }
@@ -38,7 +38,7 @@ public:
         Camera cam = readCamera();
         auto scene_ptr = make_shared<Scene>(device, cam);
 
-        while (getline(file, line)) {
+        while (getNextLine(file, line)) {
             line = trim(line);
             if (startsWith(line, "Material")) {
                 // Extract material ID from brackets (e.g., Material[Lambertian] -> Lambertian)
@@ -47,22 +47,22 @@ public:
                 std::string materialType = line.substr(idStart, idEnd - idStart);
                 if (materialType == "Lambertian") {
                     std::string materialId, texture;
-                    getline(file, materialId); getline(file, texture);
+                    getNextLine(file, materialId); getNextLine(file, texture);
                     std::string texture_id = readStringProperty(texture);
                     if (texture_id == "no") {
                         std::string albedo;
-                        getline(file, albedo);
+                        getNextLine(file, albedo);
                         materials[readStringProperty(materialId)] = std::make_shared<lambertian>(readXYZProperty(albedo));  
                     } else {
                         materials[readStringProperty(materialId)] = std::make_shared<lambertian>(textures[texture_id]);
                     }
                 } else if (materialType == "Metal") {
                     std::string materialId, albedo, fuzz;
-                    getline(file, materialId); getline(file, albedo); getline(file, fuzz);
+                    getNextLine(file, materialId); getNextLine(file, albedo); getNextLine(file, fuzz);
                     materials[readStringProperty(materialId)] = std::make_shared<metal>(readXYZProperty(albedo), readDoubleProperty(fuzz));
                 } else if (materialType == "Dielectric") {
                     std::string materialId, ir;
-                    getline(file, materialId); getline(file, ir);
+                    getNextLine(file, materialId); getNextLine(file, ir);
                     materials[readStringProperty(materialId)] = std::make_shared<dielectric>(readDoubleProperty(ir));
                 }
             } else if (startsWith(line, "Texture")) {
@@ -71,21 +71,21 @@ public:
                 std::string textureType = line.substr(idStart, idEnd - idStart);
                 if (textureType == "Checker") {
                     std::string textureId, scale, c1, c2;
-                    getline(file, textureId); getline(file, scale); getline(file, c1); getline(file, c2);
+                    getNextLine(file, textureId); getNextLine(file, scale); getNextLine(file, c1); getNextLine(file, c2);
                     textures[readStringProperty(textureId)] = std::make_shared<checker_texture>(readDoubleProperty(scale), readXYZProperty(c1), readXYZProperty(c2));
                 } else if (textureType == "Image") {
                     std::string textureId, path;
-                    getline(file, textureId); getline(file, path);
+                    getNextLine(file, textureId); getNextLine(file, path);
                     textures[readStringProperty(textureId)] = std::make_shared<image_texture>(readStringProperty(path).c_str());
                 }
             } else if (startsWith(line, "Sphere")) {
                 std::string position, material, radius;
-                getline(file, position); getline(file, material); getline(file, radius);
+                getNextLine(file, position); getNextLine(file, material); getNextLine(file, radius);
                 auto sphere = make_shared<SpherePrimitive>(readXYZProperty(position), materials[readStringProperty(material)], readDoubleProperty(radius), device);
                 scene_ptr->add_primitive(sphere);
             } else if (startsWith(line, "Quad")) {
                 std::string position, u, v, material;
-                getline(file, position); getline(file, u); getline(file, v); getline(file, material);
+                getNextLine(file, position); getNextLine(file, u); getNextLine(file, v); getNextLine(file, material);
                 auto quad = make_shared<QuadPrimitive>(readXYZProperty(position), readXYZProperty(u), readXYZProperty(v), materials[readStringProperty(material)], device);
                 scene_ptr->add_primitive(quad);
             }
@@ -94,17 +94,41 @@ public:
         return scene_ptr;
     }
 private:
+    /**
+     * @brief Given a string, reads in the next line from the file while accounting for comments,
+     * If the line begins with a '#', it is a comment and skips to the next line.
+     * String is also preprocessed to ignore anything after a #.
+    */
+    bool getNextLine(std::ifstream& file, std::string& holder) {
+        if (!getline(file, holder)) {return false;};
+        while (startsWith(holder, "#")) { // if line still is a comment
+            if (!getline(file, holder)) {return false;};
+        }
+        std::vector<std::string> tokens = split(holder, '#');
+        holder = trim(tokens[0]);
+        return true;
+    }
+
     // Helper String Functions
     std::vector<std::string> split(const std::string &s, char delimiter = ' ') {
         std::vector<std::string> tokens;
+
+        if (s.empty()) {
+            // Return a vector with a single, empty string
+            tokens.push_back("");
+            return tokens;
+        }
         std::istringstream tokenStream(s);
         std::string token;
         while (std::getline(tokenStream, token, delimiter)) {
             tokens.push_back(token);
         }
+
+        if (tokens.empty()) {
+            tokens.push_back(s);
+        }
         return tokens;
     }
-
 
     std::string trim(const std::string& str) {
         // Include '\r' and '\n' in the character set for trimming
@@ -148,10 +172,10 @@ private:
     Camera readCamera() {
         std::string line;
         std::string lookfrom, lookat, vup, vfov, aspect_ratio, aperture, focus_dist;
-        while (getline(file, line)) {
+        while (getNextLine(file, line)) {
             if (startsWith(line, "Camera")) {
-                getline(file, lookfrom); getline(file, lookat); getline(file, vup);
-                getline(file, vfov); getline(file, aspect_ratio); getline(file, aperture); getline(file, focus_dist);
+                getNextLine(file, lookfrom); getNextLine(file, lookat); getNextLine(file, vup);
+                getNextLine(file, vfov); getNextLine(file, aspect_ratio); getNextLine(file, aperture); getNextLine(file, focus_dist);
                 break;
             }
         }
@@ -162,7 +186,6 @@ private:
         return cam;
     }
 
-    
 };
 
 #endif
