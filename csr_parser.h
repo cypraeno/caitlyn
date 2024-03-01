@@ -49,6 +49,14 @@ public:
                     if (readStringProperty(texture) == "no") {
                         materials[readStringProperty(materialId)] = std::make_shared<lambertian>(readXYZProperty(albedo));  
                     }  
+                } else if (materialType == "Metal") {
+                    std::string materialId, albedo, fuzz;
+                    getline(file, materialId); getline(file, albedo); getline(file, fuzz);
+                    materials[readStringProperty(materialId)] = std::make_shared<metal>(readXYZProperty(albedo), readDoubleProperty(fuzz));
+                } else if (materialType == "Dielectric") {
+                    std::string materialId, ir;
+                    getline(file, materialId); getline(file, ir);
+                    materials[readStringProperty(materialId)] = std::make_shared<dielectric>(readDoubleProperty(ir));
                 }
             } else if (startsWith(line, "Sphere")) {
                 std::string position, material, radius;
