@@ -10,6 +10,7 @@
 #include <optional>
 #include "camera.h"
 #include "material.h"
+#include "texture.h"
 #include "sphere_primitive.h"
 #include "quad_primitive.h"
 #include "scene.h"
@@ -22,6 +23,7 @@ public:
         file = std::ifstream(filePath);
         std::string line;
         std::map<std::string, std::shared_ptr<material>> materials;
+        std::map<std::string, std::shared_ptr<texture>> textures;
         
         if (!file.is_open()) {
             throw std::runtime_error("Could not open file: " + filePath);
@@ -44,11 +46,16 @@ public:
                 auto idEnd = line.find(']');
                 std::string materialType = line.substr(idStart, idEnd - idStart);
                 if (materialType == "Lambertian") {
-                    std::string materialId, texture, albedo;
-                    getline(file, materialId); getline(file, texture); getline(file, albedo);
-                    if (readStringProperty(texture) == "no") {
+                    std::string materialId, texture;
+                    getline(file, materialId); getline(file, texture);
+                    std::string texture_id = readStringProperty(texture);
+                    if (texture_id == "no") {
+                        std::string albedo;
+                        getline(file, albedo);
                         materials[readStringProperty(materialId)] = std::make_shared<lambertian>(readXYZProperty(albedo));  
-                    }  
+                    } else {
+                        materials[readStringProperty(materialId)] = std::make_shared<lambertian>(textures[texture_id]);
+                    }
                 } else if (materialType == "Metal") {
                     std::string materialId, albedo, fuzz;
                     getline(file, materialId); getline(file, albedo); getline(file, fuzz);
@@ -57,6 +64,19 @@ public:
                     std::string materialId, ir;
                     getline(file, materialId); getline(file, ir);
                     materials[readStringProperty(materialId)] = std::make_shared<dielectric>(readDoubleProperty(ir));
+                }
+            } else if (startsWith(line, "Texture")) {
+                auto idStart = line.find('[') + 1;
+                auto idEnd = line.find(']');
+                std::string textureType = line.substr(idStart, idEnd - idStart);
+                if (textureType == "Checker") {
+                    std::string textureId, scale, c1, c2;
+                    getline(file, textureId); getline(file, scale); getline(file, c1); getline(file, c2);
+                    textures[readStringProperty(textureId)] = std::make_shared<checker_texture>(readDoubleProperty(scale), readXYZProperty(c1), readXYZProperty(c2));
+                } else if (textureType == "Image") {
+                    std::string textureId, path;
+                    getline(file, textureId); getline(file, path);
+                    textures[readStringProperty(textureId)] = std::make_shared<image_texture>(readStringProperty(path).c_str());
                 }
             } else if (startsWith(line, "Sphere")) {
                 std::string position, material, radius;

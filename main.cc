@@ -553,13 +553,12 @@ void earth() {
 
 /**
  * @brief loads "example.csr" in the same directory.
- * @note Does not support textured lambertians
  * @note see example.csr in cypraeno/csr_schema repository
 */
 void load_example() {
     RenderData render_data;
     const auto aspect_ratio = 16.0 / 9.0;
-    setRenderData(render_data, aspect_ratio, 1200, 50, 50);
+    setRenderData(render_data, aspect_ratio, 400, 50, 50);
     std::string filePath = "example.csr";
     RTCDevice device = initializeDevice();
     CSRParser parser;
