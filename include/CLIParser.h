@@ -13,9 +13,9 @@ struct Config {
     int samples_per_pixel = 50;
     int max_depth = 50;
     std::string inputFile = "example.csr";
-    std::string outputPath = "./";
+    std::string outputPath = "image.ppm";
     int image_width = 1200;
-    int image_height = 800;
+    int image_height = 675;
     std::string outputType = "ppm"; // [jpg|png|ppm]
     
     // Output flags
@@ -25,7 +25,7 @@ struct Config {
 
     // Optimization flags
     bool multithreading = false;
-    int threads = 1; // unused if multithreading is false. If it is set by -t, then bool multithreading is irrelevant.
+    int threads = -1; // if -1, then uses hardware concurrency. only used if multithreading is true.
     int vectorization = 0; // [NONE|4|8|16], NONE = 0    
 
 };
@@ -91,7 +91,7 @@ Config parseArguments(int argc, char* argv[]) {
         } else if(arg == "-h" || arg == "--help") {
             config.showHelp = true;
         } else if(arg == "-V" || arg == "--verbose") {
-            config.showHelp = true;
+            config.verbose = true;
         }
     }
     return config;
