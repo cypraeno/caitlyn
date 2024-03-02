@@ -20,6 +20,8 @@
 #include <iostream>
 #include <chrono>
 
+#include <functional>
+#include <fstream>
 
 // Threading
 #include <vector>
@@ -308,18 +310,15 @@ void render_scanlines_avx(int lines, int start_line, std::shared_ptr<Scene> scen
     int samples_per_pixel   = data.samples_per_pixel;
     int max_depth           = data.max_depth;
 
-    const int PACKET_SIZE = 8;
-
     std::vector<color> full_buffer(image_width);
 
     std::vector<RayQueue> queue;
     queue.reserve(image_width);
 
     std::vector<color> temp_buffer(image_width);
-    std::vector<RayQueue> current(PACKET_SIZE); // size = 8 only
+    std::vector<RayQueue> current(8); // size = 8 only
 
-    int mask[PACKET_SIZE];
-    std::fill(mask, mask+PACKET_SIZE, -1);
+    int mask[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
     
     for (int j=start_line; j>=start_line - (lines - 1); --j) {
         std::fill(full_buffer.begin(), full_buffer.end(), color(0, 0, 0));
@@ -336,21 +335,15 @@ void render_scanlines_avx(int lines, int start_line, std::shared_ptr<Scene> scen
 
             RTCRayHit8 rayhit;
 
-            for (int i=0; i<PACKET_SIZE; i++) {
+            for (int i=0; i<8; i++) {
                 RayQueue back = queue.back();
                 queue.pop_back();
                 current[i] = back;
             }
 
             std::fill(std::begin(mask), std::end(mask), -1);
-            bool maskContainsActive = true;
-            while (maskContainsActive) {
-                maskContainsActive = false;
-                for (int p=0; p<PACKET_SIZE; p++) {
-                    if (mask[p] == -1) { maskContainsActive = true; }
-                    break;
-                }
-
+            while (mask[0] != 0 or mask[1] != 0 or mask[2] != 0 or mask[3] != 0
+                    or mask[4] != 0 or mask[5] != 0 or mask[6] != 0 or mask[7] != 0) {
                 std::vector<ray> rays;
                 for (int i=0; i<(int)current.size(); i++) {
                     rays.push_back(current[i].r);
@@ -360,7 +353,7 @@ void render_scanlines_avx(int lines, int start_line, std::shared_ptr<Scene> scen
 
                 HitInfo record;
 
-                for (int i=0; i<PACKET_SIZE; i++) {
+                for (int i=0; i<8; i++) {
                     if (mask[i] == 0) { continue; }
                     ray current_ray = current[i].r;
                     int current_index = current[i].index;
@@ -404,6 +397,9 @@ void render_scanlines_avx(int lines, int start_line, std::shared_ptr<Scene> scen
     }
 }
 
+/**
+ * @brief Given scene, camera, and render_data, output ppm pixels image to std::cout
+*/
 void output(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_ptr) {
     int image_height = render_data.image_height;
     int image_width = render_data.image_width;
@@ -427,7 +423,6 @@ void output(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_p
     std::vector<color> pixel_colors;
     std::vector<std::thread> threads;
 
-    render_data.completed_lines = 0;
 
     for (int i=0; i < num_threads; i++) {
         // In the first thead, we want the first lines_per_thread lines to be rendered
@@ -457,6 +452,89 @@ void output(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_p
     double time_seconds = elapsed_time / 1000.0;
 
     std::cerr << "\nCompleted render of scene. Render time: " << time_seconds << " seconds" << "\n";
+}
+
+/**
+ * @brief modified version of other output that takes in CLI arguments and modifies behaviour.
+ * @note eventually should REPLACE the other one. The other one exists to keep other scenes intact.
+ * @note In the future, RenderData can be replaced by Config (or the other way around).
+ * The render functions should be modified to take in a std::vector<color> buffer(image_width * image_height);
+ * since that is the only property of RenderData needed that DOES NOT EXIST in Config.
+*/
+void output(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_ptr, Config& config) {
+    int image_height = render_data.image_height;
+    int image_width = render_data.image_width;
+    int samples_per_pixel = render_data.samples_per_pixel;
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+    render_data.completed_lines = 0;
+
+    std::function<void(int, int, std::shared_ptr<Scene>, RenderData&, Camera)> render_function;
+
+    if (config.vectorization == 0) { render_function = render_scanlines; }
+    else if (config.vectorization == 4) { render_function = render_scanlines_sse; }
+    else if (config.vectorization == 8) { render_function = render_scanlines_avx; }
+    else if (config.vectorization == 16) { render_function = render_scanlines_avx; } // replace with 16 batch render_scanlines when made
+    else { render_function = render_scanlines; }
+    if (!config.multithreading) {
+        render_function(image_height, image_height-1, scene_ptr, render_data, cam);
+    } else {
+        int num_threads;
+        if (config.threads == -1) {
+            // Threading approach? : Divide the scanlines into N blocks
+            num_threads = std::thread::hardware_concurrency() - 1;
+        } else {
+            num_threads = config.threads;
+        }
+        // Image height is the number of scanlines, suppose image_height = 800
+        const int lines_per_thread = image_height / num_threads;
+        const int leftOver = image_height % num_threads;
+        // The first <num_threads> threads are dedicated <lines_per_thread> lines, and the last thread is dedicated to <leftOver>
+
+        std::vector<color> pixel_colors;
+        std::vector<std::thread> threads;
+
+        for (int i=0; i < num_threads; i++) {
+            // In the first thead, we want the first lines_per_thread lines to be rendered
+            threads.emplace_back(render_function,lines_per_thread,(image_height-1) - (i * lines_per_thread), scene_ptr, std::ref(render_data),cam);
+        }
+        threads.emplace_back(render_function,leftOver,(image_height-1) - (num_threads * lines_per_thread), scene_ptr, std::ref(render_data),cam);
+
+        for (auto &thread : threads) {
+            thread.join();
+        }
+
+        if (config.verbose) {std::cerr << "Joining all threads" << std::endl;}
+        threads.clear();
+    }
+
+    std::ofstream outFile(config.outputPath);
+    if (!outFile.is_open()) {throw std::runtime_error("Could not open file: " + config.outputPath);}
+    
+    // PPM outputting. No current support for JPG and PNG.
+    outFile << "P3" << std::endl;
+    outFile << image_width << ' ' << image_height << std::endl;
+    outFile << 255 << std::endl;
+    for (int j = image_height - 1; j >= 0; --j) {
+        for (int i = 0; i < image_width; ++i) {
+            int buffer_index = j * image_width + i;
+            write_color(outFile, render_data.buffer[buffer_index], samples_per_pixel);
+        }
+        float percentage_completed = (((float)image_height - (float)j) / (float)image_height)*100.0;
+        if (config.verbose) {
+            std::cerr << "[" << (int)percentage_completed << "%] outputting completed" << std::endl;
+        }
+    }
+
+    if (config.verbose) {
+        auto current_time = std::chrono::high_resolution_clock::now();
+        auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
+        double time_seconds = elapsed_time / 1000.0;
+
+        std::cerr << "\nCompleted render of scene. Render time: " << time_seconds << " seconds" << "\n";
+    }
+
+    outFile.close();
 }
 
 void random_spheres() {
@@ -557,18 +635,18 @@ void earth() {
  * @brief loads "example.csr" in the same directory.
  * @note see example.csr in cypraeno/csr_schema repository
 */
-void load_example() {
+void load_example(Config& config) {
     RenderData render_data;
-    const auto aspect_ratio = 16.0 / 9.0;
-    setRenderData(render_data, aspect_ratio, 400, 50, 50);
-    std::string filePath = "example.csr";
+    const auto aspect_ratio = static_cast<float>(config.image_width) / config.image_height;
+    setRenderData(render_data, aspect_ratio, config.image_width, config.samples_per_pixel, config.max_depth);
+    std::string filePath = config.inputFile;
     RTCDevice device = initializeDevice();
     CSRParser parser;
     auto scene_ptr = parser.parseCSR(filePath, device);
     scene_ptr->commitScene();
     rtcReleaseDevice(device);
 
-    output(render_data, scene_ptr->cam, scene_ptr);
+    output(render_data, scene_ptr->cam, scene_ptr, config);
 }
 
 void quads() {
@@ -617,13 +695,14 @@ void quads() {
     output(render_data, cam, scene_ptr);
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    Config config = parseArguments(argc, argv);
     switch (5) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
         case 4:  quads();          break;
-        case 5:  load_example();   break;
+        case 5:  load_example(config);   break;
     }
 }
 
