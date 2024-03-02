@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <cstdlib>
 
 /**
  * @brief structure to hold all relevant data determined by flags.
@@ -29,6 +30,24 @@ struct Config {
     int vectorization = 0; // [NONE|4|8|16], NONE = 0    
 
 };
+
+void outputHelpGuide(std::ostream& out) {
+    out << "Usage: ./caitlyn [options]\n"
+        << "Options:\n"
+        << " -s,  --samples <number>               Number of samples per pixel.\n"
+        << " -d,  --depth <number>                 Maximum recursion depth for rays.\n"
+        << " -i,  --input <filepath>               Input file path for the scene.\n"
+        << " -o,  --output <path>                  Output path for the rendered image.\n"
+        << " -r,  --resolution <width> <height>    Resolution of the output image.\n"
+        << " -t,  --type <image_type>              Type of the output image [png|jpg|ppm].\n"
+        << " -mt, --multithreading                 Enable multithreading.\n"
+        << " -v,  --version                        Show the current version.\n"
+        << " -h,  --help                           Show this help message.\n"
+        << " -V,  --verbose                        Enables more descriptive messages of scenes and rendering process.\n"
+        << " -T,  --threads                        If multithreading is enabled, sets amount of threads used.\n"
+        << " -Vx, --vectorization                  Set SIMD vectorization batch size [NONE|4|8|16]. If NONE, do not enable the flag.\n";
+    exit(0);
+}
 
 /**
  * @brief given argc, argv, process and return a Config struct containing all the settings.
@@ -73,7 +92,7 @@ Config parseArguments(int argc, char* argv[]) {
             }
         } else if(arg == "-m" || arg == "--multithreading") {
             config.multithreading = true;
-        } else if(arg == "-t" || arg == "--threads") {
+        } else if(arg == "-T" || arg == "--threads") {
             if(i + 1 < argc) {
                 config.threads = std::stoi(argv[++i]);
             }
@@ -90,11 +109,10 @@ Config parseArguments(int argc, char* argv[]) {
             config.showVersion = true;
         } else if(arg == "-h" || arg == "--help") {
             config.showHelp = true;
+            outputHelpGuide(std::cout);
         } else if(arg == "-V" || arg == "--verbose") {
             config.verbose = true;
         }
     }
     return config;
 }
-
-void outputHelpGuide(std::ostream& out) {}
