@@ -29,6 +29,8 @@ elseif(COMPILER_SUPPORTS_SSE42)
   target_compile_definitions(caitlyn PRIVATE EMBREE_MAX_ISA=SSE4.2)
 endif()
 
+target_include_directories(caitlyn PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 # Instructions
 # Create build files:
 # mkdir build (if it does not exist already)

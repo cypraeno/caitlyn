@@ -14,6 +14,8 @@
 #include "intersects.h"
 #include "texture.h"
 
+#include "CLIParser.h"
+
 
 #include <iostream>
 #include <chrono>

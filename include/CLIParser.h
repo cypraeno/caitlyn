@@ -28,7 +28,7 @@ struct Config {
     int threads = 1; // unused if multithreading is false. If it is set by -t, then bool multithreading is irrelevant.
     int vectorization = 0; // [NONE|4|8|16], NONE = 0    
 
-}
+};
 
 /**
  * @brief given argc, argv, process and return a Config struct containing all the settings.
@@ -83,7 +83,7 @@ Config parseArguments(int argc, char* argv[]) {
                 if (choice == 0 || choice == 4 || choice == 8 || choice == 16) {
                     config.vectorization = choice;
                 } else {
-                    throw std::runtime_error("Error: Invalid option for --vectorization [1|4|8|16]. Use '--help' for more information.")
+                    throw std::runtime_error("Error: Invalid option for --vectorization [1|4|8|16]. Use '--help' for more information.");
                 }
             }
         } else if(arg == "-v" || arg == "--version") {
