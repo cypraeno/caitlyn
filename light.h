@@ -18,6 +18,10 @@ class emissive : public material {
     }
 };
 
+/**
+ * @brief Empty implementation of Light as a Visual. Update as light sampling
+ * is implemented and non-physical lights become possible.
+*/
 class Light : public Visual {
     public:
     Light(vec3 position) : Visual(position) {}
