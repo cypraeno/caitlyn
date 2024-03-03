@@ -44,8 +44,8 @@ void outputHelpGuide(std::ostream& out) {
         << " -v,  --version                        Show the current version.\n"
         << " -h,  --help                           Show this help message.\n"
         << " -V,  --verbose                        Enables more descriptive messages of scenes and rendering process.\n"
-        << " -T,  --threads                        If multithreading is enabled, sets amount of threads used.\n"
-        << " -Vx, --vectorization                  Set SIMD vectorization batch size [NONE|4|8|16]. If NONE, do not enable the flag.\n";
+        << " -T,  --threads <amt>                  If multithreading is enabled, sets amount of threads used.\n"
+        << " -Vx, --vectorization <batch_size>     Set SIMD vectorization batch size [0|4|8|16]. If NONE = 0, do not enable the flag.\n";
     exit(0);
 }
 
@@ -72,9 +72,6 @@ int checkValidIntegerInput(int& i, int argc, char* argv[], std::string flagName)
  * @brief given argc, argv, process and return a Config struct containing all the settings.
  * Doesn't account for some invalid input, such as:
  * -> invalid input and output paths
- * -> negative image widths and heights
- * -> outputType that doesn't match an option
- * -> unneeded or too many or too little arguments for a flag
  * -> no checks for if threads or vectorization is supported by hardware
 */
 Config parseArguments(int argc, char* argv[]) {
@@ -98,22 +95,23 @@ Config parseArguments(int argc, char* argv[]) {
             config.image_height = checkValidIntegerInput(i, argc, argv, "-r/--resolution <width> <height>");
         } else if(arg == "-t" || arg == "--type") {
             if(i + 1 < argc) {
-                config.outputType = argv[++i];
+                std::string type(argv[++i]);
+                if (type == "ppm") {
+                    config.outputType = argv[++i];
+                } else {
+                    throw std::invalid_argument("Invalid argument for -t/--type [ppm]");
+                }
             }
         } else if(arg == "-m" || arg == "--multithreading") {
             config.multithreading = true;
         } else if(arg == "-T" || arg == "--threads") {
-            if(i + 1 < argc) {
-                config.threads = std::stoi(argv[++i]);
-            }
+            config.threads = checkValidIntegerInput(i, argc, argv, "-T/--threads");
         } else if(arg == "-Vx" || arg == "--vectorization") {
-            if(i + 1 < argc) {
-                int choice = checkValidIntegerInput(i, argc, argv, "-Vx/--vectorization");
-                if (choice == 0 || choice == 4 || choice == 8 || choice == 16) {
-                    config.vectorization = choice;
-                } else {
-                    throw std::invalid_argument("Error: Invalid option for --vectorization [1|4|8|16]. Use '--help' for more information.");
-                }
+            int choice = checkValidIntegerInput(i, argc, argv, "-Vx/--vectorization");
+            if (choice == 0 || choice == 4 || choice == 8 || choice == 16) {
+                config.vectorization = choice;
+            } else {
+                throw std::invalid_argument("Error: Invalid option for --vectorization [1|4|8|16]. Use '--help' for more information.");
             }
         } else if(arg == "-v" || arg == "--version") {
             config.showVersion = true;
@@ -122,6 +120,9 @@ Config parseArguments(int argc, char* argv[]) {
             outputHelpGuide(std::cout);
         } else if(arg == "-V" || arg == "--verbose") {
             config.verbose = true;
+        }
+        if (i + 1 < argc && argv[i + 1][0] != '-') {
+            throw std::invalid_argument("Too many arguments for "+arg+" flag.");
         }
     }
     return config;
