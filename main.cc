@@ -644,8 +644,8 @@ void simple_light() {
     auto scene_ptr = make_shared<Scene>(device, cam);
     
     // Materials
-    auto red     = make_shared<lambertian>(color(1.0, 0.2, 0.2));
-    auto green   = make_shared<lambertian>(color(0.2, 1.0, 0.2));
+    auto red     = make_shared<lambertian>(color(1.0, 0.2, 0.2)); // replace with noise once implemented
+    auto green   = make_shared<lambertian>(color(0.2, 1.0, 0.2)); // replace with noise once implemented
 
     auto sphere1 = make_shared<SpherePrimitive>(point3(0,-1000,0), red, 1000, device);
     auto sphere2 = make_shared<SpherePrimitive>(point3(0,2,0), green, 2, device);
@@ -690,7 +690,7 @@ void cornell_box() {
     auto red   = make_shared<lambertian>(color(.65, .05, .05));
     auto white = make_shared<lambertian>(color(.73, .73, .73));
     auto green = make_shared<lambertian>(color(.12, .45, .15));
-    auto lightmaterial = make_shared<emissive>(color(6,6,6));
+    auto lightmaterial = make_shared<emissive>(color(15,15,15));
 
     auto quad1 = make_shared<QuadPrimitive>(point3(555,0,0), vec3(0,555,0), vec3(0,0,555), green, device);
     auto quad2 = make_shared<QuadPrimitive>(point3(0,0,0), vec3(0,555,0), vec3(0,0,555), red, device);
