@@ -667,14 +667,62 @@ void simple_light() {
     output(render_data, cam, scene_ptr);
 }
 
+void cornell_box() {
+    RenderData render_data; 
+    const auto aspect_ratio = 1.0;
+    setRenderData(render_data, aspect_ratio, 600, 200, 50);
+
+    // Set up Camera
+    point3 lookfrom(278, 278, -800);
+    point3 lookat(278, 278, 0);
+    vec3 vup(0,1,0);
+    double vfov = 40;
+    double aperture = 0.0001;
+    double dist_to_focus = 10.0;
+
+    Camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
+    // Simple usage of creating a Scene
+    RTCDevice device = initializeDevice();
+    auto scene_ptr = make_shared<Scene>(device, cam);
+
+    // Materials
+    auto red   = make_shared<lambertian>(color(.65, .05, .05));
+    auto white = make_shared<lambertian>(color(.73, .73, .73));
+    auto green = make_shared<lambertian>(color(.12, .45, .15));
+    auto lightmaterial = make_shared<emissive>(color(6,6,6));
+
+    auto quad1 = make_shared<QuadPrimitive>(point3(555,0,0), vec3(0,555,0), vec3(0,0,555), green, device);
+    auto quad2 = make_shared<QuadPrimitive>(point3(0,0,0), vec3(0,555,0), vec3(0,0,555), red, device);
+    auto quad3 = make_shared<QuadPrimitive>(point3(343, 554, 332), vec3(-130,0,0), vec3(0,0,-105), lightmaterial, device);
+    auto quad4 = make_shared<QuadPrimitive>(point3(0,0,0), vec3(555,0,0), vec3(0,0,555), white, device);
+    auto quad5 = make_shared<QuadPrimitive>(point3(555,555,555), vec3(-555,0,0), vec3(0,0,-555), white, device);
+    auto quad6 = make_shared<QuadPrimitive>(point3(0,0,555), vec3(555,0,0), vec3(0,555,0), white, device);
+
+    // Add to Scene
+    scene_ptr->add_primitive(quad1);
+    scene_ptr->add_primitive(quad2);
+    scene_ptr->add_primitive(quad3);
+    scene_ptr->add_primitive(quad4);
+    scene_ptr->add_primitive(quad5);
+    scene_ptr->add_primitive(quad6);
+
+    scene_ptr->commitScene();
+
+    rtcReleaseDevice(device);
+
+    output(render_data, cam, scene_ptr);
+}
+
 int main() {
-    switch (6) {
+    switch (7) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
         case 4:  quads();          break;
         case 5:  load_example();   break;
-        case 6: simple_light();    break;
+        case 6:  simple_light();   break;
+        case 7:  cornell_box();    break;
     }
 }
 
