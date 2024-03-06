@@ -130,7 +130,6 @@ color colorize_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
     vec3 unit_direction = r.direction().unit_vector();
     auto t = 0.5*(unit_direction.y() + 1.0);
 
-    return color(0, 0, 0); // temp black for lights
     return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
 }
 
@@ -393,14 +392,27 @@ void render_scanlines_avx(int lines, int start_line, std::shared_ptr<Scene> scen
                         std::shared_ptr<Geometry> geomhit = scene_ptr->geom_map[rayhit.hit.geomID[i]];
                         std::shared_ptr<material> mat_ptr = geomhit->materialById(rayhit.hit.geomID[i]);
                         record = geomhit->getHitInfo(current_ray, current_ray.at(rayhit.ray.tfar[i]), rayhit.ray.tfar[i], rayhit.hit.geomID[i]);
-                        if (!mat_ptr->scatter(current_ray, record, attenuation, scattered)) { attenuation = color(0,0,0); }
-                        if (current[i].depth == 0) { temp_buffer[current_index] = attenuation; }
-                        else { temp_buffer[current_index] = temp_buffer[current_index] * attenuation; }
-                        if (current[i].depth + 1 == max_depth) { // reached max depth, replace with next in queue
+                        
+                        color color_from_emission = mat_ptr->emitted(record.u, record.v, record.pos);
+                        if (!mat_ptr->scatter(current_ray, record, attenuation, scattered)) {
+                            if (current[i].depth == 0) { temp_buffer[current_index] = color_from_emission; }
+                            else { temp_buffer[current_index] = temp_buffer[current_index] + (attenuation_buffer[current_index] * color_from_emission); }
                             completeRayQueueTask(current, temp_buffer, full_buffer, queue, mask, i, current_index);
-                        } else { // not finished depth wise
-                            current[i].depth += 1;
-                            current[i].r = scattered;
+                        } else {
+                            if (current[i].depth == 0) {
+                                temp_buffer[current_index] = color_from_emission;
+                                attenuation_buffer[current_index] = attenuation;
+                            }
+                            else {
+                                temp_buffer[current_index] = temp_buffer[current_index] + (attenuation_buffer[current_index] * color_from_emission);
+                                attenuation_buffer[current_index] = attenuation_buffer[current_index] * attenuation;
+                            }
+                            if (current[i].depth + 1 == max_depth) { // reached max depth, replace with next in queue
+                                completeRayQueueTask(current, temp_buffer, full_buffer, queue, mask, i, current_index);
+                            } else { // not finished depth wise
+                                current[i].depth += 1;
+                                current[i].r = scattered;
+                            }
                         }
                     } else { // no hit
                         // Sky background (gradient blue-white)
@@ -408,8 +420,8 @@ void render_scanlines_avx(int lines, int start_line, std::shared_ptr<Scene> scen
                         auto t = 0.5*(unit_direction.y() + 1.0);
 
                         color multiplier = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
-                        if (current[i].depth == 0) { temp_buffer[current_index] = multiplier; } 
-                        else { temp_buffer[current_index] = temp_buffer[current_index] * multiplier; }
+                        if (current[i].depth == 0) { temp_buffer[current_index] = multiplier; }
+                        else { temp_buffer[current_index] = temp_buffer[current_index] + (attenuation_buffer[current_index] * multiplier); }
                         completeRayQueueTask(current, temp_buffer, full_buffer, queue, mask, i, current_index);
                     }
                 }
@@ -452,9 +464,9 @@ void output(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_p
 
     for (int i=0; i < num_threads; i++) {
         // In the first thead, we want the first lines_per_thread lines to be rendered
-        threads.emplace_back(render_scanlines,lines_per_thread,(image_height-1) - (i * lines_per_thread), scene_ptr, std::ref(render_data),cam);
+        threads.emplace_back(render_scanlines_sse,lines_per_thread,(image_height-1) - (i * lines_per_thread), scene_ptr, std::ref(render_data),cam);
     }
-    threads.emplace_back(render_scanlines,leftOver,(image_height-1) - (num_threads * lines_per_thread), scene_ptr, std::ref(render_data),cam);
+    threads.emplace_back(render_scanlines_sse,leftOver,(image_height-1) - (num_threads * lines_per_thread), scene_ptr, std::ref(render_data),cam);
 
     for (auto &thread : threads) {
             thread.join();
@@ -685,7 +697,7 @@ void simple_light() {
 void cornell_box() {
     RenderData render_data; 
     const auto aspect_ratio = 1.0;
-    setRenderData(render_data, aspect_ratio, 600, 20, 20);
+    setRenderData(render_data, aspect_ratio, 600, 200, 50);
 
     // Set up Camera
     point3 lookfrom(278, 278, -800);
