@@ -13,6 +13,7 @@
 #include "quad_primitive.h"
 #include "intersects.h"
 #include "texture.h"
+#include "light.h"
 
 
 #include <iostream>
@@ -114,9 +115,15 @@ color colorize_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
         std::shared_ptr<Geometry> geomhit = scene->geom_map[rayhit.hit.geomID];
         std::shared_ptr<material> mat_ptr = geomhit->materialById(rayhit.hit.geomID);
         record = geomhit->getHitInfo(r, r.at(rayhit.ray.tfar), rayhit.ray.tfar, rayhit.hit.geomID);
-        if (mat_ptr->scatter(r, record, attenuation, scattered)) return attenuation * colorize_ray(scattered, scene, depth-1);
 
-        return color(0,0,0);
+        color color_from_emission = mat_ptr->emitted(record.u, record.v, record.pos);
+        if (!mat_ptr->scatter(r, record, attenuation, scattered)) {
+            return color_from_emission;
+        } 
+
+        color color_from_scatter = attenuation * colorize_ray(scattered, scene, depth-1);
+
+        return color_from_emission + color_from_scatter;
     }
 
     // Sky background (gradient blue-white)
@@ -215,6 +222,7 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
     queue.reserve(image_width);
 
     std::vector<color> temp_buffer(image_width);
+    std::vector<color> attenuation_buffer(image_width);
     std::vector<RayQueue> current(4); // size = 4 only
 
     int mask[4] = {-1, -1, -1, -1};
@@ -223,6 +231,7 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
         std::fill(full_buffer.begin(), full_buffer.end(), color(0, 0, 0));
         for (int s=0; s < samples_per_pixel; s++) {
             std::fill(temp_buffer.begin(), temp_buffer.end(), color(0, 0, 0));
+            std::fill(attenuation_buffer.begin(), attenuation_buffer.end(), color(0, 0, 0));
             queue.clear();
             for (int i=image_width-1; i>=0; --i) {
                 auto u = (i + random_double()) / (image_width-1);
@@ -263,14 +272,27 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                         std::shared_ptr<Geometry> geomhit = scene_ptr->geom_map[rayhit.hit.geomID[i]];
                         std::shared_ptr<material> mat_ptr = geomhit->materialById(rayhit.hit.geomID[i]);
                         record = geomhit->getHitInfo(current_ray, current_ray.at(rayhit.ray.tfar[i]), rayhit.ray.tfar[i], rayhit.hit.geomID[i]);
-                        if (!mat_ptr->scatter(current_ray, record, attenuation, scattered)) { attenuation = color(0,0,0); }
-                        if (current[i].depth == 0) { temp_buffer[current_index] = attenuation; }
-                        else { temp_buffer[current_index] = temp_buffer[current_index] * attenuation; }
-                        if (current[i].depth + 1 == max_depth) { // reached max depth, replace with next in queue
+                        
+                        color color_from_emission = mat_ptr->emitted(record.u, record.v, record.pos);
+                        if (!mat_ptr->scatter(current_ray, record, attenuation, scattered)) {
+                            if (current[i].depth == 0) { temp_buffer[current_index] = color_from_emission; }
+                            else { temp_buffer[current_index] = temp_buffer[current_index] + (attenuation_buffer[current_index] * color_from_emission); }
                             completeRayQueueTask(current, temp_buffer, full_buffer, queue, mask, i, current_index);
-                        } else { // not finished depth wise
-                            current[i].depth += 1;
-                            current[i].r = scattered;
+                        } else {
+                            if (current[i].depth == 0) {
+                                temp_buffer[current_index] = color_from_emission;
+                                attenuation_buffer[current_index] = attenuation;
+                            }
+                            else {
+                                temp_buffer[current_index] = temp_buffer[current_index] + (attenuation_buffer[current_index] * color_from_emission);
+                                attenuation_buffer[current_index] = attenuation_buffer[current_index] * attenuation;
+                            }
+                            if (current[i].depth + 1 == max_depth) { // reached max depth, replace with next in queue
+                                completeRayQueueTask(current, temp_buffer, full_buffer, queue, mask, i, current_index);
+                            } else { // not finished depth wise
+                                current[i].depth += 1;
+                                current[i].r = scattered;
+                            }
                         }
                     } else { // no hit
                         // Sky background (gradient blue-white)
@@ -278,8 +300,8 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                         auto t = 0.5*(unit_direction.y() + 1.0);
 
                         color multiplier = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
-                        if (current[i].depth == 0) { temp_buffer[current_index] = multiplier; } 
-                        else { temp_buffer[current_index] = temp_buffer[current_index] * multiplier; }
+                        if (current[i].depth == 0) { temp_buffer[current_index] = multiplier; }
+                        else { temp_buffer[current_index] = temp_buffer[current_index] + (attenuation_buffer[current_index] * multiplier); }
                         completeRayQueueTask(current, temp_buffer, full_buffer, queue, mask, i, current_index);
                     }
                 }
@@ -370,14 +392,27 @@ void render_scanlines_avx(int lines, int start_line, std::shared_ptr<Scene> scen
                         std::shared_ptr<Geometry> geomhit = scene_ptr->geom_map[rayhit.hit.geomID[i]];
                         std::shared_ptr<material> mat_ptr = geomhit->materialById(rayhit.hit.geomID[i]);
                         record = geomhit->getHitInfo(current_ray, current_ray.at(rayhit.ray.tfar[i]), rayhit.ray.tfar[i], rayhit.hit.geomID[i]);
-                        if (!mat_ptr->scatter(current_ray, record, attenuation, scattered)) { attenuation = color(0,0,0); }
-                        if (current[i].depth == 0) { temp_buffer[current_index] = attenuation; }
-                        else { temp_buffer[current_index] = temp_buffer[current_index] * attenuation; }
-                        if (current[i].depth + 1 == max_depth) { // reached max depth, replace with next in queue
+                        
+                        color color_from_emission = mat_ptr->emitted(record.u, record.v, record.pos);
+                        if (!mat_ptr->scatter(current_ray, record, attenuation, scattered)) {
+                            if (current[i].depth == 0) { temp_buffer[current_index] = color_from_emission; }
+                            else { temp_buffer[current_index] = temp_buffer[current_index] + (attenuation_buffer[current_index] * color_from_emission); }
                             completeRayQueueTask(current, temp_buffer, full_buffer, queue, mask, i, current_index);
-                        } else { // not finished depth wise
-                            current[i].depth += 1;
-                            current[i].r = scattered;
+                        } else {
+                            if (current[i].depth == 0) {
+                                temp_buffer[current_index] = color_from_emission;
+                                attenuation_buffer[current_index] = attenuation;
+                            }
+                            else {
+                                temp_buffer[current_index] = temp_buffer[current_index] + (attenuation_buffer[current_index] * color_from_emission);
+                                attenuation_buffer[current_index] = attenuation_buffer[current_index] * attenuation;
+                            }
+                            if (current[i].depth + 1 == max_depth) { // reached max depth, replace with next in queue
+                                completeRayQueueTask(current, temp_buffer, full_buffer, queue, mask, i, current_index);
+                            } else { // not finished depth wise
+                                current[i].depth += 1;
+                                current[i].r = scattered;
+                            }
                         }
                     } else { // no hit
                         // Sky background (gradient blue-white)
@@ -385,8 +420,8 @@ void render_scanlines_avx(int lines, int start_line, std::shared_ptr<Scene> scen
                         auto t = 0.5*(unit_direction.y() + 1.0);
 
                         color multiplier = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
-                        if (current[i].depth == 0) { temp_buffer[current_index] = multiplier; } 
-                        else { temp_buffer[current_index] = temp_buffer[current_index] * multiplier; }
+                        if (current[i].depth == 0) { temp_buffer[current_index] = multiplier; }
+                        else { temp_buffer[current_index] = temp_buffer[current_index] + (attenuation_buffer[current_index] * multiplier); }
                         completeRayQueueTask(current, temp_buffer, full_buffer, queue, mask, i, current_index);
                     }
                 }
@@ -429,9 +464,9 @@ void output(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_p
 
     for (int i=0; i < num_threads; i++) {
         // In the first thead, we want the first lines_per_thread lines to be rendered
-        threads.emplace_back(render_scanlines,lines_per_thread,(image_height-1) - (i * lines_per_thread), scene_ptr, std::ref(render_data),cam);
+        threads.emplace_back(render_scanlines_sse,lines_per_thread,(image_height-1) - (i * lines_per_thread), scene_ptr, std::ref(render_data),cam);
     }
-    threads.emplace_back(render_scanlines,leftOver,(image_height-1) - (num_threads * lines_per_thread), scene_ptr, std::ref(render_data),cam);
+    threads.emplace_back(render_scanlines_sse,leftOver,(image_height-1) - (num_threads * lines_per_thread), scene_ptr, std::ref(render_data),cam);
 
     for (auto &thread : threads) {
             thread.join();
@@ -615,13 +650,106 @@ void quads() {
     output(render_data, cam, scene_ptr);
 }
 
+
+void simple_light() {
+    RenderData render_data; 
+    const auto aspect_ratio = 16.0 / 9.0;
+    setRenderData(render_data, aspect_ratio, 400, 100, 50);
+
+    // Set up Camera
+    point3 lookfrom(26,3,6);
+    point3 lookat(0,2,0);
+    vec3 vup(0,1,0);
+    double vfov = 20;
+    double aperture = 0.0001;
+    double dist_to_focus = 10.0;
+
+    Camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
+    // Simple usage of creating a Scene
+    RTCDevice device = initializeDevice();
+    auto scene_ptr = make_shared<Scene>(device, cam);
+    
+    // Materials
+    auto red     = make_shared<lambertian>(color(1.0, 0.2, 0.2)); // replace with noise once implemented
+    auto green   = make_shared<lambertian>(color(0.2, 1.0, 0.2)); // replace with noise once implemented
+
+    auto sphere1 = make_shared<SpherePrimitive>(point3(0,-1000,0), red, 1000, device);
+    auto sphere2 = make_shared<SpherePrimitive>(point3(0,2,0), green, 2, device);
+
+    auto lightmaterial = make_shared<emissive>(color(6,6,6));
+    auto lightsphere = make_shared<SpherePrimitive>(point3(0,7,0), lightmaterial, 2, device);
+    auto lightquad = make_shared<QuadPrimitive>(point3(3,1,-2), vec3(2,0,0), vec3(0,2,0), lightmaterial, device);
+
+    // Add to Scene
+    scene_ptr->add_primitive(lightquad);
+    scene_ptr->add_primitive(lightsphere);
+    scene_ptr->add_primitive(sphere1);
+    scene_ptr->add_primitive(sphere2);
+
+    scene_ptr->commitScene();
+
+    rtcReleaseDevice(device);
+
+    output(render_data, cam, scene_ptr);
+}
+
+void cornell_box() {
+    RenderData render_data; 
+    const auto aspect_ratio = 1.0;
+    setRenderData(render_data, aspect_ratio, 600, 200, 50);
+
+    // Set up Camera
+    point3 lookfrom(278, 278, -800);
+    point3 lookat(278, 278, 0);
+    vec3 vup(0,1,0);
+    double vfov = 40;
+    double aperture = 0.0001;
+    double dist_to_focus = 10.0;
+
+    Camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
+    // Simple usage of creating a Scene
+    RTCDevice device = initializeDevice();
+    auto scene_ptr = make_shared<Scene>(device, cam);
+
+    // Materials
+    auto red   = make_shared<lambertian>(color(.65, .05, .05));
+    auto white = make_shared<lambertian>(color(.73, .73, .73));
+    auto green = make_shared<lambertian>(color(.12, .45, .15));
+    auto lightmaterial = make_shared<emissive>(color(15,15,15));
+
+    auto quad1 = make_shared<QuadPrimitive>(point3(555,0,0), vec3(0,555,0), vec3(0,0,555), green, device);
+    auto quad2 = make_shared<QuadPrimitive>(point3(0,0,0), vec3(0,555,0), vec3(0,0,555), red, device);
+    auto quad3 = make_shared<QuadPrimitive>(point3(343, 554, 332), vec3(-130,0,0), vec3(0,0,-105), lightmaterial, device);
+    auto quad4 = make_shared<QuadPrimitive>(point3(0,0,0), vec3(555,0,0), vec3(0,0,555), white, device);
+    auto quad5 = make_shared<QuadPrimitive>(point3(555,555,555), vec3(-555,0,0), vec3(0,0,-555), white, device);
+    auto quad6 = make_shared<QuadPrimitive>(point3(0,0,555), vec3(555,0,0), vec3(0,555,0), white, device);
+
+    // Add to Scene
+    scene_ptr->add_primitive(quad1);
+    scene_ptr->add_primitive(quad2);
+    scene_ptr->add_primitive(quad3);
+    scene_ptr->add_primitive(quad4);
+    scene_ptr->add_primitive(quad5);
+    scene_ptr->add_primitive(quad6);
+
+    scene_ptr->commitScene();
+
+    rtcReleaseDevice(device);
+
+    output(render_data, cam, scene_ptr);
+}
+
 int main() {
-    switch (5) {
+    switch (7) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
         case 4:  quads();          break;
         case 5:  load_example();   break;
+        case 6:  simple_light();   break;
+        case 7:  cornell_box();    break;
     }
 }
 
