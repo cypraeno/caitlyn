@@ -36,13 +36,15 @@ public:
         std::map<std::string, std::shared_ptr<material>> materials;
         std::map<std::string, std::shared_ptr<texture>> textures;
         
-        if (!file.is_open()) {
+        if (!file.is_open() || !file.good()) {
+            rtcReleaseDevice(device);
             throw std::runtime_error("Could not open file: " + filePath);
         }
 
         // Read in version
         getNextLine(file, line);
         if (trim(line) != "version 0.1.0") {
+            rtcReleaseDevice(device);
             throw std::runtime_error("Unsupported version or missing version marker");
         }
 

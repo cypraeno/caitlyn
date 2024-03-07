@@ -71,7 +71,7 @@ int checkValidIntegerInput(int& i, int argc, char* argv[], std::string flagName)
 /**
  * @brief given argc, argv, process and return a Config struct containing all the settings.
  * Doesn't account for some invalid input, such as:
- * -> invalid input and output paths
+ * -> invalid output path
  * -> no checks for if threads or vectorization is supported by hardware
 */
 Config parseArguments(int argc, char* argv[]) {
