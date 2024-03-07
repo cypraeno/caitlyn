@@ -10,6 +10,7 @@
 #include <optional>
 #include "camera.h"
 #include "material.h"
+#include "light.h"
 #include "texture.h"
 #include "sphere_primitive.h"
 #include "quad_primitive.h"
@@ -43,7 +44,7 @@ public:
 
         // Read in version
         getNextLine(file, line);
-        if (trim(line) != "version 0.1.0") {
+        if (trim(line) != "version 0.1.1") {
             rtcReleaseDevice(device);
             throw std::runtime_error("Unsupported version or missing version marker");
         }
@@ -77,6 +78,13 @@ public:
                     std::string materialId, ir;
                     getNextLine(file, materialId); getNextLine(file, ir);
                     materials[readStringProperty(materialId)] = std::make_shared<dielectric>(readDoubleProperty(ir));
+                } else if (materialType == "Emissive") {
+                    std::string materialId, rgb, strength;
+                    getNextLine(file, materialId); getNextLine(file, rgb); getNextLine(file, strength);
+                    materials[readStringProperty(materialId)] = std::make_shared<emissive>( (readDoubleProperty(strength) * readXYZProperty(rgb)) );
+                } else {
+                    rtcReleaseDevice(device);
+                    throw std::runtime_error("Material type UNDEFINED: Material[Lambertian|Metal|Dielectric|Emissive]");
                 }
             } else if (startsWith(line, "Texture")) {
                 auto idStart = line.find('[') + 1;

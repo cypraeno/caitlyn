@@ -825,7 +825,7 @@ void cornell_box() {
 
 int main(int argc, char* argv[]) {
     Config config = parseArguments(argc, argv);
-    switch (7) {
+    switch (5) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
