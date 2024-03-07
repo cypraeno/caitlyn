@@ -338,6 +338,7 @@ void render_scanlines_avx(int lines, int start_line, std::shared_ptr<Scene> scen
     queue.reserve(image_width);
 
     std::vector<color> temp_buffer(image_width);
+    std::vector<color> attenuation_buffer(image_width);
     std::vector<RayQueue> current(8); // size = 8 only
 
     int mask[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
@@ -346,6 +347,7 @@ void render_scanlines_avx(int lines, int start_line, std::shared_ptr<Scene> scen
         std::fill(full_buffer.begin(), full_buffer.end(), color(0, 0, 0));
         for (int s=0; s < samples_per_pixel; s++) {
             std::fill(temp_buffer.begin(), temp_buffer.end(), color(0, 0, 0));
+            std::fill(attenuation_buffer.begin(), attenuation_buffer.end(), color(0, 0, 0));
             queue.clear();
             for (int i=image_width-1; i>=0; --i) {
                 auto u = (i + random_double()) / (image_width-1);
