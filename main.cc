@@ -19,6 +19,7 @@
 #include <iostream>
 #include <chrono>
 
+#include "png_output.h"
 
 // Threading
 #include <vector>
@@ -476,22 +477,24 @@ void output(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_p
     std::cerr << "Joining all threads" << std::endl;
     threads.clear();
 
-    std::cout << "P3" << std::endl;
-    std::cout << image_width << ' ' << image_height << std::endl;
-    std::cout << 255 << std::endl;
-    for (int j = image_height - 1; j >= 0; --j) {
-        for (int i = 0; i < image_width; ++i) {
-            int buffer_index = j * image_width + i;
-            write_color(std::cout, render_data.buffer[buffer_index], samples_per_pixel);
-        }
-        float percentage_completed = (((float)image_height - (float)j) / (float)image_height)*100.0;
-        std::cerr << "[" << (int)percentage_completed << "%] outputting completed" << std::endl;
-    }
-    auto current_time = std::chrono::high_resolution_clock::now();
-    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
-    double time_seconds = elapsed_time / 1000.0;
+    write_png("output.png", image_width, image_height, samples_per_pixel, render_data.buffer);
 
-    std::cerr << "\nCompleted render of scene. Render time: " << time_seconds << " seconds" << "\n";
+    // std::cout << "P3" << std::endl;
+    // std::cout << image_width << ' ' << image_height << std::endl;
+    // std::cout << 255 << std::endl;
+    // for (int j = image_height - 1; j >= 0; --j) {
+    //     for (int i = 0; i < image_width; ++i) {
+    //         int buffer_index = j * image_width + i;
+    //         write_color(std::cout, render_data.buffer[buffer_index], samples_per_pixel);
+    //     }
+    //     float percentage_completed = (((float)image_height - (float)j) / (float)image_height)*100.0;
+    //     std::cerr << "[" << (int)percentage_completed << "%] outputting completed" << std::endl;
+    // }
+    // auto current_time = std::chrono::high_resolution_clock::now();
+    // auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
+    // double time_seconds = elapsed_time / 1000.0;
+
+    // std::cerr << "\nCompleted render of scene. Render time: " << time_seconds << " seconds" << "\n";
 }
 
 void random_spheres() {
@@ -699,7 +702,7 @@ void simple_light() {
 void cornell_box() {
     RenderData render_data; 
     const auto aspect_ratio = 1.0;
-    setRenderData(render_data, aspect_ratio, 600, 200, 50);
+    setRenderData(render_data, aspect_ratio, 600, 20, 20);
 
     // Set up Camera
     point3 lookfrom(278, 278, -800);
