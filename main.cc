@@ -743,8 +743,38 @@ void cornell_box() {
     output(render_data, cam, scene_ptr);
 }
 
+void two_perlin_spheres(){
+    RenderData render_data; 
+    const auto aspect_ratio = 16.0 / 9.0;
+    setRenderData(render_data, aspect_ratio, 400, 100, 50);
+
+    // Set up Camera
+    point3 lookfrom(13, 2, 3);
+    point3 lookat(0, 0, 0);
+    vec3 vup(0,1,0);
+    double vfov = 20;
+    double aperture = 0.0001;
+    double dist_to_focus = 10.0;
+
+    Camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
+    // Simple usage of creating a Scene
+    RTCDevice device = initializeDevice();
+    auto scene_ptr = make_shared<Scene>(device, cam);
+
+    // Materials
+    auto pertext = make_shared<noise_texture>();
+    auto perlin = make_shared<lambertian>(pertext);
+
+    auto sphere1 = make_shared<SpherePrimitive>(point3(0,-1000, 0), perlin, 1000, device);
+    auto sphere2 = make_shared<SpherePrimitive>(point3(0,2, 0), perlin, 2, device);
+
+
+
+}
+
 int main() {
-    switch (7) {
+    switch (4) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;

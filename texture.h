@@ -3,6 +3,7 @@
 
 #include "general.h"
 #include "rtw_stb_image.h"
+#include "perlin.h"
 
 
 class texture {
@@ -10,6 +11,18 @@ class texture {
     virtual ~texture() = default;
 
     virtual color value(double u, double v, const point3& p) const = 0;
+};
+
+class noise_texture : public texture {
+  public:
+    noise_texture() {}
+
+    color value(double u, double v, const point3& p) const override {
+        return color(1,1,1) * noise.noise(p);
+    }
+
+  private:
+    perlin noise;
 };
 
 
