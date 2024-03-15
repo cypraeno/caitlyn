@@ -38,7 +38,7 @@ void write_png(const char* filename, int width, int height, int samples_per_pixe
     png_bytep row = (png_bytep) malloc(3 * width * sizeof(png_byte));
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            color col = buffer[y * width + x];
+            color col = buffer[(height - y - 1) * width + x];
             row[x*3 + 0] = to_byte(col.x(), samples_per_pixel);
             row[x*3 + 1] = to_byte(col.y(), samples_per_pixel);
             row[x*3 + 2] = to_byte(col.z(), samples_per_pixel);
