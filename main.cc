@@ -763,7 +763,7 @@ void two_perlin_spheres(){
     auto scene_ptr = make_shared<Scene>(device, cam);
 
     // Materials
-    auto pertext = make_shared<noise_texture>();
+    auto pertext = make_shared<noise_texture>(4);
     auto perlin = make_shared<lambertian>(pertext);
 
     auto sphere1 = make_shared<SpherePrimitive>(point3(0,-1000, 0), perlin, 1000, device);
