@@ -787,7 +787,7 @@ int main() {
         case 5:  load_example();   break;
         case 6:  simple_light();   break;
         case 7:  cornell_box();    break;
-        case 8:  two_perlin_spheres(); break;
+        case 8: two_perlin_spheres() break;
     }
 }
 
