@@ -3,10 +3,8 @@
 #include <cstdio>
 #include "color.h"
 
-uint8_t to_byte(float value, int samples_per_pixel) {
-    auto scale = 1.0 / samples_per_pixel;
-    value = sqrt(scale * value);
-    return static_cast<uint8_t>(255.99 * clamp(value, 0.0, 0.999));
+uint8_t to_byte(float value) {
+    return static_cast<uint8_t>(value);
 }
 
 void write_png(const char* filename, int width, int height, int samples_per_pixel, const std::vector<color>& buffer) {
@@ -38,10 +36,10 @@ void write_png(const char* filename, int width, int height, int samples_per_pixe
     png_bytep row = (png_bytep) malloc(3 * width * sizeof(png_byte));
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            color col = buffer[(height - y - 1) * width + x];
-            row[x*3 + 0] = to_byte(col.x(), samples_per_pixel);
-            row[x*3 + 1] = to_byte(col.y(), samples_per_pixel);
-            row[x*3 + 2] = to_byte(col.z(), samples_per_pixel);
+            color col = color_to_256(buffer[(height - y - 1) * width + x], samples_per_pixel);
+            row[x*3 + 0] = to_byte(col.x());
+            row[x*3 + 1] = to_byte(col.y());
+            row[x*3 + 2] = to_byte(col.z());
         }
         png_write_row(png_ptr, row);
     }
