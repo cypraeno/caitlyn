@@ -517,19 +517,19 @@ void outputJPEG(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> sce
     struct RGB data[image_height][image_width];
 
     for(int j = image_height - 1 ; j >= 0 ; j-- ){
-        for(int i = 0; i < image_width ; i++){
+        for(int i = 0; i < image_width; i++){
             int buffer_index = j * image_width + i;
             auto r = render_data.buffer[buffer_index].x();                
             auto g = render_data.buffer[buffer_index].y();                
             auto b = render_data.buffer[buffer_index].z();      
 
-            r = sqrt(scale * r);
-            g = sqrt(scale * g);
-            b = sqrt(scale * b);
+            r = 256 * clamp(sqrt(scale * r), 0.0, 0.999);
+            g = 256 * clamp(sqrt(scale * g), 0.0, 0.999);
+            b = 256 * clamp(sqrt(scale * b), 0.0, 0.999);
 
-            data[i][j].R = r;
-            data[i][j].G = g;
-            data[i][j].B = b;
+            data[image_height - j - 1][i].R = r;
+            data[image_height - j - 1][i].G = g;
+            data[image_height - j - 1][i].B = b;
         }
     }
     stbi_write_jpg("image.jpg", image_width, image_height, 3, data, 100);
@@ -631,7 +631,7 @@ void earth() {
     // When scene construction is finished, the device is no longer needed.
     rtcReleaseDevice(device);
 
-    output(render_data, cam, scene_ptr);
+    outputJPEG(render_data, cam, scene_ptr);
 }
 
 /**
@@ -699,7 +699,7 @@ void quads() {
 }
 
 int main() {
-    switch (2) {
+    switch (3) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
