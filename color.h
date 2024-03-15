@@ -5,22 +5,26 @@
 
 #include <iostream>
 
-void write_color(std::ostream &out, color pixel_color, int samples_per_pixel) {
-
-    auto r = pixel_color.x();
-    auto g = pixel_color.y();
-    auto b = pixel_color.z();
-
-    // Implemented gamma correction at gamma=2.0
+color color_to_256(color c, int samples_per_pixel) {
+    auto r = c.x();
+    auto g = c.y();
+    auto b = c.z();
+    
     auto scale = 1.0 / samples_per_pixel;
-    
-    r = sqrt(scale * r);
-    g = sqrt(scale * g);
-    b = sqrt(scale * b);
-    
-    out << static_cast<int>(256 * clamp(r, 0.0, 0.999)) << ' '
-        << static_cast<int>(256 * clamp(g, 0.0, 0.999)) << ' '
-        << static_cast<int>(256 * clamp(b, 0.0, 0.999)) << '\n';
+
+    r = 256 * clamp(sqrt(scale * r), 0.0, 0.999);
+    g = 256 * clamp(sqrt(scale * g), 0.0, 0.999);
+    b = 256 * clamp(sqrt(scale * b), 0.0, 0.999);
+
+    return color(r, g, b);
+}
+
+void write_color(std::ostream &out, color pixel_color, int samples_per_pixel) {
+    color to_256 = color_to_256(pixel_color, samples_per_pixel);
+
+    out << static_cast<int>(to_256.x()) << ' '
+        << static_cast<int>(to_256.y()) << ' '
+        << static_cast<int>(to_256.z()) << '\n';
 }
 
 #endif

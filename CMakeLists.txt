@@ -12,10 +12,17 @@ set(embree_DIR ../opt/lib/cmake/embree-4.3.0/)
 # set(TBB_DIR ../opt/lib/cmake/tbb/) haven't installed TBB, doesn't exist
 FIND_PACKAGE(embree 4 REQUIRED)
 
+# Find libpng package
+find_package(PNG REQUIRED)
+
 add_executable(caitlyn vec3.cc scene.cc rtw_stb_image.cc quad_primitive.cc main.cc) # Required
 
 # EMBREE CONFIG
 TARGET_LINK_LIBRARIES(caitlyn embree)
+
+# Link with libpng
+target_link_libraries(caitlyn ${PNG_LIBRARY})
+include_directories(${PNG_INCLUDE_DIR})
 
 target_compile_features(caitlyn PUBLIC cxx_std_11) # Set the C++ standard to C++11
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2") # Set the optimization level to -O2
