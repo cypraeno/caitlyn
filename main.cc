@@ -13,7 +13,8 @@
 #include "quad_primitive.h"
 #include "intersects.h"
 #include "texture.h"
-
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "external/stb_image_write.h"
 
 #include <iostream>
 #include <chrono>
@@ -457,6 +458,88 @@ void output(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_p
     std::cerr << "\nCompleted render of scene. Render time: " << time_seconds << " seconds" << "\n";
 }
 
+struct RGB{
+    unsigned char R;
+    unsigned char G;
+    unsigned char B;
+};
+
+void outputJPEG(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_ptr) {
+    int image_height = render_data.image_height;
+    int image_width = render_data.image_width;
+    int samples_per_pixel = render_data.samples_per_pixel;
+
+    // Start Render Timer 
+    auto start_time = std::chrono::high_resolution_clock::now();
+    render_data.completed_lines = 0;
+
+    // To render entire thing without multithreading, uncomment this line and comment out num_threads -> threads.clear()
+    //render_scanlines_sse(image_height,image_height-1,scene_ptr,render_data,cam);
+
+    // Threading approach? : Divide the scanlines into N blocks
+    const int num_threads = std::thread::hardware_concurrency() - 1;
+
+    // Image height is the number of scanlines, suppose image_height = 800
+    const int lines_per_thread = image_height / num_threads;
+    const int leftOver = image_height % num_threads;
+    // The first <num_threads> threads are dedicated <lines_per_thread> lines, and the last thread is dedicated to <leftOver>
+
+    std::vector<color> pixel_colors;
+    std::vector<std::thread> threads;
+
+    render_data.completed_lines = 0;
+
+    for (int i=0; i < num_threads; i++) {
+        // In the first thead, we want the first lines_per_thread lines to be rendered
+        threads.emplace_back(render_scanlines,lines_per_thread,(image_height-1) - (i * lines_per_thread), scene_ptr, std::ref(render_data),cam);
+    }
+    threads.emplace_back(render_scanlines,leftOver,(image_height-1) - (num_threads * lines_per_thread), scene_ptr, std::ref(render_data),cam);
+
+    for (auto &thread : threads) {
+            thread.join();
+    }
+    std::cerr << "Joining all threads" << std::endl;
+    threads.clear();
+
+    // std::cout << "P3" << std::endl;
+    // std::cout << image_width << ' ' << image_height << std::endl;
+    // std::cout << 255 << std::endl;
+    // for (int j = image_height - 1; j >= 0; --j) {
+    //     for (int i = 0; i < image_width; ++i) {
+    //         int buffer_index = j * image_width + i;
+    //         write_color(std::cout, render_data.buffer[buffer_index], samples_per_pixel);
+    //     }
+    //     float percentage_completed = (((float)image_height - (float)j) / (float)image_height)*100.0;
+    //     std::cerr << "[" << (int)percentage_completed << "%] outputting completed" << std::endl;
+    // }
+
+    auto scale = 1.0 / samples_per_pixel;
+    struct RGB data[image_height][image_width];
+
+    for(int j = image_height - 1 ; j >= 0 ; j-- ){
+        for(int i = 0; i < image_width ; i++){
+            int buffer_index = j * image_width + i;
+            auto r = render_data.buffer[buffer_index].x();                
+            auto g = render_data.buffer[buffer_index].y();                
+            auto b = render_data.buffer[buffer_index].z();      
+
+            r = sqrt(scale * r);
+            g = sqrt(scale * g);
+            b = sqrt(scale * b);
+
+            data[i][j].R = r;
+            data[i][j].G = g;
+            data[i][j].B = b;
+        }
+    }
+    stbi_write_jpg("image.jpg", image_width, image_height, 3, data, 100);
+    auto current_time = std::chrono::high_resolution_clock::now();
+    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
+    double time_seconds = elapsed_time / 1000.0;
+
+    std::cerr << "\nCompleted render of scene. Render time: " << time_seconds << " seconds" << "\n";
+}
+
 void random_spheres() {
     RenderData render_data; 
 
@@ -616,7 +699,7 @@ void quads() {
 }
 
 int main() {
-    switch (5) {
+    switch (2) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
