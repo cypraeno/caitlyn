@@ -764,17 +764,22 @@ void two_perlin_spheres(){
 
     // Materials
     auto pertext = make_shared<noise_texture>(4);
-    auto perlin = make_shared<lambertian>(pertext);
+    auto perlin_mtl = make_shared<lambertian>(pertext);
 
-    auto sphere1 = make_shared<SpherePrimitive>(point3(0,-1000, 0), perlin, 1000, device);
-    auto sphere2 = make_shared<SpherePrimitive>(point3(0,2, 0), perlin, 2, device);
+    auto sphere1 = make_shared<SpherePrimitive>(point3(0,-1000, 0), perlin_mtl, 1000, device);
+    auto sphere2 = make_shared<SpherePrimitive>(point3(0,2, 0), perlin_mtl, 2, device);
 
+    scene_ptr->add_primitive(sphere1);
+    scene_ptr->add_primitive(sphere2);
 
+    scene_ptr->commitScene();
+    rtcReleaseDevice(device);
 
+    output(render_data, cam, scene_ptr);
 }
 
 int main() {
-    switch (4) {
+    switch (8) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
@@ -782,6 +787,7 @@ int main() {
         case 5:  load_example();   break;
         case 6:  simple_light();   break;
         case 7:  cornell_box();    break;
+        case 8:  two_perlin_spheres(); break;
     }
 }
 
