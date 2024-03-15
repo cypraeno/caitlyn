@@ -442,6 +442,13 @@ void render_scanlines_avx(int lines, int start_line, std::shared_ptr<Scene> scen
     }
 }
 
+
+struct RGB{
+    unsigned char R;
+    unsigned char G;
+    unsigned char B;
+};
+
 void output(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_ptr) {
     int image_height = render_data.image_height;
     int image_width = render_data.image_width;
@@ -479,101 +486,38 @@ void output(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_p
     std::cerr << "Joining all threads" << std::endl;
     threads.clear();
 
-    write_png("output.png", image_width, image_height, samples_per_pixel, render_data.buffer);
+    int output_type = 2; // 0 for ppm, 1 for jpg, 2 for png
+    // hardcoded, but will be updated for CLI in CA-83
 
-    // std::cout << "P3" << std::endl;
-    // std::cout << image_width << ' ' << image_height << std::endl;
-    // std::cout << 255 << std::endl;
-    // for (int j = image_height - 1; j >= 0; --j) {
-    //     for (int i = 0; i < image_width; ++i) {
-    //         int buffer_index = j * image_width + i;
-    //         write_color(std::cout, render_data.buffer[buffer_index], samples_per_pixel);
-    //     }
-    //     float percentage_completed = (((float)image_height - (float)j) / (float)image_height)*100.0;
-    //     std::cerr << "[" << (int)percentage_completed << "%] outputting completed" << std::endl;
-    // }
-    // auto current_time = std::chrono::high_resolution_clock::now();
-    // auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
-    // double time_seconds = elapsed_time / 1000.0;
-
-    // std::cerr << "\nCompleted render of scene. Render time: " << time_seconds << " seconds" << "\n";
-}
-
-struct RGB{
-    unsigned char R;
-    unsigned char G;
-    unsigned char B;
-};
-
-void outputJPEG(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_ptr) {
-    int image_height = render_data.image_height;
-    int image_width = render_data.image_width;
-    int samples_per_pixel = render_data.samples_per_pixel;
-
-    // Start Render Timer 
-    auto start_time = std::chrono::high_resolution_clock::now();
-    render_data.completed_lines = 0;
-
-    // To render entire thing without multithreading, uncomment this line and comment out num_threads -> threads.clear()
-    //render_scanlines_sse(image_height,image_height-1,scene_ptr,render_data,cam);
-
-    // Threading approach? : Divide the scanlines into N blocks
-    const int num_threads = std::thread::hardware_concurrency() - 1;
-
-    // Image height is the number of scanlines, suppose image_height = 800
-    const int lines_per_thread = image_height / num_threads;
-    const int leftOver = image_height % num_threads;
-    // The first <num_threads> threads are dedicated <lines_per_thread> lines, and the last thread is dedicated to <leftOver>
-
-    std::vector<color> pixel_colors;
-    std::vector<std::thread> threads;
-
-    render_data.completed_lines = 0;
-
-    for (int i=0; i < num_threads; i++) {
-        // In the first thead, we want the first lines_per_thread lines to be rendered
-        threads.emplace_back(render_scanlines,lines_per_thread,(image_height-1) - (i * lines_per_thread), scene_ptr, std::ref(render_data),cam);
-    }
-    threads.emplace_back(render_scanlines,leftOver,(image_height-1) - (num_threads * lines_per_thread), scene_ptr, std::ref(render_data),cam);
-
-    for (auto &thread : threads) {
-            thread.join();
-    }
-    std::cerr << "Joining all threads" << std::endl;
-    threads.clear();
-
-    // std::cout << "P3" << std::endl;
-    // std::cout << image_width << ' ' << image_height << std::endl;
-    // std::cout << 255 << std::endl;
-    // for (int j = image_height - 1; j >= 0; --j) {
-    //     for (int i = 0; i < image_width; ++i) {
-    //         int buffer_index = j * image_width + i;
-    //         write_color(std::cout, render_data.buffer[buffer_index], samples_per_pixel);
-    //     }
-    //     float percentage_completed = (((float)image_height - (float)j) / (float)image_height)*100.0;
-    //     std::cerr << "[" << (int)percentage_completed << "%] outputting completed" << std::endl;
-    // }
-
-    auto scale = 1.0 / samples_per_pixel;
-    struct RGB data[image_height][image_width];
-
-    for(int j = image_height - 1 ; j >= 0 ; j-- ){
-        for(int i = 0; i < image_width; i++){
-            int buffer_index = j * image_width + i;
-            auto r = render_data.buffer[buffer_index].x();                
-            auto g = render_data.buffer[buffer_index].y();                
-            auto b = render_data.buffer[buffer_index].z();      
-
-            r = 256 * clamp(sqrt(scale * r), 0.0, 0.999);
-            g = 256 * clamp(sqrt(scale * g), 0.0, 0.999);
-            b = 256 * clamp(sqrt(scale * b), 0.0, 0.999);
-
-            data[image_height - j - 1][i].R = r;
-            data[image_height - j - 1][i].G = g;
-            data[image_height - j - 1][i].B = b;
+    if (output_type == 0) {
+        std::cout << "P3" << std::endl;
+        std::cout << image_width << ' ' << image_height << std::endl;
+        std::cout << 255 << std::endl;
+        for (int j = image_height - 1; j >= 0; --j) {
+            for (int i = 0; i < image_width; ++i) {
+                int buffer_index = j * image_width + i;
+                write_color(std::cout, render_data.buffer[buffer_index], samples_per_pixel);
+            }
+            float percentage_completed = (((float)image_height - (float)j) / (float)image_height)*100.0;
+            std::cerr << "[" << (int)percentage_completed << "%] outputting completed" << std::endl;
         }
+    } else if (output_type == 1) {
+        struct RGB data[image_height][image_width];
+        for (int j = image_height - 1 ; j >= 0 ; j-- ) {
+            for (int i = 0; i < image_width; i++) {
+                int buffer_index = j * image_width + i;
+                color pixel_color = color_to_256(render_data.buffer[buffer_index], samples_per_pixel);
+
+                data[image_height - j - 1][i].R = pixel_color.x();
+                data[image_height - j - 1][i].G = pixel_color.y();
+                data[image_height - j - 1][i].B = pixel_color.z();
+            }
+        }
+        stbi_write_jpg("image.jpg", image_width, image_height, 3, data, 100);
+    } else if (output_type == 2) {
+        write_png("image.png", image_width, image_height, samples_per_pixel, render_data.buffer);
     }
-    stbi_write_jpg("image.jpg", image_width, image_height, 3, data, 100);
+
     auto current_time = std::chrono::high_resolution_clock::now();
     auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
     double time_seconds = elapsed_time / 1000.0;
@@ -672,7 +616,7 @@ void earth() {
     // When scene construction is finished, the device is no longer needed.
     rtcReleaseDevice(device);
 
-    outputJPEG(render_data, cam, scene_ptr);
+    output(render_data, cam, scene_ptr);
 }
 
 /**
