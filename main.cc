@@ -769,12 +769,10 @@ void two_perlin_spheres(){
     auto sphere1 = make_shared<SpherePrimitive>(point3(0,-1000, 0), perlin, 1000, device);
     auto sphere2 = make_shared<SpherePrimitive>(point3(0,2, 0), perlin, 2, device);
 
-
-
 }
 
 int main() {
-    switch (4) {
+    switch (8) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
@@ -782,6 +780,7 @@ int main() {
         case 5:  load_example();   break;
         case 6:  simple_light();   break;
         case 7:  cornell_box();    break;
+        case 8: two_perlin_spheres() break;
     }
 }
 
