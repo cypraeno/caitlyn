@@ -575,23 +575,40 @@ void output(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_p
         if (config.verbose) {std::cerr << "Joining all threads" << std::endl;}
         threads.clear();
     }
-
-    std::ofstream outFile(config.outputPath);
-    if (!outFile.is_open()) {throw std::runtime_error("Could not open file: " + config.outputPath);}
     
     // PPM outputting. No current support for JPG and PNG.
-    outFile << "P3" << std::endl;
-    outFile << image_width << ' ' << image_height << std::endl;
-    outFile << 255 << std::endl;
-    for (int j = image_height - 1; j >= 0; --j) {
-        for (int i = 0; i < image_width; ++i) {
-            int buffer_index = j * image_width + i;
-            write_color(outFile, render_data.buffer[buffer_index], samples_per_pixel);
+    if (config.outputType == "ppm") {
+        std::ofstream outFile(config.outputPath);
+        if (!outFile.is_open()) {throw std::runtime_error("Could not open file: " + config.outputPath);}
+        outFile << "P3" << std::endl;
+        outFile << image_width << ' ' << image_height << std::endl;
+        outFile << 255 << std::endl;
+        for (int j = image_height - 1; j >= 0; --j) {
+            for (int i = 0; i < image_width; ++i) {
+                int buffer_index = j * image_width + i;
+                write_color(outFile, render_data.buffer[buffer_index], samples_per_pixel);
+            }
+            float percentage_completed = (((float)image_height - (float)j) / (float)image_height)*100.0;
+            if (config.verbose) {
+                std::cerr << "[" << (int)percentage_completed << "%] outputting completed" << std::endl;
+            }
         }
-        float percentage_completed = (((float)image_height - (float)j) / (float)image_height)*100.0;
-        if (config.verbose) {
-            std::cerr << "[" << (int)percentage_completed << "%] outputting completed" << std::endl;
+        outFile.close();
+    } else if (config.outputType == "jpg") {
+        struct RGB data[image_height][image_width];
+        for (int j = image_height - 1 ; j >= 0 ; j-- ) {
+            for (int i = 0; i < image_width; i++) {
+                int buffer_index = j * image_width + i;
+                color pixel_color = color_to_256(render_data.buffer[buffer_index], samples_per_pixel);
+
+                data[image_height - j - 1][i].R = pixel_color.x();
+                data[image_height - j - 1][i].G = pixel_color.y();
+                data[image_height - j - 1][i].B = pixel_color.z();
+            }
         }
+        stbi_write_jpg("image.jpg", image_width, image_height, 3, data, 100);
+    } else if (config.outputType == "png") {
+        write_png("image.png", image_width, image_height, samples_per_pixel, render_data.buffer);
     }
 
     if (config.verbose) {
@@ -601,8 +618,6 @@ void output(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_p
 
         std::cerr << "\nCompleted render of scene. Render time: " << time_seconds << " seconds" << "\n";
     }
-
-    outFile.close();
 }
 
 void random_spheres() {
@@ -856,7 +871,7 @@ void cornell_box() {
 
 int main(int argc, char* argv[]) {
     Config config = parseArguments(argc, argv);
-    switch (7) {
+    switch (5) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;

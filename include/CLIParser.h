@@ -96,8 +96,8 @@ Config parseArguments(int argc, char* argv[]) {
         } else if(arg == "-t" || arg == "--type") {
             if(i + 1 < argc) {
                 std::string type(argv[++i]);
-                if (type == "ppm") {
-                    config.outputType = argv[++i];
+                if (type == "ppm" || type == "png" || type == "jpg") {
+                    config.outputType = type;
                 } else {
                     throw std::invalid_argument("Invalid argument for -t/--type [ppm]");
                 }
