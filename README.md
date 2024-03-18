@@ -1,10 +1,40 @@
-# The Caitlyn Renderer
-Caitlyn is a Monte Carlo ray tracer built in C++ by a team of students from UWaterloo and Wilfrid Laurier. It is currently being developed towards the visual style originally inspired by the Odd Tales' game, "The Last Night". The project is currently being co-run by Connor Loi and Samuel Bai :D
+<h1 align="center">The Caitlyn Renderer</h1>
+<p align="center"><img width="300" alt="Render1" src="https://github.com/Astro-Monkeys/caitlyn/assets/25397938/8f088c62-47e1-432d-9c12-9a198214d6b0"></p>
 
-<img width="898" alt="Render1" src="https://github.com/Astro-Monkeys/caitlyn/assets/25397938/8f088c62-47e1-432d-9c12-9a198214d6b0">
+Caitlyn is an in-development Monte Carlo ray tracer built in C++ by a team of students from the University of Waterloo and Wilfrid Laurier University. Caitlyn is actively working towards being a beautiful tool for bridging the accuracy and lighting of raytracing and the breathtaking visuals of pixel art (see our [portfolio](#our-portfolio) and Odd Tales' "The Last Night"!)
 
-## Contributing and Current Status
-If you wish to contribute to this project, please email one of us at ctloi@uwaterloo.ca and sbai@uwaterloo.ca (or both!)
-We are currently following the fantastic work of [Peter Shirley and his team](https://raytracing.github.io/).
+_Interested in getting involved? Contact [Connor Loi](ctloi@uwaterloo.ca) or [Samuel Bai](sbai@uwaterloo.ca)._
 
-**New Developer? Make sure you've been onboarded with Notion access and check out the [wiki page for how to get started on development](https://www.notion.so/Getting-Started-63fcd5670a69407285e3401e7b590fbf?pvs=4).**
+## Table of Contents
+- [Quick Start Guide](#quick-start-guide)
+- [Our Portfolio](#our-portfolio)
+- [In-depth Docs](#docs)
+    - [Writing Scenes](#writing-scenes)
+    - [Rendering](#rendering)
+- [Contribute](#contribute)
+
+## Quick Start Guide
+
+## Our Portfolio
+
+## Docs
+
+### Writing Scenes
+
+### Rendering
+
+## Contribute
+For contribution or general inquiries, please email one of us at [Connor Loi](ctloi@uwaterloo.ca) or [Samuel Bai](sbai@uwaterloo.ca).
+
+Behind every pixel rendered is our incredible developers who have contributed their dedication and creativity to Caitlyn.
+<div align="center">
+<a href="https://github.com/connortbot">Connor Loi</a>,
+<a href="https://github.com/haenlonns">Samuel Bai</a>,
+<a href="https://github.com/Saai151">Saai Arora</a>,
+<a href="https://github.com/dan-the-man639">Danny Yang</a>,
+<a href="https://github.com/ASharpMarble">Jonathan Wang</a>,
+<a href="https://github.com/18gen">Gen Ichihashi</a>,
+<a href="https://github.com/18gen">Max Tan</a>,
+<a href="https://github.com/rickyhuangjh">Ricky Huang</a>,
+<a href="https://github.com/daniel-su1">Daniel Su</a>
+</div>
