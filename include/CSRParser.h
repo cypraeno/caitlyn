@@ -10,6 +10,7 @@
 #include <optional>
 #include "camera.h"
 #include "material.h"
+#include "light.h"
 #include "texture.h"
 #include "sphere_primitive.h"
 #include "quad_primitive.h"
@@ -36,13 +37,15 @@ public:
         std::map<std::string, std::shared_ptr<material>> materials;
         std::map<std::string, std::shared_ptr<texture>> textures;
         
-        if (!file.is_open()) {
+        if (!file.is_open() || !file.good()) {
+            rtcReleaseDevice(device);
             throw std::runtime_error("Could not open file: " + filePath);
         }
 
         // Read in version
         getNextLine(file, line);
-        if (trim(line) != "version 0.1.0") {
+        if (trim(line) != "version 0.1.1") {
+            rtcReleaseDevice(device);
             throw std::runtime_error("Unsupported version or missing version marker");
         }
 
@@ -75,6 +78,13 @@ public:
                     std::string materialId, ir;
                     getNextLine(file, materialId); getNextLine(file, ir);
                     materials[readStringProperty(materialId)] = std::make_shared<dielectric>(readDoubleProperty(ir));
+                } else if (materialType == "Emissive") {
+                    std::string materialId, rgb, strength;
+                    getNextLine(file, materialId); getNextLine(file, rgb); getNextLine(file, strength);
+                    materials[readStringProperty(materialId)] = std::make_shared<emissive>( (readDoubleProperty(strength) * readXYZProperty(rgb)) );
+                } else {
+                    rtcReleaseDevice(device);
+                    throw std::runtime_error("Material type UNDEFINED: Material[Lambertian|Metal|Dielectric|Emissive]");
                 }
             } else if (startsWith(line, "Texture")) {
                 auto idStart = line.find('[') + 1;
@@ -88,6 +98,13 @@ public:
                     std::string textureId, path;
                     getNextLine(file, textureId); getNextLine(file, path);
                     textures[readStringProperty(textureId)] = std::make_shared<image_texture>(readStringProperty(path).c_str());
+                } else if (textureType == "Noise") {
+                    std::string textureId, scale;
+                    getNextLine(file, textureId); getNextLine(file, scale);
+                    textures[readStringProperty(textureId)] = std::make_shared<noise_texture>(readDoubleProperty(scale));
+                } else {
+                    rtcReleaseDevice(device);
+                    throw std::runtime_error("Texture type UNDEFINED: Texture[Checker|Image|Noise]");
                 }
             } else if (startsWith(line, "Sphere")) {
                 std::string position, material, radius;
