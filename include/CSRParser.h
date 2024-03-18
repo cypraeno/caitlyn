@@ -98,6 +98,13 @@ public:
                     std::string textureId, path;
                     getNextLine(file, textureId); getNextLine(file, path);
                     textures[readStringProperty(textureId)] = std::make_shared<image_texture>(readStringProperty(path).c_str());
+                } else if (textureType == "Noise") {
+                    std::string textureId, scale;
+                    getNextLine(file, textureId); getNextLine(file, scale);
+                    textures[readStringProperty(textureId)] = std::make_shared<noise_texture>(readDoubleProperty(scale));
+                } else {
+                    rtcReleaseDevice(device);
+                    throw std::runtime_error("Texture type UNDEFINED: Texture[Checker|Image|Noise]");
                 }
             } else if (startsWith(line, "Sphere")) {
                 std::string position, material, radius;
