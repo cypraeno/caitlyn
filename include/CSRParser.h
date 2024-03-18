@@ -44,7 +44,7 @@ public:
 
         // Read in version
         getNextLine(file, line);
-        if (trim(line) != "version 0.1.1") {
+        if (trim(line) != "version 0.1.2") {
             rtcReleaseDevice(device);
             throw std::runtime_error("Unsupported version or missing version marker");
         }
