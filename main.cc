@@ -122,18 +122,22 @@ color colorize_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
         color color_from_emission = mat_ptr->emitted(record.u, record.v, record.pos);
         if (!mat_ptr->scatter(r, record, attenuation, scattered)) {
             return color_from_emission;
-        } 
+        }
 
-        color color_from_scatter = attenuation * colorize_ray(scattered, scene, depth-1);
+        double scattering_pdf = mat_ptr->scattering_pdf(r, record, scattered);
+        double pdf = scattering_pdf;
+
+        color color_from_scatter = (attenuation * scattering_pdf * colorize_ray(scattered, scene, depth-1)) / pdf;
 
         return color_from_emission + color_from_scatter;
     }
 
+    return color(0,0,0);
     // Sky background (gradient blue-white)
-    vec3 unit_direction = r.direction().unit_vector();
-    auto t = 0.5*(unit_direction.y() + 1.0);
+    // vec3 unit_direction = r.direction().unit_vector();
+    // auto t = 0.5*(unit_direction.y() + 1.0);
 
-    return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
+    // return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
 }
 
 struct RenderData {
@@ -476,9 +480,9 @@ void output(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_p
 
     for (int i=0; i < num_threads; i++) {
         // In the first thead, we want the first lines_per_thread lines to be rendered
-        threads.emplace_back(render_scanlines_sse,lines_per_thread,(image_height-1) - (i * lines_per_thread), scene_ptr, std::ref(render_data),cam);
+        threads.emplace_back(render_scanlines,lines_per_thread,(image_height-1) - (i * lines_per_thread), scene_ptr, std::ref(render_data),cam);
     }
-    threads.emplace_back(render_scanlines_sse,leftOver,(image_height-1) - (num_threads * lines_per_thread), scene_ptr, std::ref(render_data),cam);
+    threads.emplace_back(render_scanlines,leftOver,(image_height-1) - (num_threads * lines_per_thread), scene_ptr, std::ref(render_data),cam);
 
     for (auto &thread : threads) {
             thread.join();
@@ -810,7 +814,7 @@ void two_perlin_spheres(){
 }
 
 int main() {
-    switch (8) {
+    switch (7) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
