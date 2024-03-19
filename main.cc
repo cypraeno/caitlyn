@@ -715,7 +715,7 @@ void earth() {
 }
 
 /**
- * @brief loads "example.csr" in the same directory.
+ * @brief loads "scene.csr" in the same directory.
  * @note see example.csr in cypraeno/csr_schema repository
 */
 void load_example(Config& config) {

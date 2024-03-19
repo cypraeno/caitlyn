@@ -14,6 +14,23 @@ _Interested in getting involved? Contact [Connor Loi](ctloi@uwaterloo.ca) or [Sa
 - [Contribute](#contribute)
 
 ## Quick Start Guide
+Caitlyn MCRT is built on Debian 12. It may work on other distros, but we recommend simply pulling our Docker container.
+
+### Setup
+Before continuing:
+- Install `Docker Desktop`.
+- Pull the latest `docker pull connortbot/caitlyn-mcrt:base-vX.X.X`
+
+### Build
+You may pull the `stable` repository from within the container or mount a volume. Either works!
+Run `cmake -B build/ -S .` to create files in the `build` folder. `cd build`, and `make`.
+
+### Basic Rendering
+Caitlyn renders scenes from our custom filetype `.csr`. By default, the `caitlyn` executable will read the scene from a `example.csr` file, so you need to have one before running. In this guide, we'll just run the `example.csr` 
+
+To learn how to write CSR files, check out the [Basic Guide](https://github.com/cypraeno/csr-schema/blob/main/basic-guide.md).
+
+Caitlyn has a user-friendly command line interface, allowing you to customize samples, depth, type of multithreading, and more. 
 
 ## Our Portfolio
 
