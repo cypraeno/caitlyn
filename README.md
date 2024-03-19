@@ -26,24 +26,43 @@ You may pull the `stable` repository from within the container or mount a volume
 Run `cmake -B build/ -S .` to create files in the `build` folder. `cd build`, and `make`.
 
 ### Basic Rendering
-Caitlyn renders scenes from our custom filetype `.csr`. By default, the `caitlyn` executable will read the scene from a `example.csr` file, so you need to have one before running. In this guide, we'll just run the `example.csr` 
+Caitlyn renders scenes from our custom filetype `.csr`. By default, the `caitlyn` executable will read the scene from a `scene.csr` file, so you need to have one before running. In this guide, we'll just run the `example.csr`, which you can copy from [here](https://github.com/cypraeno/csr-schema/blob/main/examples/example.csr).
 
 To learn how to write CSR files, check out the [Basic Guide](https://github.com/cypraeno/csr-schema/blob/main/basic-guide.md).
 
-Caitlyn has a user-friendly command line interface, allowing you to customize samples, depth, type of multithreading, and more. 
+Caitlyn has a user-friendly command line interface, allowing you to customize samples, depth, type of multithreading, and more. Once you have the executable, you can run `./caitlyn --help` to see all the options at your disposal.
+
+Let's render a PNG file of the example scene! Ensure that you have your CSR file in the same directory.
+```
+./caitlyn -i example.csr -t png
+```
+This will read the scene from `example.csr` and output as a `png`.
+And now you have your first caitlyn-rendered scene!
 
 ## Our Portfolio
 
 ## Docs
 
 ### Writing Scenes
+As mentioned in the `Quick Start`, `caitlyn` will read and build scenes via CSR files. The CSR [Basic Guide](https://github.com/cypraeno/csr-schema/blob/main/basic-guide.md) covers everything from creating objects to custom materials.
 
 ### Rendering
+To see all the options available to `caitlyn`, run:
+```
+./caitlyn --help
+```
+Flags like `--samples` and `--depth` control the amount of time spent on the render. If you are unfamiliar with rendering concepts, `samples` refer to the amount of rays traced per pixel, which decreases the noise of a render as it increases. `depth` refers to the amount of times a ray is simulated to "bounce" around the scene, allowing for realism in reflections, emissives, etc.
+
+Sometimes, CSR files will have features not supported in your version of `caitlyn`. You can check this with the version indicator at the top of the CSR file and with `./caitlyn --version`.
+
+For users who have a better understanding of their computer's resources, the `--threads` and `--vectorization` flags control the use of more efficient architecture. While `threads` dictate the amount of CPU threads to split the workloads on, the `vectorization` flag will dictate the type of SIMD batching. `[NONE|SSE|AVX|AVX512]`.
+
 
 ## Contribute
 For contribution or general inquiries, please email one of us at [Connor Loi](ctloi@uwaterloo.ca) or [Samuel Bai](sbai@uwaterloo.ca).
 
-Behind every pixel rendered is our incredible developers who have contributed their dedication and creativity to Caitlyn.
+The people the made it happen:
+
 <div align="center">
 <a href="https://github.com/connortbot">Connor Loi</a>,
 <a href="https://github.com/haenlonns">Samuel Bai</a>,
