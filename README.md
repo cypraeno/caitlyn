@@ -1,5 +1,5 @@
-<h1 align="center">The Caitlyn Renderer</h1>
-<p align="center"><img width="300" alt="Render1" src="https://github.com/Astro-Monkeys/caitlyn/assets/25397938/8f088c62-47e1-432d-9c12-9a198214d6b0"></p>
+<h1 align="center">The Caitlyn Renderer :camera:</h1>
+<p align="center"><img width="600" alt="Render1" src="https://github.com/Astro-Monkeys/caitlyn/assets/25397938/8f088c62-47e1-432d-9c12-9a198214d6b0"></p>
 
 Caitlyn is an in-development Monte Carlo ray tracer built in C++ by a team of students from the University of Waterloo and Wilfrid Laurier University. Caitlyn is actively working towards being a beautiful tool for bridging the accuracy and lighting of raytracing and the breathtaking visuals of pixel art (see our [portfolio](#our-portfolio) and Odd Tales' "The Last Night"!)
 
