@@ -1,14 +1,7 @@
 #ifndef OBJPARSER_H
 #define OBJPARSER_H
 
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <iostream>
-#include <algorithm>
-
-#include "vec3.h"
+#include "MTLParser.h"
 
 class OBJParser {
     public:
@@ -62,17 +55,18 @@ class OBJParser {
                 std::string id;
                 lineStream >> id;
 
-                current_mat_idx = materials.size();
+                current_mat_idx = matKeys[id];
+            } else if (lineType == "mtllib") {
+                std::string id;
+                lineStream >> id;
 
-                std::shared_ptr<material> mtl;
-                if (id == "Black_AssaultRIfle_01") {
-                    mtl = make_shared<lambertian>(color(0.05, 0.05, 0.05));
-                } else if (id == "Brown_AssaultRIfle_01") {
-                    mtl = make_shared<lambertian>(color(0.1, 0.05, 0.05));
-                } else {
-                    mtl = make_shared<lambertian>(color(0.2, 0.2, 0.2));
+                MTLParser mp;
+                if (!mp.parse(id)) {
+                    throw std::runtime_error("Failed to load .mtl file");
                 }
-                materials.push_back(mtl);
+
+                materials = mp.getMaterials();
+                matKeys = mp.getMatKeys();
             }
         }
 
@@ -104,6 +98,7 @@ class OBJParser {
 
     std::vector<vec3> normals;
     std::vector<shared_ptr<material>> materials;
+    std::map<std::string, int> matKeys;
 };
 
 #endif

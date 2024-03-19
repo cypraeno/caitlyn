@@ -17,9 +17,9 @@ class Mesh : public Geometry {
 
 
     std::vector<RTCGeometry> geoms;
-    shared_ptr<material> mat_ptr;
+    float scale;
 
-    Mesh(vec3 position, shared_ptr<material> mat_ptr, std::string& filePath, RTCDevice device) : mat_ptr{mat_ptr}, Geometry(position) {
+    Mesh(vec3 position, float scale, std::string& filePath, RTCDevice device) : scale{scale}, Geometry(position) {
         loadGeometry(filePath, device);
     }
 
@@ -48,9 +48,9 @@ class Mesh : public Geometry {
                 Vertex3f* vertBuffer = (Vertex3f*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, sizeof(Vertex3f), 3);
                 for (size_t i = 0; i < 3; ++i) {
                     vec3 vertice = vertices[face[i + 2]];
-                    vertBuffer[i].x = vertice.x() + position.x();
-                    vertBuffer[i].y = vertice.y() + position.y();
-                    vertBuffer[i].z = vertice.z() + position.z();
+                    vertBuffer[i].x = vertice.x() * scale + position.x();
+                    vertBuffer[i].y = vertice.y() * scale + position.y();
+                    vertBuffer[i].z = vertice.z() * scale + position.z();
                 }
                 unsigned* indexBuffer = (unsigned*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT3, sizeof(unsigned) * 3, 1);
                 indexBuffer[0] = 0; indexBuffer[1] = 1; indexBuffer[2] = 2;
@@ -61,11 +61,11 @@ class Mesh : public Geometry {
             } else if (numVertices == 4) {
                 RTCGeometry geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_QUAD);
                 Vertex3f* vertBuffer = (Vertex3f*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, sizeof(Vertex3f), 4);
-                for (size_t i = 0; i < face.size(); ++i) {
+                for (size_t i = 0; i < numVertices; ++i) {
                     vec3 vertice = vertices[face[i + 2]];
-                    vertBuffer[i].x = vertice.x() + position.x();
-                    vertBuffer[i].y = vertice.y() + position.y();
-                    vertBuffer[i].z = vertice.z() + position.z();
+                    vertBuffer[i].x = vertice.x() * scale + position.x();
+                    vertBuffer[i].y = vertice.y() * scale + position.y();
+                    vertBuffer[i].z = vertice.z() * scale + position.z();
                 }
                 
                 Quad* quad = (Quad*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT4, sizeof(Quad), 1);
@@ -80,18 +80,18 @@ class Mesh : public Geometry {
                     Vertex3f* vertBuffer = (Vertex3f*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, sizeof(Vertex3f), 3);
 
                     vec3 vertice0 = vertices[face[2]];
-                    vertBuffer[0].x = vertice0.x() + position.x();
-                    vertBuffer[0].y = vertice0.y() + position.y();
-                    vertBuffer[0].z = vertice0.z() + position.z();
+                    vertBuffer[0].x = vertice0.x() * scale + position.x();
+                    vertBuffer[0].y = vertice0.y() * scale + position.y();
+                    vertBuffer[0].z = vertice0.z() * scale + position.z();
 
                     vec3 vertice1 = vertices[face[i + 2]];
                     vec3 vertice2 = vertices[face[i + 2 + 1]];
-                    vertBuffer[1].x = vertice1.x() + position.x();
-                    vertBuffer[1].y = vertice1.y() + position.y();
-                    vertBuffer[1].z = vertice1.z() + position.z();
-                    vertBuffer[2].x = vertice2.x() + position.x();
-                    vertBuffer[2].y = vertice2.y() + position.y();
-                    vertBuffer[2].z = vertice2.z() + position.z();
+                    vertBuffer[1].x = vertice1.x() * scale + position.x();
+                    vertBuffer[1].y = vertice1.y() * scale + position.y();
+                    vertBuffer[1].z = vertice1.z() * scale + position.z();
+                    vertBuffer[2].x = vertice2.x() * scale + position.x();
+                    vertBuffer[2].y = vertice2.y() * scale + position.y();
+                    vertBuffer[2].z = vertice2.z() * scale + position.z();
 
                     unsigned* indexBuffer = (unsigned*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT3, sizeof(unsigned) * 3, 1);
                     indexBuffer[0] = 0; indexBuffer[1] = 1; indexBuffer[2] = 2;

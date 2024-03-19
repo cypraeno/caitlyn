@@ -707,9 +707,8 @@ void earth() {
     auto globe = make_shared<SpherePrimitive>(point3(0,-2.65,0), earth_surface, 2, device);
     unsigned int groundID = scene_ptr->add_primitive(globe);
 
-    auto reddish = make_shared<lambertian>(color(.8, .13, .18));
     std::string filePath = "plate_cleaned.obj";
-    auto mesh = make_shared<Mesh>(point3(0,0,0), reddish, filePath, device);
+    auto mesh = make_shared<Mesh>(point3(0,0,0), 1, filePath, device);
     scene_ptr->add_mesh(mesh);
 
     scene_ptr->commitScene();
@@ -913,10 +912,10 @@ void two_perlin_spheres(){
 void mesh_example() {
     RenderData render_data; 
     const auto aspect_ratio = 16.0 / 9.0;
-    setRenderData(render_data, aspect_ratio, 1200, 50, 50);
+    setRenderData(render_data, aspect_ratio, 400, 50, 50);
 
     // Set up Camera
-    point3 lookfrom(4, 0, 4);
+    point3 lookfrom(10, 0, 5);
     point3 lookat(0, 0, 0);
     vec3 vup(0,1,0);
     double vfov = 60;
@@ -929,10 +928,19 @@ void mesh_example() {
     RTCDevice device = initializeDevice();
     auto scene_ptr = make_shared<Scene>(device, cam);
 
-    auto white = make_shared<lambertian>(color(.73, .73, .73));
-    std::string filePath = "knight_cleaned.obj";
-    auto mesh = make_shared<Mesh>(point3(0,0,0), white, filePath, device);
-    scene_ptr->add_mesh(mesh);
+    // seg fault when included:
+    // std::string knightPath = "knight_og.obj";
+    // auto knight = make_shared<Mesh>(point3(0,0,0), 1, knightPath, device);
+    // scene_ptr->add_mesh(knight);
+
+    std::string treePath = "tree.obj";
+    auto tree = make_shared<Mesh>(point3(-4,3,-2), 1, treePath, device);
+    scene_ptr->add_mesh(tree);
+
+    std::string grassPath = "grass.obj";
+    auto grass = make_shared<Mesh>(point3(0,0,0), 1, grassPath, device);
+    scene_ptr->add_mesh(grass);
+
     scene_ptr->commitScene();
     rtcReleaseDevice(device);
     output(render_data, cam, scene_ptr);
@@ -940,7 +948,7 @@ void mesh_example() {
 
 int main(int argc, char* argv[]) {
     Config config = parseArguments(argc, argv);
-    switch (3) {
+    switch (9) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
