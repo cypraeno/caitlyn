@@ -13,7 +13,7 @@ struct Config {
     // Standard flags
     int samples_per_pixel = 50;
     int max_depth = 50;
-    std::string inputFile = "example.csr";
+    std::string inputFile = "scene.csr";
     std::string outputPath = "image.ppm";
     int image_width = 1200;
     int image_height = 675;
