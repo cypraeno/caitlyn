@@ -18,6 +18,12 @@ class Mesh : public Geometry {
         loadGeometry(filePath, device);
     }
 
+    /**
+     * @brief loadGeometry takes in a path to an obj file, uses a parseer to load it, and constructs
+     * vector of RTCGeometry objects based on the list of faces and vertices.
+     * loadGeometry will use triangles and quads for 3 and 4 vertice faces respectively.
+     * For faces with > 4 vertices, it will create a triangle fan.
+    */
     void loadGeometry(std::string& filePath, RTCDevice device) {
         OBJParser parser;
         if (!parser.parse(filePath)) {
@@ -28,26 +34,66 @@ class Mesh : public Geometry {
         faces = parser.getFaces();
 
         for (const auto& face : faces) {
-            if (face.size() != 4) {
-                continue;
+            size_t numVertices = face.size();
+
+            if (numVertices == 3) { // triangle
+                RTCGeometry geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_TRIANGLE);
+                Vertex3f* vertBuffer = (Vertex3f*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, sizeof(Vertex3f), 3);
+                for (size_t i = 0; i < 3; ++i) {
+                    vec3 vertice = vertices[face[i]];
+                    vertBuffer[i].x = vertice.x() + position.x();
+                    vertBuffer[i].y = vertice.y() + position.y();
+                    vertBuffer[i].z = vertice.z() + position.z();
+                }
+                unsigned* indexBuffer = (unsigned*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT3, sizeof(unsigned) * 3, 1);
+                indexBuffer[0] = 0; indexBuffer[1] = 1; indexBuffer[2] = 2;
+
+                rtcCommitGeometry(geom);
+                geoms.push_back(geom);
+            } else if (numVertices == 4) {
+                 RTCGeometry geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_QUAD);
+                Vertex3f* vertBuffer = (Vertex3f*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, sizeof(Vertex3f), 4);
+                for (size_t i = 0; i < face.size(); ++i) {
+                    vec3 vertice = vertices[face[i]];
+                    vertBuffer[i].x = vertice.x() + position.x();
+                    vertBuffer[i].y = vertice.y() + position.y();
+                    vertBuffer[i].z = vertice.z() + position.z();
+                }
+                
+                Quad* quad = (Quad*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT4, sizeof(Quad), 1);
+                quad[0].v0 = 0; quad[0].v1 = 1; quad[0].v2 = 2; quad[0].v3 = 3;
+
+                rtcCommitGeometry(geom);
+                geoms.push_back(geom);
+            } else {
+                for (size_t i = 1; i < numVertices - 1; ++i) {
+                    RTCGeometry geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_TRIANGLE);
+                    Vertex3f* vertBuffer = (Vertex3f*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, sizeof(Vertex3f), 3);
+
+                    vec3 vertice0 = vertices[face[0]];
+                    vertBuffer[0].x = vertice0.x() + position.x();
+                    vertBuffer[0].y = vertice0.y() + position.y();
+                    vertBuffer[0].z = vertice0.z() + position.z();
+
+                    vec3 vertice1 = vertices[face[i]];
+                    vec3 vertice2 = vertices[face[i + 1]];
+                    vertBuffer[1].x = vertice1.x() + position.x();
+                    vertBuffer[1].y = vertice1.y() + position.y();
+                    vertBuffer[1].z = vertice1.z() + position.z();
+                    vertBuffer[2].x = vertice2.x() + position.x();
+                    vertBuffer[2].y = vertice2.y() + position.y();
+                    vertBuffer[2].z = vertice2.z() + position.z();
+
+                    unsigned* indexBuffer = (unsigned*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT3, sizeof(unsigned) * 3, 1);
+                    indexBuffer[0] = 0; indexBuffer[1] = 1; indexBuffer[2] = 2;
+
+                    rtcCommitGeometry(geom);
+                    geoms.push_back(geom);
+                }
             }
 
-            RTCGeometry geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_QUAD);
-            Vertex3f* vertBuffer = (Vertex3f*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, sizeof(Vertex3f), 4);
-            for (size_t i = 0; i < face.size(); ++i) {
-                vec3 vertice = vertices[face[i]];
-                vertBuffer[i].x = vertice.x();
-                vertBuffer[i].y = vertice.y();
-                vertBuffer[i].z = vertice.z();
-            }
-            
-            Quad* quad = (Quad*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT4, sizeof(Quad), 1);
-            quad[0].v0 = 0; quad[0].v1 = 1; quad[0].v2 = 2; quad[0].v3 = 3;
-
-            rtcSetGeometryVertexAttributeCount(geom, 1);
-            rtcSetGeometryBuildQuality(geom, RTC_BUILD_QUALITY_HIGH);
-            rtcCommitGeometry(geom);
-            geoms.push_back(geom);
+            //rtcSetGeometryVertexAttributeCount(geom, 1);
+            //rtcSetGeometryBuildQuality(geom, RTC_BUILD_QUALITY_HIGH);
         }
     }
 
