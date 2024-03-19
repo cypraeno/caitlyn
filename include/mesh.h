@@ -1,6 +1,11 @@
 #ifndef MESH_H
 #define MESH_H
 
+#include <iostream>
+#include <vector>
+#include <iterator>
+#include <algorithm>
+
 #include "geometry.h"
 #include "quad_primitive.h"
 #include "OBJParser.h"
@@ -20,9 +25,9 @@ class Mesh : public Geometry {
 
     /**
      * @brief loadGeometry takes in a path to an obj file, uses a parseer to load it, and constructs
-     * vector of RTCGeometry objects based on the list of faces and vertices.
-     * loadGeometry will use triangles and quads for 3 and 4 vertice faces respectively.
-     * For faces with > 4 vertices, it will create a triangle fan.
+     * vector of RTCGeometry objects based on the list of originalFaces and vertices.
+     * loadGeometry will use triangles and quads for 3 and 4 vertice originalFaces respectively.
+     * For originalFaces with > 4 vertices, it will create a triangle fan.
     */
     void loadGeometry(std::string& filePath, RTCDevice device) {
         OBJParser parser;
@@ -31,16 +36,18 @@ class Mesh : public Geometry {
         }
 
         vertices = parser.getVertices();
-        faces = parser.getFaces();
+        originalFaces = parser.getFaces();
+        normals = parser.getNormals();
+        materials = parser.getMaterials();
 
-        for (const auto& face : faces) {
-            size_t numVertices = face.size();
+        for (const auto& face : originalFaces) { // Use a reference to avoid copying here
+            size_t numVertices = face.size() - 2;
 
             if (numVertices == 3) { // triangle
                 RTCGeometry geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_TRIANGLE);
                 Vertex3f* vertBuffer = (Vertex3f*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, sizeof(Vertex3f), 3);
                 for (size_t i = 0; i < 3; ++i) {
-                    vec3 vertice = vertices[face[i]];
+                    vec3 vertice = vertices[face[i + 2]];
                     vertBuffer[i].x = vertice.x() + position.x();
                     vertBuffer[i].y = vertice.y() + position.y();
                     vertBuffer[i].z = vertice.z() + position.z();
@@ -50,11 +57,12 @@ class Mesh : public Geometry {
 
                 rtcCommitGeometry(geom);
                 geoms.push_back(geom);
+                faces.push_back(face);
             } else if (numVertices == 4) {
-                 RTCGeometry geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_QUAD);
+                RTCGeometry geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_QUAD);
                 Vertex3f* vertBuffer = (Vertex3f*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, sizeof(Vertex3f), 4);
                 for (size_t i = 0; i < face.size(); ++i) {
-                    vec3 vertice = vertices[face[i]];
+                    vec3 vertice = vertices[face[i + 2]];
                     vertBuffer[i].x = vertice.x() + position.x();
                     vertBuffer[i].y = vertice.y() + position.y();
                     vertBuffer[i].z = vertice.z() + position.z();
@@ -65,18 +73,19 @@ class Mesh : public Geometry {
 
                 rtcCommitGeometry(geom);
                 geoms.push_back(geom);
+                faces.push_back(face);
             } else {
                 for (size_t i = 1; i < numVertices - 1; ++i) {
                     RTCGeometry geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_TRIANGLE);
                     Vertex3f* vertBuffer = (Vertex3f*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, sizeof(Vertex3f), 3);
 
-                    vec3 vertice0 = vertices[face[0]];
+                    vec3 vertice0 = vertices[face[2]];
                     vertBuffer[0].x = vertice0.x() + position.x();
                     vertBuffer[0].y = vertice0.y() + position.y();
                     vertBuffer[0].z = vertice0.z() + position.z();
 
-                    vec3 vertice1 = vertices[face[i]];
-                    vec3 vertice2 = vertices[face[i + 1]];
+                    vec3 vertice1 = vertices[face[i + 2]];
+                    vec3 vertice2 = vertices[face[i + 2 + 1]];
                     vertBuffer[1].x = vertice1.x() + position.x();
                     vertBuffer[1].y = vertice1.y() + position.y();
                     vertBuffer[1].z = vertice1.z() + position.z();
@@ -89,6 +98,7 @@ class Mesh : public Geometry {
 
                     rtcCommitGeometry(geom);
                     geoms.push_back(geom);
+                    faces.push_back({face[0], face[i], face[i + 1]});
                 }
             }
 
@@ -99,22 +109,19 @@ class Mesh : public Geometry {
 
 
     shared_ptr<material> materialById(unsigned int geomID) const override {
-        return mat_ptr;
+        int faces_idx = geomID - starterId;
+        std::vector<int> face = faces[faces_idx];
+
+        return materials[face[0]];
     }
 
     HitInfo getHitInfo(const ray& r, const vec3& p, const float t, unsigned int geomID) const override {
         HitInfo record;
-
         int faces_idx = geomID - starterId;
-        std::vector face = faces[faces_idx];
-        vec3 v1 = vertices[face[1]] - vertices[face[0]];
-        vec3 v2 = vertices[face[2]] - vertices[face[0]];
-
-        vec3 normal = vec3(
-            v1.y() * v2.z() - v1.z() * v2.y(),
-            v1.z() * v2.x() - v1.x() * v2.z(),
-            v1.x() * v2.y() - v1.y() * v2.x()
-        ).unit_vector();
+        std::vector<int> face = faces[faces_idx];
+        size_t numVertices = face.size();
+        
+        vec3 normal = normals[face[1]];
 
         record.pos = p;
         record.t = t;
@@ -132,7 +139,10 @@ class Mesh : public Geometry {
 
     private:
     std::vector<vec3> vertices;
+    std::vector<std::vector<int>> originalFaces;
     std::vector<std::vector<int>> faces;
+    std::vector<vec3> normals;
+    std::vector<shared_ptr<material>> materials;
     unsigned int starterId;
 };
 
