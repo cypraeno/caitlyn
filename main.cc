@@ -686,7 +686,7 @@ void earth() {
     // Set RenderData
     RenderData render_data; 
     const auto aspect_ratio = 16.0 / 9.0;
-    setRenderData(render_data, aspect_ratio, 400, 50, 50);
+    setRenderData(render_data, aspect_ratio, 1200, 50, 50);
 
     // Set up Camera
     point3 lookfrom(6,2,10);
@@ -707,9 +707,9 @@ void earth() {
     auto globe = make_shared<SpherePrimitive>(point3(0,-2.65,0), earth_surface, 2, device);
     unsigned int groundID = scene_ptr->add_primitive(globe);
 
-    auto sophia_colour = make_shared<lambertian>(color(.8, .13, .18));
-    std::string filePath = "knight_cleaned.obj";
-    auto mesh = make_shared<Mesh>(point3(0,0,0), sophia_colour, filePath, device);
+    auto reddish = make_shared<lambertian>(color(.8, .13, .18));
+    std::string filePath = "plate_cleaned.obj";
+    auto mesh = make_shared<Mesh>(point3(0,0,0), reddish, filePath, device);
     scene_ptr->add_mesh(mesh);
 
     scene_ptr->commitScene();
