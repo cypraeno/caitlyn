@@ -18,6 +18,18 @@ unsigned int Scene::add_primitive(std::shared_ptr<Primitive> prim) {
     return primID;
 }
 
+void Scene::add_mesh(std::shared_ptr<Mesh> mesh) {
+    for (size_t i = 0; i < mesh->geoms.size(); ++i) {
+        unsigned int primID = rtcAttachGeometry(rtc_scene, mesh->geoms[i]);
+        rtcReleaseGeometry(mesh->geoms[i]);
+        if (i == 0) {
+            mesh->setStarterId(primID);
+        }
+
+        geom_map[primID] = mesh;
+    }
+}
+
 void Scene::commitScene() { rtcCommitScene(rtc_scene); }
 void Scene::releaseScene() { rtcReleaseScene(rtc_scene); }
 

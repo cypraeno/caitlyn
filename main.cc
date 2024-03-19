@@ -11,6 +11,7 @@
 
 #include "sphere_primitive.h"
 #include "quad_primitive.h"
+#include "mesh.h"
 #include "intersects.h"
 #include "texture.h"
 #include "light.h"
@@ -688,7 +689,7 @@ void earth() {
     setRenderData(render_data, aspect_ratio, 400, 50, 50);
 
     // Set up Camera
-    point3 lookfrom(0,0,12);
+    point3 lookfrom(6,2,10);
     point3 lookat(0,0,0);
     vec3 vup(0,1,0);
     auto dist_to_focus = 10.0;
@@ -703,8 +704,13 @@ void earth() {
     // Set World
     auto earth_texture = make_shared<image_texture>("../images/earthmap.jpg");
     auto earth_surface = make_shared<lambertian>(earth_texture);
-    auto globe = make_shared<SpherePrimitive>(point3(0,0,0), earth_surface, 2, device);
+    auto globe = make_shared<SpherePrimitive>(point3(0,-2.65,0), earth_surface, 2, device);
     unsigned int groundID = scene_ptr->add_primitive(globe);
+
+    auto sophia_colour = make_shared<lambertian>(color(.8, .13, .18));
+    std::string filePath = "knight_cleaned.obj";
+    auto mesh = make_shared<Mesh>(point3(0,0,0), sophia_colour, filePath, device);
+    scene_ptr->add_mesh(mesh);
 
     scene_ptr->commitScene();
 
@@ -904,9 +910,37 @@ void two_perlin_spheres(){
     output(render_data, cam, scene_ptr);
 }
 
+void mesh_example() {
+    RenderData render_data; 
+    const auto aspect_ratio = 16.0 / 9.0;
+    setRenderData(render_data, aspect_ratio, 1200, 50, 50);
+
+    // Set up Camera
+    point3 lookfrom(4, 0, 4);
+    point3 lookat(0, 0, 0);
+    vec3 vup(0,1,0);
+    double vfov = 60;
+    double aperture = 0.0001;
+    double dist_to_focus = 10.0;
+
+    Camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
+    // Simple usage of creating a Scene
+    RTCDevice device = initializeDevice();
+    auto scene_ptr = make_shared<Scene>(device, cam);
+
+    auto white = make_shared<lambertian>(color(.73, .73, .73));
+    std::string filePath = "knight_cleaned.obj";
+    auto mesh = make_shared<Mesh>(point3(0,0,0), white, filePath, device);
+    scene_ptr->add_mesh(mesh);
+    scene_ptr->commitScene();
+    rtcReleaseDevice(device);
+    output(render_data, cam, scene_ptr);
+}
+
 int main(int argc, char* argv[]) {
     Config config = parseArguments(argc, argv);
-    switch (5) {
+    switch (3) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
@@ -915,6 +949,7 @@ int main(int argc, char* argv[]) {
         case 6:  simple_light();   break;
         case 7:  cornell_box();    break;
         case 8: two_perlin_spheres(); break;
+        case 9: mesh_example();    break;
     }
 }
 

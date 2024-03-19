@@ -6,6 +6,7 @@
 #include "camera.h"
 #include "material.h"
 #include "primitive.h"
+#include "mesh.h"
 #include "hitinfo.h"
 
 // SCENE INTERFACE
@@ -36,6 +37,7 @@ class Scene {
     void commitScene();
     void releaseScene();
     unsigned int add_primitive(std::shared_ptr<Primitive> prim);
+    void add_mesh(std::shared_ptr<Mesh> mesh);
 };
 
 void add_sphere(RTCDevice device, RTCScene scene);
