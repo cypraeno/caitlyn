@@ -10,12 +10,32 @@ class emissive : public material {
     public:
     color emission_color;
     emissive(color emission_color) : emission_color{emission_color} {}
-    bool scatter(const ray& r_in, const HitInfo& rec, color& attenuation, ray& scattered) const override {
+    virtual bool scatter(const ray& r_in, const HitInfo& rec, color& attenuation, ray& scattered) const override {
         return false;
     }
     color emitted(double u, double v, const point3& p) const override {
         return emission_color;
     }
+};
+
+class emissive_lambertian : public emissive {
+    public:
+    emissive_lambertian(color c, color e) : albedo{c}, emissive(e) {}
+
+    bool scatter(const ray& r_in, const HitInfo& rec, color& attenuation, ray& scattered) const override {
+
+        auto scatter_direction = rec.normal + random_unit_vector();
+
+        if (scatter_direction.near_zero()) {
+            scatter_direction = rec.normal;
+        }
+        scattered = ray(rec.pos, scatter_direction, r_in.time());
+        attenuation = albedo;
+        
+        return true;
+    }
+
+    color albedo;
 };
 
 /**
