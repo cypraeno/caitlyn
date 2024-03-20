@@ -10,7 +10,7 @@
 #include <map>
 
 #include "vec3.h"
-#include "material.h"
+#include "light.h"
 
 class MTLParser {
     public:
@@ -28,6 +28,9 @@ class MTLParser {
         int i = 0;
 
         std::shared_ptr<material> currentMaterial = nullptr;
+        color albedo;
+        bool creatingEmissive = false;
+        color emission;
 
         std::string line;
         while (getline(file, line)) {
@@ -36,9 +39,15 @@ class MTLParser {
             lineStream >> lineType;
 
             if (lineType == "newmtl") {
-
-                if (currentMaterial != nullptr) {
+                
+                if (i != 0) { // first material
                     // Save the previous material before starting a new one
+                    if (creatingEmissive) {
+                        currentMaterial = make_shared<emissive_lambertian>(albedo, emission);
+                    } else {
+                        currentMaterial = make_shared<lambertian>(albedo);
+                    }
+                    creatingEmissive = false;
                     materials.push_back(currentMaterial);
                 }
 
@@ -50,13 +59,22 @@ class MTLParser {
             } else if (lineType == "Kd") {
                 float r, g, b;
                 lineStream >> r >> g >> b;
-                currentMaterial = make_shared<lambertian>(color(r,g,b));
+                albedo = color(r,g,b);
+            } else if (lineType == "Ke") {
+                float r, g, b;
+                lineStream >> r >> g >> b;
+                emission = color(r,g,b);
+                creatingEmissive = true;
             }
         }
 
-        if (currentMaterial != nullptr) {
-            materials.push_back(currentMaterial);
+        if (creatingEmissive) {
+            currentMaterial = make_shared<emissive_lambertian>(albedo, emission);
+        } else {
+            currentMaterial = make_shared<lambertian>(albedo);
         }
+        creatingEmissive = false;
+        materials.push_back(currentMaterial);
 
 
         return true;
