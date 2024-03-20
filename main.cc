@@ -307,7 +307,12 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                         vec3 unit_direction = current_ray.direction().unit_vector();
                         auto t = 0.5*(unit_direction.y() + 1.0);
 
-                        color multiplier = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
+                        // color top = color(0.5, 0.7, 1.0);
+                        // color bottom = color(1.0, 1.0, 1.0);
+                        color top = color(0.1882, 0.1137, 0.49);
+                        color bottom = color(1.0, 0.584, 0.3176);
+
+                        color multiplier = (1.0-t)*bottom + t*top; // lerp formula (1.0-t)*start + t*endval
                         if (current[i].depth == 0) { temp_buffer[current_index] = multiplier; }
                         else { temp_buffer[current_index] = temp_buffer[current_index] + (attenuation_buffer[current_index] * multiplier); }
                         completeRayQueueTask(current, temp_buffer, full_buffer, queue, mask, i, current_index);
@@ -912,11 +917,12 @@ void two_perlin_spheres(){
 void mesh_example() {
     RenderData render_data; 
     const auto aspect_ratio = 16.0 / 9.0;
-    setRenderData(render_data, aspect_ratio, 400, 50, 50);
+    setRenderData(render_data, aspect_ratio, 1200, 400, 100);
 
     // Set up Camera
-    point3 lookfrom(10, 0, 5);
-    point3 lookat(0, 0, 0);
+    point3 lookfrom(4, 0.5, 3);
+    point3 lookat(0, 0.75, 0);
+
     vec3 vup(0,1,0);
     double vfov = 60;
     double aperture = 0.0001;
@@ -929,17 +935,48 @@ void mesh_example() {
     auto scene_ptr = make_shared<Scene>(device, cam);
 
     // seg fault when included:
-    // std::string knightPath = "knight_og.obj";
-    // auto knight = make_shared<Mesh>(point3(0,0,0), 1, knightPath, device);
-    // scene_ptr->add_mesh(knight);
+    std::string knightPath = "knight_og.obj";
+    auto knight = make_shared<Mesh>(point3(0,0.1,1.5), 1, knightPath, device);
+    scene_ptr->add_mesh(knight);
 
     std::string treePath = "tree.obj";
-    auto tree = make_shared<Mesh>(point3(-4,3,-2), 1, treePath, device);
+    auto tree = make_shared<Mesh>(point3(-2,3,-1), 3, treePath, device);
     scene_ptr->add_mesh(tree);
 
+    std::string moonPath = "Moon.obj";
+    auto moon = make_shared<Mesh>(point3(25,5,25), 2.0, moonPath, device);
+    scene_ptr->add_mesh(moon);
+
     std::string grassPath = "grass.obj";
-    auto grass = make_shared<Mesh>(point3(0,0,0), 1, grassPath, device);
-    scene_ptr->add_mesh(grass);
+    auto grass1 = make_shared<Mesh>(point3(-2,-0.6,-1), 4, grassPath, device);
+    scene_ptr->add_mesh(grass1);
+    auto grass2 = make_shared<Mesh>(point3(0,-0.6,1.5), 3.5, grassPath, device);
+    scene_ptr->add_mesh(grass2);
+    auto grass3 = make_shared<Mesh>(point3(-1,-0.6,0.25), 3.5, grassPath, device);
+    scene_ptr->add_mesh(grass3);
+    auto grass4 = make_shared<Mesh>(point3(1.25,-0.6,0.25), 3.5, grassPath, device);
+    scene_ptr->add_mesh(grass4);
+    auto grass5 = make_shared<Mesh>(point3(1.5,-0.6,1.5), 3.5, grassPath, device);
+    scene_ptr->add_mesh(grass5);
+    auto grass6 = make_shared<Mesh>(point3(1.0,-0.6,2.65), 3.5, grassPath, device);
+    scene_ptr->add_mesh(grass6);
+    auto grass7 = make_shared<Mesh>(point3(2.5,-0.6,0), 3.5, grassPath, device);
+    scene_ptr->add_mesh(grass7);
+    auto grass8 = make_shared<Mesh>(point3(2.3,-0.6,0.4), 3.5, grassPath, device);
+    scene_ptr->add_mesh(grass8);
+    auto grass9 = make_shared<Mesh>(point3(0.5,-0.6,2.75), 3.5, grassPath, device);
+    scene_ptr->add_mesh(grass9);
+    auto grass10 = make_shared<Mesh>(point3(2.75,-0.6,-0.5), 3.5, grassPath, device);
+    scene_ptr->add_mesh(grass10);
+    auto grass11 = make_shared<Mesh>(point3(2,-0.6,-1.0), 3.5, grassPath, device);
+    scene_ptr->add_mesh(grass11);
+    auto grass12 = make_shared<Mesh>(point3(-1.0,-0.6,2), 3.5, grassPath, device);
+    scene_ptr->add_mesh(grass12);
+
+    // Ground sphere
+    auto dgreen = make_shared<lambertian>(color(0.1,0.35,0.1));
+    auto sphere1 = make_shared<SpherePrimitive>(point3(0,-200 - 0.55, 0), dgreen, 200, device);
+    scene_ptr->add_primitive(sphere1);
 
     scene_ptr->commitScene();
     rtcReleaseDevice(device);
