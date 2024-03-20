@@ -27,22 +27,44 @@ class OBJParser {
             } else if (lineType == "f") {
                 std::vector<int> face;
 
+                std::string vertexData;
+
                 // Push material index
                 face.push_back(current_mat_idx);
+                
+                while (lineStream >> vertexData) {
+                    std::istringstream vertexStream(vertexData);
+                    std::string part;
+                    int vertexIndex = -1, textureIndex = -1, normalIndex = -1;
+                    int partIndex = 0;
 
-                std::string element;
-                while (lineStream >> element) {
-
-                    std::replace(element.begin(), element.end(), '/', ' ');
-                    std::istringstream vertexStream(element);
-                    int vertexIndex, textureIndex, normalIndex;
-                    vertexStream >> vertexIndex >> textureIndex >> normalIndex;
+                    while (getline(vertexStream, part, '/')) {
+                        if (!part.empty()) { // Check if the part is not empty.
+                            switch (partIndex) {
+                                case 0: vertexIndex = std::stoi(part); break; // First part, vertex index.
+                                case 1: textureIndex = std::stoi(part); break; // Second part, texture index.
+                                case 2: normalIndex = std::stoi(part); break; // Third part, normal index.
+                            }
+                        }
+                        partIndex++; // Move to the next part.
+                    }
                     vertexIndex--; textureIndex--; normalIndex--;
-
-                    if (face.size() == 1) { // first vertex being parsed
+                    
+                    if (face.size() == 1) {
                         face.push_back(normalIndex);
                     }
                     face.push_back(vertexIndex);
+                }
+
+                if (face[1] < 0) { // normal not defined
+                    // Calculates the face normal, pushes to array of normals and places the index in face.
+                    int normal_idx;
+                    normal_idx << normals.size();
+                    vec3 v1 = vertices[face[2]] - vertices[face[3]];
+                    vec3 v2 = vertices[face[2]] - vertices[face[4]];
+                    vec3 normal = cross(v1, v2).unit_vector();
+                    normals.push_back(normal);
+                    face[1] = normal_idx;
                 }
                 faces.push_back(face);
             } else if (lineType == "vn") {
