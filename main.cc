@@ -943,10 +943,6 @@ void mesh_example() {
     auto tree = make_shared<Mesh>(point3(-2,3,-1), 3, treePath, device);
     scene_ptr->add_mesh(tree);
 
-    std::string moonPath = "Moon.obj";
-    auto moon = make_shared<Mesh>(point3(25,5,25), 2.0, moonPath, device);
-    scene_ptr->add_mesh(moon);
-
     std::string grassPath = "grass.obj";
     auto grass1 = make_shared<Mesh>(point3(-2,-0.6,-1), 4, grassPath, device);
     scene_ptr->add_mesh(grass1);
@@ -994,7 +990,7 @@ int main(int argc, char* argv[]) {
         case 6:  simple_light();   break;
         case 7:  cornell_box();    break;
         case 8: two_perlin_spheres(); break;
-        case 9: mesh_example();    break;
+        case 9: mesh_example();    break; // download necessary OBJ files from cypraeno/csr-schema/examples/grass_horse/....
     }
 }
 
