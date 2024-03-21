@@ -3,6 +3,11 @@
 
 #include "MTLParser.h"
 
+/**
+ * @brief Loads OBJ files into vectors of vertices, faces (containing normals, vertices, matkeys).
+ * Uses MTL parser, so supports a limited range of MTL files. Does not support textures,
+ * meaning that it will ignore all "vt" lines. 
+*/
 class OBJParser {
     public:
     bool parse(std::string& filePath) {

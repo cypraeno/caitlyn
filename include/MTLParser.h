@@ -12,6 +12,12 @@
 #include "vec3.h"
 #include "light.h"
 
+
+/**
+ * @brief provides a parse() that loads a file and populates a vector of materials.
+ * Does NOT support image textures or any material parameters other than Ke and Kd.
+ * Will load either lambertian or emissive_lambertian.
+*/
 class MTLParser {
     public:
 
