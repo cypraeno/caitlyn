@@ -16,7 +16,7 @@ class OBJParser {
             return false;
         }
 
-        size_t current_mat_idx = 0;
+        size_t current_mat_idx = -1;
 
         std::string line;
         while (getline(file, line)) {
@@ -35,6 +35,11 @@ class OBJParser {
                 std::string vertexData;
 
                 // Push material index
+                if (current_mat_idx == -1) { // no MTL file was ever defined
+                    auto white = std::make_shared<lambertian>(color(0.73, 0.73, 0.73));
+                    materials.push_back(white);
+                    current_mat_idx = 0;
+                }
                 face.push_back(current_mat_idx);
                 
                 while (lineStream >> vertexData) {
