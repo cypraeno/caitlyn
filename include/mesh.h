@@ -10,6 +10,11 @@
 #include "quad_primitive.h"
 #include "OBJParser.h"
 
+/**
+ * @brief Mesh object constructed with a given OBJ with MTL file.
+ * Loads into a series of RTCGeometry geoms, normals, and materials.
+ * Uses a "starterId" to convert geomIDs to real indexes to the vectors.
+*/
 class Mesh : public Geometry {
     public:
     // assuming geomIDs increment, if startId is 5, and geomID is 6, then
