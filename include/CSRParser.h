@@ -14,6 +14,7 @@
 #include "texture.h"
 #include "sphere_primitive.h"
 #include "quad_primitive.h"
+#include "mesh.h"
 #include "scene.h"
 
 /**
@@ -44,7 +45,7 @@ public:
 
         // Read in version
         getNextLine(file, line);
-        if (trim(line) != "version 0.1.2") {
+        if (trim(line) != "version 0.1.3") {
             rtcReleaseDevice(device);
             throw std::runtime_error("Unsupported version or missing version marker");
         }
@@ -116,6 +117,12 @@ public:
                 getNextLine(file, position); getNextLine(file, u); getNextLine(file, v); getNextLine(file, material);
                 auto quad = make_shared<QuadPrimitive>(readXYZProperty(position), readXYZProperty(u), readXYZProperty(v), materials[readStringProperty(material)], device);
                 scene_ptr->add_primitive(quad);
+            } else if (startsWith(line, "Mesh")) {
+                std::string position, path, scale;
+                getNextLine(file, position); getNextLine(file, path); getNextLine(file, scale);
+                std::string path_str = readStringProperty(path);
+                auto mesh = make_shared<Mesh>(readXYZProperty(position), readDoubleProperty(scale), path_str, device);
+                scene_ptr->add_mesh(mesh);
             }
         }
 

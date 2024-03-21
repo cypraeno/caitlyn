@@ -944,7 +944,7 @@ void mesh_example() {
     scene_ptr->add_mesh(tree);
 
     std::string grassPath = "grass.obj";
-    auto grass1 = make_shared<Mesh>(point3(-2,-0.6,-1), 4, grassPath, device);
+    auto grass1 = make_shared<Mesh>(point3(-2,-0.6,-1), 3.5, grassPath, device);
     scene_ptr->add_mesh(grass1);
     auto grass2 = make_shared<Mesh>(point3(0,-0.6,1.5), 3.5, grassPath, device);
     scene_ptr->add_mesh(grass2);
@@ -981,7 +981,7 @@ void mesh_example() {
 
 int main(int argc, char* argv[]) {
     Config config = parseArguments(argc, argv);
-    switch (9) {
+    switch (5) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
