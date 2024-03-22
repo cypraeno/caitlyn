@@ -8,6 +8,7 @@
 #include "ray.h"
 #include "vec3.h"
 #include "material.h"
+#include "render.h"
 
 #include "sphere_primitive.h"
 #include "quad_primitive.h"

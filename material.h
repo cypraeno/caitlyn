@@ -15,6 +15,12 @@ class material {
         }
 
         virtual bool scatter(const ray& r_in, const HitInfo& rec, color& attenuation, ray& scattered) const = 0;
+        virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
+            return color(0,0,0);
+        }
+	    virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
+            return 0.0;
+        };
 };
 
 class lambertian : public material {
@@ -25,42 +31,37 @@ class lambertian : public material {
 
         virtual bool scatter(const ray& r_in, const HitInfo& rec, color& attenuation, ray& scattered) const override {
 
+            // auto scatter_direction = rec.normal + random_unit_vector();
             auto scatter_direction = rec.normal + random_unit_vector();
-
             if (scatter_direction.near_zero()) {
                 scatter_direction = rec.normal;
             }
             scattered = ray(rec.pos, scatter_direction, r_in.time());
-            attenuation = albedo->value(rec.u, rec.v, rec.pos);
             
             return true;
         }
 
-    private:
-    shared_ptr<texture> albedo;
-};
-
-class hemispheric : public material {
-
-    public:
-
-        hemispheric(const color& a) : albedo(a) {}
-
-        virtual bool scatter(const ray& r_in, const HitInfo& rec, color& attenuation, ray& scattered) const override {
-            auto scatter_direction = random_in_hemisphere(rec.normal);
-
-            if (scatter_direction.near_zero()) {
-                scatter_direction = rec.normal;
-            }
-            scattered = ray(rec.pos,scatter_direction, r_in.time());
-            attenuation = albedo;
-
-            return true;
+        // A lambertians BRDF value is its albedo / pi
+        virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
+            color a = albedo->value(rec.u, rec.v, rec.pos);
+            return a / pi;
+        }
+        
+        /**
+         * @note some resources say a lambertians PDF is 1 / (2 * pi)
+         * But Shirley refers to a "perfect match" as cos_theta / pi.
+         * Whereas 1 / (2 * pi) seems to be the PDF for uniform hemispherical sampling, which we
+         * no longer support (or really ever did).
+        */
+        //A lambertians PDF is 1 / (2 * pi)
+        virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
+            // return 1 / (2 * pi);
+            double cos_theta = fmax(0.0, dot(rec.normal, scattered.direction()));
+            return cos_theta / pi;
         }
 
-    public:
-
-        color albedo;
+    private:
+    shared_ptr<texture> albedo;
 };
 
 class metal : public material {
