@@ -4,6 +4,7 @@
 #include "general.h"
 #include "hitinfo.h"
 #include "texture.h"
+#include "onb.h"
 
 class hit_record;
 
@@ -30,12 +31,9 @@ class lambertian : public material {
         lambertian(shared_ptr<texture> a) : albedo(a) {}
 
         virtual bool scatter(const ray& r_in, const HitInfo& rec, color& attenuation, ray& scattered) const override {
-
-            // auto scatter_direction = rec.normal + random_unit_vector();
-            auto scatter_direction = rec.normal + random_unit_vector();
-            if (scatter_direction.near_zero()) {
-                scatter_direction = rec.normal;
-            }
+            onb uvw;
+            uvw.build_from_w(rec.normal);
+            auto scatter_direction = uvw.local(random_cosine_direction());
             scattered = ray(rec.pos, scatter_direction, r_in.time());
             
             return true;
@@ -55,9 +53,9 @@ class lambertian : public material {
         */
         //A lambertians PDF is 1 / (2 * pi)
         virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
-            // return 1 / (2 * pi);
-            double cos_theta = fmax(0.0, dot(rec.normal, scattered.direction()));
-            return cos_theta / pi;
+            onb uvw;
+            uvw.build_from_w(rec.normal);
+            return dot(uvw.w(), scattered.direction()) / pi;
         }
 
     private:

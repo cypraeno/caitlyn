@@ -119,6 +119,18 @@ vec3 random_in_unit_disk() {
     return rand_vec.unit_vector();
 }
 
+vec3 random_cosine_direction() {
+    auto r1 = random_double();
+    auto r2 = random_double();
+
+    auto phi = 2*pi*r1;
+    auto x = cos(phi)*sqrt(r2);
+    auto y = sin(phi)*sqrt(r2);
+    auto z = sqrt(1-r2);
+
+    return vec3(x, y, z);
+}
+
 vec3 reflect(const vec3& v, const vec3& n) { return v - 2*n * dot(v, n); }
 
 vec3 refract(const vec3& uv, const vec3& n, float etai_over_etat) {
