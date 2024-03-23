@@ -6,6 +6,7 @@
 #include "camera.h"
 #include "material.h"
 #include "primitive.h"
+#include "light.h"
 #include "hitinfo.h"
 
 // SCENE INTERFACE
@@ -29,6 +30,9 @@ class Scene {
     std::map<unsigned int, std::shared_ptr<Geometry>> geom_map;
     RTCScene rtc_scene;
 
+    std::vector<std::shared_ptr<Geometry>> physical_lights;
+    std::vector<std::shared_ptr<Light>> lights;
+
     // Default Constructor
     // requires a device to initialize RTCScene
     Scene(RTCDevice device, Camera cam);
@@ -36,6 +40,8 @@ class Scene {
     void commitScene();
     void releaseScene();
     unsigned int add_primitive(std::shared_ptr<Primitive> prim);
+
+    void add_physical_light(std::shared_ptr<Geometry> geom_ptr);
 };
 
 void add_sphere(RTCDevice device, RTCScene scene);
