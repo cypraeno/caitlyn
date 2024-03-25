@@ -23,6 +23,9 @@ class QuadPrimitive : public Primitive {
         shared_ptr<material> materialById(unsigned int geomID) const override;
 
         HitInfo getHitInfo(const ray& r, const vec3& p, const float t, unsigned int geomID) const override;
+
+        point3 sample(const HitInfo& rec) const override;
+        double pdf(const HitInfo& rec, ray sample_ray) const override;
 };
 
 #endif

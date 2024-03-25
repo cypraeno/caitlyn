@@ -40,3 +40,14 @@ HitInfo QuadPrimitive::getHitInfo(const ray& r, const vec3& p, const float t, un
 
     return record;
 }
+
+point3 QuadPrimitive::sample(const HitInfo& rec) const {
+    vec3 random_point = this->position + random_double() * this->u + random_double() * this->v;
+    return random_point;
+}
+double QuadPrimitive::pdf(const HitInfo& light_record, ray sample_ray) const {
+    auto distance_squared = light_record.t * light_record.t * sample_ray.direction().length_squared();
+    auto cosine = fabs(dot(sample_ray.direction().unit_vector(), light_record.normal));
+    double area = cross(u,v).length();
+    return distance_squared / (cosine * area);
+}

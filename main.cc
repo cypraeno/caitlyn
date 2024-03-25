@@ -177,7 +177,7 @@ void render_scanlines(int lines, int start_line, std::shared_ptr<Scene> scene_pt
                 auto u = (i + random_double()) / (image_width-1);
                 auto v = (j + random_double()) / (image_height-1);
                 ray r = cam.get_ray(u, v);
-                pixel_color += colorize_ray(r, scene_ptr, max_depth);
+                pixel_color += trace_ray(r, scene_ptr, max_depth);
             }
 
             int buffer_index = j * image_width + i;
@@ -458,31 +458,31 @@ void output(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_p
     render_data.completed_lines = 0;
 
     // To render entire thing without multithreading, uncomment this line and comment out num_threads -> threads.clear()
-    //render_scanlines_sse(image_height,image_height-1,scene_ptr,render_data,cam);
+    render_scanlines(image_height,image_height-1,scene_ptr,render_data,cam);
 
-    // Threading approach? : Divide the scanlines into N blocks
-    const int num_threads = std::thread::hardware_concurrency() - 1;
+    // // Threading approach? : Divide the scanlines into N blocks
+    // const int num_threads = std::thread::hardware_concurrency() - 1;
 
-    // Image height is the number of scanlines, suppose image_height = 800
-    const int lines_per_thread = image_height / num_threads;
-    const int leftOver = image_height % num_threads;
-    // The first <num_threads> threads are dedicated <lines_per_thread> lines, and the last thread is dedicated to <leftOver>
+    // // Image height is the number of scanlines, suppose image_height = 800
+    // const int lines_per_thread = image_height / num_threads;
+    // const int leftOver = image_height % num_threads;
+    // // The first <num_threads> threads are dedicated <lines_per_thread> lines, and the last thread is dedicated to <leftOver>
 
-    std::vector<color> pixel_colors;
-    std::vector<std::thread> threads;
+    // std::vector<color> pixel_colors;
+    // std::vector<std::thread> threads;
 
 
-    for (int i=0; i < num_threads; i++) {
-        // In the first thead, we want the first lines_per_thread lines to be rendered
-        threads.emplace_back(render_scanlines_sse,lines_per_thread,(image_height-1) - (i * lines_per_thread), scene_ptr, std::ref(render_data),cam);
-    }
-    threads.emplace_back(render_scanlines_sse,leftOver,(image_height-1) - (num_threads * lines_per_thread), scene_ptr, std::ref(render_data),cam);
+    // for (int i=0; i < num_threads; i++) {
+    //     // In the first thead, we want the first lines_per_thread lines to be rendered
+    //     threads.emplace_back(render_scanlines,lines_per_thread,(image_height-1) - (i * lines_per_thread), scene_ptr, std::ref(render_data),cam);
+    // }
+    // threads.emplace_back(render_scanlines,leftOver,(image_height-1) - (num_threads * lines_per_thread), scene_ptr, std::ref(render_data),cam);
 
-    for (auto &thread : threads) {
-            thread.join();
-    }
-    std::cerr << "Joining all threads" << std::endl;
-    threads.clear();
+    // for (auto &thread : threads) {
+    //         thread.join();
+    // }
+    // std::cerr << "Joining all threads" << std::endl;
+    // threads.clear();
 
     int output_type = 2; // 0 for ppm, 1 for jpg, 2 for png
     // hardcoded, but will be updated for CLI in CA-83
@@ -826,7 +826,7 @@ void simple_light() {
 void cornell_box() {
     RenderData render_data; 
     const auto aspect_ratio = 1.0;
-    setRenderData(render_data, aspect_ratio, 600, 20, 20);
+    setRenderData(render_data, aspect_ratio, 600, 10, 10);
 
     // Set up Camera
     point3 lookfrom(278, 278, -800);
@@ -859,6 +859,7 @@ void cornell_box() {
     scene_ptr->add_primitive(quad1);
     scene_ptr->add_primitive(quad2);
     scene_ptr->add_primitive(quad3);
+    scene_ptr->add_physical_light(quad3);
     scene_ptr->add_primitive(quad4);
     scene_ptr->add_primitive(quad5);
     scene_ptr->add_primitive(quad6);
@@ -907,7 +908,7 @@ void two_perlin_spheres(){
 
 int main(int argc, char* argv[]) {
     Config config = parseArguments(argc, argv);
-    switch (5) {
+    switch (7) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
