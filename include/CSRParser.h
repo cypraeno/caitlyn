@@ -111,11 +111,24 @@ public:
                 getNextLine(file, position); getNextLine(file, material); getNextLine(file, radius);
                 auto sphere = make_shared<SpherePrimitive>(readXYZProperty(position), materials[readStringProperty(material)], readDoubleProperty(radius), device);
                 scene_ptr->add_primitive(sphere);
+
+                // This check is if the material emits anything, but it doesn't really work because it assumes
+                // that the u and v ints passed in hit a part that emits. In the future, if u and v actually plays into
+                // whether or not it emits, (e.g one part of the material emits and the rest don't)
+                // and the u v don't result in that one part, it'll incorrectly ignore it as a light.
+                if (materials[readStringProperty(material)]->emitted(0, 0, point3(0,0,0)).length() > 0) {
+                    scene_ptr->add_physical_light(sphere);
+                }
             } else if (startsWith(line, "Quad")) {
                 std::string position, u, v, material;
                 getNextLine(file, position); getNextLine(file, u); getNextLine(file, v); getNextLine(file, material);
                 auto quad = make_shared<QuadPrimitive>(readXYZProperty(position), readXYZProperty(u), readXYZProperty(v), materials[readStringProperty(material)], device);
                 scene_ptr->add_primitive(quad);
+                
+                // see above warning in Sphere block
+                if (materials[readStringProperty(material)]->emitted(0, 0, point3(0,0,0)).length() > 0) {
+                    scene_ptr->add_physical_light(quad);
+                }
             }
         }
 
