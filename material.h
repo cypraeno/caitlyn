@@ -20,7 +20,7 @@ class material {
             return color(0,0,0);
         }
 	    virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
-            return 0.0;
+            return 1.0;
         };
 };
 
@@ -74,6 +74,15 @@ class metal : public material {
             attenuation = albedo;
 
             return (dot(scattered.direction(), rec.normal) > 0);
+        }
+
+        virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
+            return albedo;
+        }
+
+        virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
+            // Simplified PDF for educational purposes. In reality, specular reflection would require a different approach.
+            return 0.5 / pi;
         }
 
     public:
