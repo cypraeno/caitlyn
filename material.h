@@ -42,6 +42,7 @@ class lambertian : public material {
 
         // A lambertians BRDF value is its albedo / pi
         virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
+            // See note in Oren-Nayar generate() function.
             return albedo->value(rec.u, rec.v, rec.pos);
         }
         
@@ -133,6 +134,67 @@ class dielectric : public material {
 
             return r0 + (1 - r0) * pow((1 - cosine), 5);
         }
+};
+
+class OrenNayar : public material {
+
+    public:
+    OrenNayar(color albedo, float roughness) : albedo{albedo}, roughness{roughness} {}
+
+    virtual bool scatter(const ray& r_in, const HitInfo& rec, color& attenuation, ray& scattered) const override {
+        onb uvw;
+        uvw.build_from_w(rec.normal);
+        auto scatter_direction = uvw.local(random_cosine_direction());
+        scattered = ray(rec.pos, scatter_direction, r_in.time());
+        attenuation = albedo;
+        
+        return true;
+    }
+
+    virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
+        vec3 w_i = scattered.direction().unit_vector();
+        vec3 w_o = -(r_in.direction().unit_vector());
+
+        // Calculate azimuthal angles.
+        vec3 projected_i = (w_i - (dot(w_i, rec.normal) * rec.normal)).unit_vector();
+        vec3 projected_o = (w_o - (dot(w_o, rec.normal) * rec.normal)).unit_vector();
+        float cos_azimuth = dot(projected_i, projected_o);
+
+
+        float theta_i = acos(dot(w_i, rec.normal));
+        float theta_o = acos(dot(w_o, rec.normal));
+        
+        float sigma2 = roughness * roughness;
+        float A = 1 - (sigma2 / (2 * (sigma2 + 0.33)));
+
+        float B = (0.45 * sigma2) / (sigma2 + 0.09);
+
+        float alpha = fmax(theta_i, theta_o);
+        float beta = fmin(theta_i, theta_o);
+
+        // Multiple sources say that the formula for the Oren-Nayar BRDF includes the R term as albedo, meaning
+        // diffuse term should be => albedo / pi.
+        // However, tests ran weirdly dark (on a simple ground sphere and default non-black sky.) Even fully white albedo and
+        // zero roughness came out gray.
+        // This problem extends here and default lambertian, which suggests a possible problem in pdf (unlikely, it very often converges to 1)
+        // or in the rest of the renderer.
+        color diffuse_term = albedo;
+
+
+        return diffuse_term * (A + B * (fmax(0, cos_azimuth) * sin(alpha) * tan(beta)));
+    }
+
+    virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
+        auto cos_theta = dot(rec.normal, scattered.direction().unit_vector());
+        double scattering_pdf = (cos_theta < 0 ? 0 : cos_theta/pi);
+
+        return scattering_pdf / fmax(0.0, cos_theta / pi);
+        //return 1.0;
+    }
+
+    private:
+    color albedo;
+    float roughness;
 };
 
 #endif
