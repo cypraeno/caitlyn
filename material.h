@@ -35,27 +35,21 @@ class lambertian : public material {
             uvw.build_from_w(rec.normal);
             auto scatter_direction = uvw.local(random_cosine_direction());
             scattered = ray(rec.pos, scatter_direction, r_in.time());
+            attenuation = albedo->value(rec.u, rec.v, rec.pos);
             
             return true;
         }
 
         // A lambertians BRDF value is its albedo / pi
         virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
-            color a = albedo->value(rec.u, rec.v, rec.pos);
-            return a / pi;
+            return albedo->value(rec.u, rec.v, rec.pos);
         }
         
-        /**
-         * @note some resources say a lambertians PDF is 1 / (2 * pi)
-         * But Shirley refers to a "perfect match" as cos_theta / pi.
-         * Whereas 1 / (2 * pi) seems to be the PDF for uniform hemispherical sampling, which we
-         * no longer support (or really ever did).
-        */
-        //A lambertians PDF is 1 / (2 * pi)
         virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
-            onb uvw;
-            uvw.build_from_w(rec.normal);
-            return dot(uvw.w(), scattered.direction()) / pi;
+            auto cos_theta = dot(rec.normal, scattered.direction().unit_vector());
+            double scattering_pdf = (cos_theta < 0 ? 0 : cos_theta/pi);
+
+            return fmax(0.0, cos_theta / pi) / scattering_pdf;
         }
 
     private:
@@ -81,8 +75,7 @@ class metal : public material {
         }
 
         virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
-            // Simplified PDF for educational purposes. In reality, specular reflection would require a different approach.
-            return 0.5 / pi;
+            return 1.0;
         }
 
     public:
@@ -98,7 +91,6 @@ class dielectric : public material {
         dielectric(double index_of_refraction) : ir(index_of_refraction) {}
 
         virtual bool scatter(const ray& r_in, const HitInfo& rec, color& attenuation, ray& scattered) const override {
-            attenuation = color(1.0, 1.0, 1.0);
             // If the hit is on the front face, ir is the refracted index.
             // If the hit comes from the outside, then 1.0 is the refracted index (air)
             double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
@@ -116,6 +108,14 @@ class dielectric : public material {
             }
             scattered = ray(rec.pos, direction, r_in.time());
             return true;
+        }
+
+        virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
+            return color(1.0, 1.0, 1.0);
+        }
+
+        virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
+            return 1.0;
         }
         
 
