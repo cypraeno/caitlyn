@@ -71,6 +71,7 @@ vec3 operator/(vec3 v, float t);
 // vector multiplication
 float dot(const vec3 &u, const vec3 &v);
 vec3 cross(const vec3 &u, const vec3 &v);
+vec3 mix(vec3 x, vec3 y, float a);
 
 /** @brief overloads std::ostream& operator<< to support vec3s */
 std::ostream& operator<<(std::ostream &out, const vec3 &v);
