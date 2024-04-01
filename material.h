@@ -35,22 +35,18 @@ class lambertian : public material {
             uvw.build_from_w(rec.normal);
             auto scatter_direction = uvw.local(random_cosine_direction());
             scattered = ray(rec.pos, scatter_direction, r_in.time());
-            attenuation = albedo->value(rec.u, rec.v, rec.pos);
             
             return true;
         }
 
         // A lambertians BRDF value is its albedo / pi
         virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
-            // See note in Oren-Nayar generate() function.
-            return albedo->value(rec.u, rec.v, rec.pos);
+            return albedo->value(rec.u, rec.v, rec.pos) / pi;
         }
         
         virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
             auto cos_theta = dot(rec.normal, scattered.direction().unit_vector());
-            double scattering_pdf = (cos_theta < 0 ? 0 : cos_theta/pi);
-
-            return fmax(0.0, cos_theta / pi) / scattering_pdf;
+            return fmax(0.0, cos_theta / pi);
         }
 
     private:
@@ -136,6 +132,16 @@ class dielectric : public material {
         }
 };
 
+/**
+ * @class OrenNayar
+ * @brief Implements the Oren-Nayar reflectance model for simulating the appearance of rough diffuse surfaces.
+ * The Oren-Nayar reflectance model is an extension of the Lambertian model that accounts for the roughness of the
+ * surface, providing a more accurate representation of diffuse reflection from surfaces that are not perfectly smooth.
+ * 
+ * @note The correctness of the pdf and scatter functions, which use cosine-weighted sampling similar to the Lambertian
+ * class, may need further verification.
+ * 
+*/
 class OrenNayar : public material {
 
     public:
@@ -146,7 +152,6 @@ class OrenNayar : public material {
         uvw.build_from_w(rec.normal);
         auto scatter_direction = uvw.local(random_cosine_direction());
         scattered = ray(rec.pos, scatter_direction, r_in.time());
-        attenuation = albedo;
         
         return true;
     }
@@ -172,13 +177,7 @@ class OrenNayar : public material {
         float alpha = fmax(theta_i, theta_o);
         float beta = fmin(theta_i, theta_o);
 
-        // Multiple sources say that the formula for the Oren-Nayar BRDF includes the R term as albedo, meaning
-        // diffuse term should be => albedo / pi.
-        // However, tests ran weirdly dark (on a simple ground sphere and default non-black sky.) Even fully white albedo and
-        // zero roughness came out gray.
-        // This problem extends here and default lambertian, which suggests a possible problem in pdf (unlikely, it very often converges to 1)
-        // or in the rest of the renderer.
-        color diffuse_term = albedo;
+        color diffuse_term = albedo / pi;
 
 
         return diffuse_term * (A + B * (fmax(0, cos_azimuth) * sin(alpha) * tan(beta)));
@@ -186,10 +185,7 @@ class OrenNayar : public material {
 
     virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
         auto cos_theta = dot(rec.normal, scattered.direction().unit_vector());
-        double scattering_pdf = (cos_theta < 0 ? 0 : cos_theta/pi);
-
-        return scattering_pdf / fmax(0.0, cos_theta / pi);
-        //return 1.0;
+        return fmax(0.0, cos_theta / pi);
     }
 
     private:
