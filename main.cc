@@ -923,12 +923,15 @@ void brdf_tests() {
     RTCDevice device = initializeDevice();
     auto scene_ptr = make_shared<Scene>(device, cam);
 
+    //auto mt = make_shared<metal>(color(0.7, 0.6, 0.77), 0.1);
     color test = color(1.0, 1.0, 1.0);
     auto mt = make_shared<lambertian>(test);
     auto mt2 = make_shared<OrenNayar>(test, 0.0);
+    auto mt3 = make_shared<CookTorrance>(color(0.8, 0.4, 0.4), 0.1, 1.0, 0.5);
 
+    //auto mt = make_shared<dielectric>(1.5);
     auto sphere1 = make_shared<SpherePrimitive>(point3(0, 2, 2), mt, 2, device);
-    auto sphere2 = make_shared<SpherePrimitive>(point3(0, 2, -2), mt2, 2, device);
+    auto sphere2 = make_shared<SpherePrimitive>(point3(0, 2, -2), mt3, 2, device);
     scene_ptr->add_primitive(sphere1);
     scene_ptr->add_primitive(sphere2);
 
@@ -940,6 +943,10 @@ void brdf_tests() {
     rtcReleaseDevice(device);
 
     output(render_data, cam, scene_ptr);
+
+    std::cout << mt3->random_GGX_microfacet(vec3(0,1,0)) << std::endl;
+    std::cout << mt3->random_GGX_microfacet(vec3(0,1,0)) << std::endl;
+    std::cout << mt3->random_GGX_microfacet(vec3(0,1,0)) << std::endl;
 }
 
 int main(int argc, char* argv[]) {
