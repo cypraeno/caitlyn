@@ -7,6 +7,7 @@
 #include "onb.h"
 
 #include <complex>
+#include "microfacet.h"
 
 class hit_record;
 
@@ -199,18 +200,31 @@ class OrenNayar : public material {
  * @brief Implements the Cook-Torrance BRDF model for simulating the specular reflection of a conductor.
  * This is a more complex model of the original `metal` material. 
  * This implementation uses the GGX (Trowbridge-Reitz) microfacet distribution to simulate the roughness.
+ * 
+ * @param albedo [OPTIONAL] Base colour.
+ * @param roughness In range [0-1] defines how rough the surface of the material becomes (less shiny).
+ * @param absorption [OPTIONAL] RGB value of how much to not absorb. The higher the color channel, the less that one is absorbed.
+ * @param refraction [OPTIONAL] RGB value of how much to refract (i.e NOT reflect). The higher the color channel, the less it shows.
+ * 
+ * @note by default, if no MDF is specified in the constructor, GGX is used.
 */
 class CookTorrance : public material {
 
     public:
     CookTorrance(color albedo, float roughness)
-        : complex{false}, albedo{albedo}, roughness{roughness} {}
+        : complex{false}, albedo{albedo}, MDF{std::make_shared<GGX>(roughness)} {}
 
-    CookTorrance(float roughness, color absorption, color refraction)
-        : complex(true), roughness{roughness}, absorption_coefficient{absorption}, eta{refraction} {}
+    CookTorrance(color albedo, std::shared_ptr<Microfacet> mdf)
+        : complex(false), albedo{albedo}, MDF{mdf} {}
+
+    CookTorrance(color absorption, color refraction, float roughness)
+        : complex(true), absorption_coefficient{absorption}, eta{refraction}, MDF{std::make_shared<GGX>(roughness)} {}
+
+    CookTorrance(color absorption, color refraction, std::shared_ptr<Microfacet> mdf)
+        : complex(true), absorption_coefficient{absorption}, eta{refraction}, MDF{mdf} {}
 
     virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const override {
-        vec3 microfacet_normal = random_GGX_microfacet(rec.normal);
+        vec3 microfacet_normal = MDF->sample(rec.normal);
         rec.microfacet_normal = microfacet_normal;
         vec3 scatter_direction = reflect(r_in.direction().unit_vector(), microfacet_normal);
         scattered = ray(rec.pos, scatter_direction, r_in.time());
@@ -233,8 +247,8 @@ class CookTorrance : public material {
         if (complex) { F = FrComplex(fabs(dot(V,rec.microfacet_normal)), absorption_coefficient, eta); }
         else { F = fresnelSchlick(VoH, f0); }
 
-        float D = D_GGX(NoH, roughness);
-        float G = G_Smith(NoV, NoL, roughness);
+        float D = MDF->D(NoH);
+        float G = MDF->G(NoV, NoL);
 
         vec3 spec = (F * D * G) / (4.0 * fmax(NoV, 0.001) * fmax(NoL, 0.001));
 
@@ -250,7 +264,7 @@ class CookTorrance : public material {
         float NoH = clamp(dot(N, H), 0.0, 1.0);
         float VoH = clamp(dot(V, H), 0.0, 1.0);
 
-        float D = D_GGX(NoH, roughness);
+        float D = MDF->D(NoH);
         // Convert D(N·H) to pdf based on the microfacet normal distribution.
         // The Jacobian of the half-vector reflection transformation is |4 * (V·H)|.
         // This accounts for the change in area density when mapping from H to L.
@@ -263,52 +277,13 @@ class CookTorrance : public material {
     private:
     bool complex;
     color albedo;
-    float roughness; // 0-1
-    color absorption_coefficient; // RGB value of how much to not absorb. The higher the color channel, the less that one is absorbed.
-    color eta; // RGB value of how much to refract (i.e NOT reflect). The higher the color channel, the less it shows.
+    color absorption_coefficient;
+    color eta;
+    std::shared_ptr<Microfacet> MDF;
 
     // F, G, D functions
     vec3 fresnelSchlick(float cosTheta, vec3 F0) const {
         return F0 + (color(1.0, 1.0, 1.0) - F0) * pow(1.0 - cosTheta, 5.0);
-    }
-
-    float D_GGX(float NoH, float roughness) const {
-        roughness = fmax(0.0001, roughness);
-        float alpha = roughness * roughness;
-        float alpha2 = alpha * alpha;
-        float NoH2 = NoH * NoH;
-        float b = (NoH2 * (alpha2 - 1.0) + 1.0);
-        return (alpha2 / pi) / (b * b);
-    }
-
-    float G1_GGX_Schlick(float NoV, float roughness) const {
-        float alpha = roughness * roughness;
-        float k = alpha / 2.0;
-        return fmax(NoV, 0.001) / (NoV * (1.0 - k) + k);
-    }
-
-    float G_Smith(float NoV, float NoL, float roughness) const {
-        return G1_GGX_Schlick(NoL, roughness) * G1_GGX_Schlick(NoV, roughness);
-    }
-
-    vec3 random_GGX_microfacet(vec3 N) const {
-        onb ortho;
-        ortho.build_from_w(N);
-
-        auto e1 = random_double();
-        auto e2 = random_double();
-
-        float theta = atan(roughness * sqrt(e1 / (1 - e1)));
-        float phi = 2 * pi * e2;
-
-        // Calculate normal with y as the up vector
-        float x = sin(theta) * cos(phi);
-        float y = sin(theta) * sin(phi);
-        float z = cos(theta);
-        vec3 microfacet_normal = vec3(x, y, z).unit_vector();
-
-        vec3 adjusted = ortho.local(microfacet_normal);
-        return adjusted;
     }
 
     float FrComplex(float cosTheta_i, std::complex<float> eta) const {

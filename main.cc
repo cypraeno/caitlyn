@@ -929,7 +929,7 @@ void brdf_tests() {
     auto mt2 = make_shared<OrenNayar>(test, 0.0);
     
     // Complex example:
-    auto mt3 = make_shared<CookTorrance>(0.05, color(1.0, 1.0, 1.0), color(1.0, 1.0, 1.0));
+    auto mt3 = make_shared<CookTorrance>(color(1.0, 1.0, 1.0), color(1.0, 1.0, 1.0), 0.05);
     // Non-complex example:
     auto mt4 = make_shared<CookTorrance>(color(1.0, 0.05, 0.05), 0.0);
 
