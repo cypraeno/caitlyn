@@ -76,7 +76,7 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
             }
 
             color brdf_value = mat_ptr->generate(r_in, scattered, record);
-            double cos_theta = fmax(0.0, dot(record.normal, (scattered.direction().unit_vector())));
+            double cos_theta = fabs(dot(record.normal, (scattered.direction().unit_vector())));
             double pdf_value = mat_ptr->pdf(r_in, scattered, record);
 
             weight = weight * (brdf_value * cos_theta / pdf_value);
