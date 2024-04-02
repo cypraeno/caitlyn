@@ -273,6 +273,7 @@ class CookTorrance : public material {
     }
 
     float D_GGX(float NoH, float roughness) const {
+        roughness = fmax(0.0001, roughness);
         float alpha = roughness * roughness;
         float alpha2 = alpha * alpha;
         float NoH2 = NoH * NoH;
