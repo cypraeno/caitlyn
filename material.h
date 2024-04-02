@@ -6,6 +6,8 @@
 #include "texture.h"
 #include "onb.h"
 
+#include <complex>
+
 class hit_record;
 
 class material {
@@ -202,7 +204,10 @@ class CookTorrance : public material {
 
     public:
     CookTorrance(color albedo, float roughness)
-        : albedo{albedo}, roughness{roughness} {}
+        : complex{false}, albedo{albedo}, roughness{roughness} {}
+
+    CookTorrance(float roughness, color absorption, color refraction)
+        : complex(true), roughness{roughness}, absorption_coefficient{absorption}, eta{refraction} {}
 
     virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const override {
         vec3 microfacet_normal = random_GGX_microfacet(rec.normal);
@@ -212,7 +217,6 @@ class CookTorrance : public material {
 
         return (dot(scattered.direction(), rec.normal) > 0);
     }
-
 
     virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
         vec3 L = scattered.direction().unit_vector();
@@ -225,8 +229,9 @@ class CookTorrance : public material {
         float NoH = clamp(dot(N, H), 0.0, 1.0);
         float VoH = clamp(dot(V, H), 0.0, 1.0);
 
-        vec3 f0 = albedo;
-        vec3 F = fresnelSchlick(VoH, f0);
+        vec3 f0 = albedo; vec3 F;
+        if (complex) { F = FrComplex(fabs(dot(V,rec.microfacet_normal)), absorption_coefficient, eta); }
+        else { F = fresnelSchlick(VoH, f0); }
 
         float D = D_GGX(NoH, roughness);
         float G = G_Smith(NoV, NoL, roughness);
@@ -256,9 +261,11 @@ class CookTorrance : public material {
     }
 
     private:
+    bool complex;
     color albedo;
     float roughness; // 0-1
-
+    color absorption_coefficient; // RGB value of how much to not absorb. The higher the color channel, the less that one is absorbed.
+    color eta; // RGB value of how much to refract (i.e NOT reflect). The higher the color channel, the less it shows.
 
     // F, G, D functions
     vec3 fresnelSchlick(float cosTheta, vec3 F0) const {
@@ -301,6 +308,28 @@ class CookTorrance : public material {
 
         vec3 adjusted = ortho.local(microfacet_normal);
         return adjusted;
+    }
+
+    float FrComplex(float cosTheta_i, std::complex<float> eta) const {
+        using Complex = std::complex<float>;
+        cosTheta_i = clamp(cosTheta_i, 0, 1);
+        float sin2Theta_i = 1 - (cosTheta_i * cosTheta_i);
+        Complex sin2Theta_t = sin2Theta_i / (eta * eta);
+        Complex val(1, -2);
+        Complex cosTheta_t = std::sqrt(val - sin2Theta_t);
+        
+        Complex r_parl = (eta * cosTheta_i - cosTheta_t) /
+                     (eta * cosTheta_i + cosTheta_t);
+        Complex r_perp = (cosTheta_i - eta * cosTheta_t) /
+                        (cosTheta_i + eta * cosTheta_t);
+        return (std::norm(r_parl) + std::norm(r_perp)) / 2;
+    }
+
+    vec3 FrComplex(float cosTheta_v, vec3 k, vec3 eta) const {
+        float x = FrComplex(cosTheta_v, std::complex<float>(eta.x(), k.x()));
+        float y = FrComplex(cosTheta_v, std::complex<float>(eta.y(), k.y()));
+        float z = FrComplex(cosTheta_v, std::complex<float>(eta.z(), k.z()));
+        return vec3(x,y,z);
     }
 
 };
