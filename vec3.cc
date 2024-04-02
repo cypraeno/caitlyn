@@ -89,7 +89,7 @@ vec3 cross(const vec3 &u, const vec3 &v) {
 }
 
 vec3 mix(vec3 x, vec3 y, float a) {
-    x * (1 - a) + y * a;
+    return x * (1 - a) + y * a;
 }
 
 std::ostream& operator<<(std::ostream &out, const vec3 &v) {

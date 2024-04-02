@@ -202,76 +202,61 @@ class CookTorrance : public material {
     virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const override {
         vec3 microfacet_normal = random_GGX_microfacet(rec.normal);
         rec.microfacet_normal = microfacet_normal;
-        vec3 scatter_direction = reflect(r_in.direction().unit_vector(), microfacet_normal).unit_vector();
-
-        //(2 * dot(microfacet_normal, L) * microfacet_normal) - L;
+        vec3 scatter_direction = reflect(r_in.direction().unit_vector(), microfacet_normal);
         scattered = ray(rec.pos, scatter_direction, r_in.time());
-
-        // vec3 reflected = reflect(r_in.direction().unit_vector(), rec.normal);
-        // scattered = ray(rec.pos, reflected + roughness*random_in_unit_sphere(), r_in.time());
 
         return (dot(scattered.direction(), rec.normal) > 0);
     }
 
 
     virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
-        // vec3 L = scattered.direction().unit_vector();
-        // vec3 N = rec.normal;
-        // vec3 V = -(r_in.direction().unit_vector());
-        // vec3 H = (V + L).unit_vector();
+        vec3 L = scattered.direction().unit_vector();
+        vec3 N = rec.normal;
+        vec3 V = -(r_in.direction().unit_vector());
+        vec3 H = (V + L).unit_vector();
 
-        // float NoV = clamp(dot(N, V), 0.0, 1.0);
-        // float NoL = clamp(dot(N, L), 0.0, 1.0);
-        // float NoH = clamp(dot(N, H), 0.0, 1.0);
-        // float VoH = clamp(dot(V, H), 0.0, 1.0);
+        float NoV = clamp(dot(N, V), 0.0, 1.0);
+        float NoL = clamp(dot(N, L), 0.0, 1.0);
+        float NoH = clamp(dot(N, H), 0.0, 1.0);
+        float VoH = clamp(dot(V, H), 0.0, 1.0);
 
-        // float amt = 0.16 * reflectance * reflectance;
-        // vec3 f0 = vec3(amt, amt, amt);
-        // f0 = mix(f0, albedo, metallic);
+        float amt = 0.16 * reflectance * reflectance;
+        vec3 f0 = vec3(amt, amt, amt);
+        f0 = mix(f0, albedo, metallic);
 
-        // vec3 F = fresnelSchlick(VoH, f0);
-        // float D = D_GGX(NoH, roughness);
-        // float G = G_Smith(NoV, NoL, roughness);
+        vec3 F = fresnelSchlick(VoH, f0);
+        float D = D_GGX(NoH, roughness);
+        float G = G_Smith(NoV, NoL, roughness);
 
-        // vec3 spec = (F * D * G) / (4.0 * fmax(NoV, 0.001) * fmax(NoL, 0.001));
-        // vec3 spec = color(0.1, 0.1, 0.1);
-        // vec3 rhoD = albedo;
+        vec3 spec = (F * D * G) / (4.0 * fmax(NoV, 0.001) * fmax(NoL, 0.001));
+        vec3 rhoD = albedo;
 
-        // // optionally
-        // rhoD = rhoD * (vec3(1.0, 1.0, 1.0) + (-F));
-        // // rhoD *= disneyDiffuseFactor(NoV, NoL, VoH, roughness);
+        // optionally
+        rhoD = rhoD * (vec3(1.0, 1.0, 1.0) + (-F));
 
-        // rhoD *= (1.0 - metallic);
-        // vec3 diff = rhoD / pi;
+        rhoD *= (1.0 - metallic);
+        vec3 diff = rhoD / pi;
 
-        // return diff + spec;
-        return albedo / pi;
+        return diff + spec;
     }
 
     virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
+        vec3 V = -r_in.direction().unit_vector();
+        vec3 L = scattered.direction().unit_vector();
+        vec3 H = (V + L).unit_vector();
         vec3 N = rec.normal;
-        vec3 M = rec.microfacet_normal;
-        float NoM = clamp(dot(N, M), 0.0, 1.0);
 
-        float numerator = D_GGX(NoM, roughness) * fmax(0.0,dot(rec.normal, M));
-        float denom = 4 * fabs(dot(r_in.direction(), M));
-        return numerator / denom;
-    }
+        float NoH = clamp(dot(N, H), 0.0, 1.0);
+        float VoH = clamp(dot(V, H), 0.0, 1.0);
 
-    vec3 random_GGX_microfacet(vec3 N) const {
-        auto e1 = random_double();
-        auto e2 = random_double();
+        float D = D_GGX(NoH, roughness);
+        // Convert D(N·H) to pdf based on the microfacet normal distribution.
+        // The Jacobian of the half-vector reflection transformation is |4 * (V·H)|.
+        // This accounts for the change in area density when mapping from H to L.
+        float jacobian = 4.0 * abs(dot(V, H));
+        if (jacobian < 0.0001) return 0;
 
-        float theta = atan(roughness * sqrt(e1 / (1 - e1)));
-        float phi = 2 * pi * e2;
-
-        // Claculate normal
-        float x = sin(theta)*cos(phi);
-        float y = sin(theta)*sin(phi);
-        float z = cos(theta);
-        vec3 microfacet_normal = vec3(x, y, z).unit_vector();
-
-        return (microfacet_normal + N).unit_vector();
+        return D / jacobian;
     }
 
     private:
@@ -291,7 +276,7 @@ class CookTorrance : public material {
         float alpha2 = alpha * alpha;
         float NoH2 = NoH * NoH;
         float b = (NoH2 * (alpha2 - 1.0) + 1.0);
-        return (alpha2 * pi) / (b * b);
+        return (alpha2 / pi) / (b * b);
     }
 
     float G1_GGX_Schlick(float NoV, float roughness) const {
@@ -302,6 +287,26 @@ class CookTorrance : public material {
 
     float G_Smith(float NoV, float NoL, float roughness) const {
         return G1_GGX_Schlick(NoL, roughness) * G1_GGX_Schlick(NoV, roughness);
+    }
+
+    vec3 random_GGX_microfacet(vec3 N) const {
+        onb ortho;
+        ortho.build_from_w(N);
+
+        auto e1 = random_double();
+        auto e2 = random_double();
+
+        float theta = atan(roughness * sqrt(e1 / (1 - e1)));
+        float phi = 2 * pi * e2;
+
+        // Calculate normal with y as the up vector
+        float x = sin(theta) * cos(phi);
+        float y = sin(theta) * sin(phi);
+        float z = cos(theta);
+        vec3 microfacet_normal = vec3(x, y, z).unit_vector();
+
+        vec3 adjusted = ortho.local(microfacet_normal);
+        return adjusted;
     }
 
 };
