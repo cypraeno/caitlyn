@@ -192,12 +192,17 @@ class OrenNayar : public material {
     float roughness;
 };
 
-
+/**
+ * @class CookTorrance
+ * @brief Implements the Cook-Torrance BRDF model for simulating the specular reflection of a conductor.
+ * This is a more complex model of the original `metal` material. 
+ * This implementation uses the GGX (Trowbridge-Reitz) microfacet distribution to simulate the roughness.
+*/
 class CookTorrance : public material {
 
     public:
-    CookTorrance(color albedo, float roughness, float metallic, float reflectance)
-        : albedo{albedo}, roughness{roughness}, metallic{metallic}, reflectance{reflectance} {}
+    CookTorrance(color albedo, float roughness)
+        : albedo{albedo}, roughness{roughness} {}
 
     virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const override {
         vec3 microfacet_normal = random_GGX_microfacet(rec.normal);
@@ -220,24 +225,15 @@ class CookTorrance : public material {
         float NoH = clamp(dot(N, H), 0.0, 1.0);
         float VoH = clamp(dot(V, H), 0.0, 1.0);
 
-        float amt = 0.16 * reflectance * reflectance;
-        vec3 f0 = vec3(amt, amt, amt);
-        f0 = mix(f0, albedo, metallic);
-
+        vec3 f0 = albedo;
         vec3 F = fresnelSchlick(VoH, f0);
+
         float D = D_GGX(NoH, roughness);
         float G = G_Smith(NoV, NoL, roughness);
 
         vec3 spec = (F * D * G) / (4.0 * fmax(NoV, 0.001) * fmax(NoL, 0.001));
-        vec3 rhoD = albedo;
 
-        // optionally
-        rhoD = rhoD * (vec3(1.0, 1.0, 1.0) + (-F));
-
-        rhoD *= (1.0 - metallic);
-        vec3 diff = rhoD / pi;
-
-        return diff + spec;
+        return spec;
     }
 
     virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
@@ -262,8 +258,6 @@ class CookTorrance : public material {
     private:
     color albedo;
     float roughness; // 0-1
-    float metallic; // 0.0 or 1.0
-    float reflectance; // 0-1
 
 
     // F, G, D functions

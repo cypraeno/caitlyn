@@ -927,7 +927,7 @@ void brdf_tests() {
     color test = color(1.0, 1.0, 1.0);
     auto mt = make_shared<lambertian>(test);
     auto mt2 = make_shared<OrenNayar>(test, 0.0);
-    auto mt3 = make_shared<CookTorrance>(color(1.0, 1.0, 1.0), 0.01, 0.0, 0.0);
+    auto mt3 = make_shared<CookTorrance>(color(1.0, 0.05, 0.05), 0.05);
 
     //auto mt = make_shared<dielectric>(1.5);
     auto sphere1 = make_shared<SpherePrimitive>(point3(0, 2, 2), mt, 2, device);
