@@ -11,6 +11,13 @@
 
 class hit_record;
 
+struct BSDFSample {
+    bool scatter;
+    vec3 scatter_direction;
+    color bsdf_value;
+    float pdf_value;
+};
+
 class material {
 
     public:
@@ -18,13 +25,30 @@ class material {
             return color(0,0,0);
         }
 
-        virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const = 0;
+        virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const {
+            return true;
+        }
         virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
             return color(0,0,0);
         }
 	    virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
             return 1.0;
         };
+
+        virtual BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const {
+            BSDFSample sample_data;
+            // Sample the microfacet distribution to get the scatter direction.
+            color attenuation; // placeholder until it gets removed from the scatter function header
+            sample_data.scatter = scatter(r_in, rec, attenuation, scattered);
+            sample_data.scatter_direction = scattered.direction().unit_vector();
+
+            // Sample the BRDF for the value
+            sample_data.bsdf_value = generate(r_in, scattered, rec);
+
+            // Find the PDF for the MDF
+            sample_data.pdf_value = pdf(r_in, scattered, rec);
+            return sample_data;
+        }
 };
 
 class lambertian : public material {
@@ -116,7 +140,7 @@ class dielectric : public material {
         virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
             return 1.0;
         }
-        
+
 
     public:
 
