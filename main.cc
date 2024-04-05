@@ -932,8 +932,9 @@ void brdf_tests() {
     auto mt3 = make_shared<CookTorrance>(color(1.0, 1.0, 1.0), color(1.0, 1.0, 1.0), 0.05);
     // Non-complex example:
     auto mt4 = make_shared<CookTorrance>(color(1.0, 0.05, 0.05), 0.0);
+    auto mt5 = make_shared<CookTorranceDielectric>(0.01, 0.01);
 
-    auto sphere1 = make_shared<SpherePrimitive>(point3(0, 2, 2), mt, 2, device);
+    auto sphere1 = make_shared<SpherePrimitive>(point3(0, 2, 2), mt5, 2, device);
     auto sphere2 = make_shared<SpherePrimitive>(point3(0, 2, -2), mt4, 2, device);
     scene_ptr->add_primitive(sphere1);
     scene_ptr->add_primitive(sphere2);
@@ -946,6 +947,8 @@ void brdf_tests() {
     rtcReleaseDevice(device);
 
     output(render_data, cam, scene_ptr);
+
+    std::cout << mt5->FrDielectric(0.995037) << std::endl;
 }
 
 int main(int argc, char* argv[]) {

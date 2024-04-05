@@ -335,4 +335,156 @@ class CookTorrance : public material {
 };
 
 
+class CookTorranceDielectric : public material {
+
+    public:
+    CookTorranceDielectric(float eta, float roughness) : eta{eta}, MDF{std::make_shared<GGX>(roughness)} {}
+
+    BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const override {
+        BSDFSample sample_data;
+
+        vec3 microfacet_normal = MDF->sample(rec.normal);
+        rec.microfacet_normal = microfacet_normal;
+
+        float cosTheta_i = dot(-r_in.direction().unit_vector(), microfacet_normal);
+        float R = FrDielectric(cosTheta_i);
+        float T = 1 - R;
+
+        float u = random_double();
+
+        if (u < (R / (R + T))) { // reflectance
+
+            vec3 scatter_direction = reflect(r_in.direction().unit_vector(), microfacet_normal);
+            scattered = ray(rec.pos, scatter_direction, r_in.time());
+            sample_data.scatter_direction = scatter_direction;
+            sample_data.scatter = (dot(scattered.direction(), rec.normal) > 0);
+
+            sample_data.bsdf_value = f_r(r_in, rec, scattered, R);
+            sample_data.pdf_value = pdf_r(r_in, rec, scattered, R);
+        
+        
+        } else { // transmission
+            double refraction_ratio = rec.front_face ? (1.0/eta) : eta;
+            vec3 scatter_direction = refract(r_in.direction().unit_vector(), microfacet_normal, refraction_ratio);
+            scattered = ray(rec.pos, scatter_direction, r_in.time());
+            sample_data.scatter = (dot(scattered.direction(), rec.normal) < 0);
+
+            sample_data.bsdf_value = f_t(r_in, rec, scattered, T);
+            sample_data.pdf_value = pdf_t(r_in, rec, scattered, T);
+        }
+
+        return sample_data;
+    }
+
+    //private:
+    float eta;
+    std::shared_ptr<Microfacet> MDF;
+
+    float FrDielectric(float cosTheta_i) const {
+        float temp_eta = eta;
+        cosTheta_i = clamp(cosTheta_i, -1.0, 1.0);
+        if (cosTheta_i < 0) {
+            temp_eta = 1 / eta;
+            cosTheta_i = -cosTheta_i;
+        }
+
+        float sin2Theta_i = 1 - (cosTheta_i * cosTheta_i);
+        float sin2Theta_t = sin2Theta_i / (temp_eta * temp_eta);
+        if (sin2Theta_t >= 1.0) {
+            return 1.0;
+        }
+        float cosTheta_t = sqrt(1 - sin2Theta_t);
+        float r_parallel = (temp_eta * cosTheta_i - cosTheta_t) / (temp_eta * cosTheta_i + cosTheta_t);
+        float r_perp = (cosTheta_i - (temp_eta * cosTheta_t)) / (cosTheta_i + (eta * cosTheta_t));
+        return ((r_parallel * r_parallel) + (r_perp * r_perp)) / 2;
+    }
+    private:
+    color f_r(const ray& r_in, HitInfo& rec, ray& scattered, float R) const {
+        vec3 V = -r_in.direction().unit_vector();
+        vec3 L = scattered.direction().unit_vector();
+        vec3 H = (V + L).unit_vector();
+        vec3 N = rec.normal;
+
+        float NoH = clamp(dot(N, H), 0.0, 1.0);
+        float NoV = clamp(dot(N, V), 0.0, 1.0);
+        float NoL = clamp(dot(N, L), 0.0, 1.0);
+
+        float D = MDF->D(NoH);
+        float G = MDF->G(NoV, NoL);
+        
+        color R_col = color(R, R, R);
+
+        color num = D * G * R_col;
+        float denom = (4.0 * fmax(NoV, 0.001) * fmax(NoL, 0.001));
+
+        return num / denom;
+    }
+
+    float pdf_r(const ray& r_in, HitInfo& rec, ray& scattered, float R) const {
+        vec3 V = -r_in.direction().unit_vector();
+        vec3 L = scattered.direction().unit_vector();
+        vec3 H = (V + L).unit_vector();
+        vec3 N = rec.normal;
+
+        float NoH = clamp(dot(N, H), 0.0, 1.0);
+        float VoH = clamp(dot(V, H), 0.0, 1.0);
+
+        float D = MDF->D(NoH);
+        // Convert D(N·H) to pdf based on the microfacet normal distribution.
+        // The Jacobian of the half-vector reflection transformation is |4 * (V·H)|.
+        // This accounts for the change in area density when mapping from H to L.
+        float jacobian = 4.0 * abs(dot(V, H));
+        if (jacobian < 0.0001) return 0;
+
+        return (D * R) / jacobian;
+    }
+
+    float pdf_t(const ray& r_in, HitInfo& rec, ray& scattered, float T) const {
+        double etap = rec.front_face ? (1.0/eta) : eta;
+
+        vec3 V = -r_in.direction().unit_vector();
+        vec3 L = scattered.direction().unit_vector();
+        vec3 H = (V + L).unit_vector();
+        vec3 N = rec.normal;
+
+        float NoH = clamp(dot(N, H), 0.0, 1.0);
+        float VoH = clamp(dot(V, H), 0.0, 1.0);
+        float LoM = dot(L, rec.microfacet_normal);
+
+        float num = MDF->D(NoH) * fabs(LoM) * T;
+        float dw = dot(V, rec.microfacet_normal) / etap;
+        float denom = (LoM + dw) * (LoM + dw);
+
+        return num / denom;
+    }
+
+    color f_t(const ray& r_in, HitInfo& rec, ray& scattered, float T) const {
+        double etap = rec.front_face ? (1.0/eta) : eta;
+        
+        vec3 V = -r_in.direction().unit_vector();
+        vec3 L = scattered.direction().unit_vector();
+        vec3 H = (V + L).unit_vector();
+        vec3 N = rec.normal;
+
+        float NoH = clamp(dot(N, H), 0.0, 1.0);
+        float NoV = clamp(dot(N, V), 0.0, 1.0);
+        float NoL = clamp(dot(N, L), 0.0, 1.0);
+        float VoM = dot(V, rec.microfacet_normal);
+        float LoM = dot(L, rec.microfacet_normal);
+
+        color T_col = color(T, T, T);
+
+        float D = MDF->D(NoH);
+        float G = MDF->G(NoV, NoL);
+        float dotabs = fabs(VoM * LoM);
+        color num = D * G * dotabs * T_col;
+
+        float dw = dot(V, rec.microfacet_normal) / etap;
+        float dw2 = (LoM + dw) * (LoM + dw);
+        float denom = fmax(NoV, 0.001) * fmax(NoL, 0.001) * dw2;
+
+        return num / denom;
+    } 
+};
+
 #endif
