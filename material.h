@@ -337,7 +337,7 @@ class CookTorrance : public material {
 class CookTorranceDielectric : public material {
 
     public:
-    CookTorranceDielectric(color albedo, float eta, float roughness) : albedo{albedo}, eta{(eta == 0.0f) ? 0.0f : fmax(eta, 1.0001)}, MDF{std::make_shared<GGX>(roughness)} {}
+    CookTorranceDielectric(color albedo, float eta, float roughness) : albedo{albedo}, eta{(eta == 0.0f) ? 0.0f : (float)fmax(eta, 1.0001f)}, MDF{std::make_shared<GGX>(roughness)} {}
 
     BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const override {
         // Vectors wo and wi are the outgoing and incident directions respectively.
