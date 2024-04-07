@@ -341,33 +341,36 @@ class CookTorranceDielectric : public material {
     CookTorranceDielectric(float eta, float roughness) : eta{eta}, MDF{std::make_shared<GGX>(roughness)} {}
 
     BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const override {
+        // Vectors wo and wi are the outgoing and incident directions respectively.
+        vec3 wo = -r_in.direction().unit_vector();
+
         BSDFSample sample_data;
+        vec3 N = rec.normal;
+        vec3 wm = MDF->sample(N); // outward microfacet normal.
+        rec.microfacet_normal = wm;
 
-        vec3 microfacet_normal = MDF->sample(rec.normal);
-        rec.microfacet_normal = microfacet_normal;
-
-        float cosTheta_i = dot(-r_in.direction().unit_vector(), microfacet_normal);
+        float cosTheta_i = dot(wo, wm);
         float R = FrDielectric(cosTheta_i);
         float T = 1 - R;
 
         float u = random_double();
+        double refraction_ratio = rec.front_face ? (1.0/eta) : eta;
+        double sinTheta_i = sqrt(1.0 - cosTheta_i*cosTheta_i);
 
-        if (u < (R / (R + T))) { // reflectance
-
-            vec3 scatter_direction = reflect(r_in.direction().unit_vector(), microfacet_normal);
-            scattered = ray(rec.pos, scatter_direction, r_in.time());
-            sample_data.scatter_direction = scatter_direction;
-            sample_data.scatter = (dot(scattered.direction(), rec.normal) > 0);
+        if (u < (R / (R + T)) || refraction_ratio * sinTheta_i > 1.0) { // reflectance
+            vec3 wi = reflect(-wo, wm);
+            scattered = ray(rec.pos, wi, r_in.time());
+            sample_data.scatter_direction = wi;
+            sample_data.scatter = (dot(wi, N) > 0);
 
             sample_data.bsdf_value = f_r(r_in, rec, scattered, R);
             sample_data.pdf_value = pdf_r(r_in, rec, scattered, R);
         
-        
         } else { // transmission
-            double refraction_ratio = rec.front_face ? (1.0/eta) : eta;
-            vec3 scatter_direction = refract(r_in.direction().unit_vector(), microfacet_normal, refraction_ratio);
-            scattered = ray(rec.pos, scatter_direction, r_in.time());
-            sample_data.scatter = (dot(scattered.direction(), rec.normal) < 0);
+            vec3 wi = refract(-wo, wm, refraction_ratio);
+            scattered = ray(rec.pos, wi, r_in.time());
+            sample_data.scatter_direction = wi;
+            sample_data.scatter = (dot(wi, N) < 0);
 
             sample_data.bsdf_value = f_t(r_in, rec, scattered, T);
             sample_data.pdf_value = pdf_t(r_in, rec, scattered, T);
@@ -442,48 +445,41 @@ class CookTorranceDielectric : public material {
     float pdf_t(const ray& r_in, HitInfo& rec, ray& scattered, float T) const {
         double etap = rec.front_face ? (1.0/eta) : eta;
 
-        vec3 V = -r_in.direction().unit_vector();
-        vec3 L = scattered.direction().unit_vector();
-        vec3 H = (V + L).unit_vector();
-        vec3 N = rec.normal;
+        vec3 wo = -r_in.direction().unit_vector();
+        vec3 wi = scattered.direction().unit_vector();
+        vec3 wn = rec.normal;
+        vec3 wm = rec.microfacet_normal;
+        vec3 h = (wo + wi).unit_vector();
 
-        float NoH = clamp(dot(N, H), 0.0, 1.0);
-        float VoH = clamp(dot(V, H), 0.0, 1.0);
-        float LoM = dot(L, rec.microfacet_normal);
-
-        float num = MDF->D(NoH) * fabs(LoM) * T;
-        float dw = dot(V, rec.microfacet_normal) / etap;
-        float denom = (LoM + dw) * (LoM + dw);
-
-        return num / denom;
+        float denom = (dot(wi, wm) + dot(wo, wm) / etap) * (dot(wi, wm) + dot(wo, wm) / etap);
+        float dwm_dwi = fabs(dot(wi, wm)) / denom;
+        float NoM = dot(wm, wn);
+        float D = MDF->D(NoM);
+        return D * dwm_dwi * T;
     }
 
     color f_t(const ray& r_in, HitInfo& rec, ray& scattered, float T) const {
         double etap = rec.front_face ? (1.0/eta) : eta;
-        
-        vec3 V = -r_in.direction().unit_vector();
-        vec3 L = scattered.direction().unit_vector();
-        vec3 H = (V + L).unit_vector();
-        vec3 N = rec.normal;
 
-        float NoH = clamp(dot(N, H), 0.0, 1.0);
-        float NoV = clamp(dot(N, V), 0.0, 1.0);
-        float NoL = clamp(dot(N, L), 0.0, 1.0);
-        float VoM = dot(V, rec.microfacet_normal);
-        float LoM = dot(L, rec.microfacet_normal);
+        vec3 wo = -r_in.direction().unit_vector();
+        vec3 wi = scattered.direction().unit_vector();
+        vec3 wn = rec.normal;
+        vec3 wm = rec.microfacet_normal;
+        vec3 h = (wo + wi).unit_vector();
 
+        float NoM = dot(wm, wn);
+        float NoO = dot(wn, wo);
+        float NoI = dot(wn, wi);
+        float D = MDF->D(NoM);
+        float G = MDF->G(fabs(NoO), fabs(NoI));
         color T_col = color(T, T, T);
+        color num = D * G * T_col;
 
-        float D = MDF->D(NoH);
-        float G = MDF->G(NoV, NoL);
-        float dotabs = fabs(VoM * LoM);
-        color num = D * G * dotabs * T_col;
-
-        float dw = dot(V, rec.microfacet_normal) / etap;
-        float dw2 = (LoM + dw) * (LoM + dw);
-        float denom = fmax(NoV, 0.001) * fmax(NoL, 0.001) * dw2;
-
-        return num / denom;
+        float IoM = dot(wi, wm);
+        float OoM = dot(wo, wm);
+        float denom = (IoM + OoM / etap) * (IoM + OoM / etap);
+        float dotabs = fabs(IoM * OoM / (dot(wi, wn) * dot(wo, wn) * denom)); // 1: e+14, 2: inf
+        return num * dotabs;
     } 
 };
 

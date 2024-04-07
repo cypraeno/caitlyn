@@ -84,7 +84,11 @@ vec3 random_in_unit_disk();
 vec3 random_cosine_direction();
 
 // reflection and refraction
+
+// reflects the incoming vector v across the normal n. v is not outward.
 vec3 reflect(const vec3& v, const vec3& n);
+
+// refracts the incoming vector v across the normal n. v is not outward.
 vec3 refract(const vec3& uv, const vec3& n, float etai_over_etat);
 
 #endif
