@@ -909,7 +909,7 @@ void two_perlin_spheres(){
 void brdf_tests() {
     RenderData render_data; 
     const auto aspect_ratio = 16.0 / 9.0;
-    setRenderData(render_data, aspect_ratio, 1200, 20, 10);
+    setRenderData(render_data, aspect_ratio, 1200, 50, 20);
 
     point3 lookfrom(10, 3, 0);
     point3 lookat(0, 2, 0);
@@ -931,24 +931,25 @@ void brdf_tests() {
     // Complex example:
     auto mt3 = make_shared<CookTorrance>(color(1.0, 1.0, 1.0), color(1.0, 1.0, 1.0), 0.05);
     // Non-complex example:
-    auto mt4 = make_shared<CookTorrance>(color(1.0, 0.05, 0.05), 0.0);
-    auto mt5 = make_shared<CookTorranceDielectric>(0.01, 0.01);
+    auto mt4 = make_shared<CookTorrance>(color(1.0, 1.0, 1.0), 0.0);
+
+    // Dielectric comparison
+    auto mt5 = make_shared<CookTorranceDielectric>(color(0.6, 1.0, 0.6), 1.5, 0.0001); // model glass
+    auto mt7 = make_shared<CookTorranceDielectric>(color(0.6, 1.0, 0.6), 0.0, 0.0001); // model mirror
 
     auto sphere1 = make_shared<SpherePrimitive>(point3(0, 2, 2), mt5, 2, device);
-    auto sphere2 = make_shared<SpherePrimitive>(point3(0, 2, -2), mt4, 2, device);
+    auto sphere2 = make_shared<SpherePrimitive>(point3(0, 2, -2), mt7, 2, device);
     scene_ptr->add_primitive(sphere1);
     scene_ptr->add_primitive(sphere2);
 
     auto red     = make_shared<lambertian>(color(1.0, 0.2, 0.2));
-    auto ground = make_shared<SpherePrimitive>(point3(0,-1000,0), red, 1000, device);
+    auto ground = make_shared<SpherePrimitive>(point3(0,-10000,0), red, 10000, device);
     scene_ptr->add_primitive(ground);
 
     scene_ptr->commitScene();
     rtcReleaseDevice(device);
 
     output(render_data, cam, scene_ptr);
-
-    std::cout << mt5->FrDielectric(0.995037) << std::endl;
 }
 
 int main(int argc, char* argv[]) {

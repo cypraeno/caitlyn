@@ -334,11 +334,10 @@ class CookTorrance : public material {
 
 };
 
-
 class CookTorranceDielectric : public material {
 
     public:
-    CookTorranceDielectric(float eta, float roughness) : eta{eta}, MDF{std::make_shared<GGX>(roughness)} {}
+    CookTorranceDielectric(color albedo, float eta, float roughness) : albedo{albedo}, eta{(eta == 0.0f) ? 0.0f : fmax(eta, 1.0001)}, MDF{std::make_shared<GGX>(roughness)} {}
 
     BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const override {
         // Vectors wo and wi are the outgoing and incident directions respectively.
@@ -380,6 +379,7 @@ class CookTorranceDielectric : public material {
     }
 
     //private:
+    color albedo;
     float eta;
     std::shared_ptr<Microfacet> MDF;
 
@@ -415,7 +415,7 @@ class CookTorranceDielectric : public material {
         float D = MDF->D(NoH);
         float G = MDF->G(NoV, NoL);
         
-        color R_col = color(R, R, R);
+        color R_col = color(R, R, R) * albedo;
 
         color num = D * G * R_col;
         float denom = (4.0 * fmax(NoV, 0.001) * fmax(NoL, 0.001));
@@ -472,7 +472,7 @@ class CookTorranceDielectric : public material {
         float NoI = dot(wn, wi);
         float D = MDF->D(NoM);
         float G = MDF->G(fabs(NoO), fabs(NoI));
-        color T_col = color(T, T, T);
+        color T_col = color(T, T, T) * albedo;
         color num = D * G * T_col;
 
         float IoM = dot(wi, wm);
