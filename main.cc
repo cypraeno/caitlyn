@@ -622,7 +622,7 @@ void brdf_tests() {
 
 int main(int argc, char* argv[]) {
     Config config = parseArguments(argc, argv);
-    switch (80) {
+    switch (89) {
         case 30:  random_spheres(); break;
         case 48:  two_spheres();    break;
         case 481:  earth();          break;

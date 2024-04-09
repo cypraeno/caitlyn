@@ -175,7 +175,7 @@ void render_scanlines(int lines, int start_line, std::shared_ptr<Scene> scene_pt
                 auto u = (i + random_double()) / (image_width-1);
                 auto v = (j + random_double()) / (image_height-1);
                 ray r = cam.get_ray(u, v);
-                pixel_color += colorize_ray(r, scene_ptr, max_depth);
+                pixel_color += trace_ray(r, scene_ptr, max_depth);
             }
 
             int buffer_index = j * image_width + i;
