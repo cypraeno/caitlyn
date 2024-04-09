@@ -10,7 +10,7 @@ class emissive : public material {
     public:
     emissive(shared_ptr<texture> a) : emit(a) {}
     emissive(color emission_color) : emit(make_shared<solid_color>(emission_color)) {}
-    bool scatter(const ray& r_in, const HitInfo& rec, color& attenuation, ray& scattered) const override {
+    bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const {
         return false;
     }
     color emitted(double u, double v, const point3& p) const override {
