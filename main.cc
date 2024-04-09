@@ -954,14 +954,14 @@ void brdf_tests() {
 
 int main(int argc, char* argv[]) {
     Config config = parseArguments(argc, argv);
-    switch (5) {
+    switch (80) {
         case 30:  random_spheres(); break;
         case 48:  two_spheres();    break;
-        case 48.1:  earth();          break;
+        case 481:  earth();          break;
         case 50:  quads();          break;
         case 80:  load_example(config);   break;
         case 51:  simple_light();   break;
-        case 51.1:  cornell_box();    break;
+        case 511:  cornell_box();    break;
         case 49: two_perlin_spheres(); break;
         case 89: brdf_tests();         break;
     }
