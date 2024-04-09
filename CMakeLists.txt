@@ -15,7 +15,8 @@ FIND_PACKAGE(embree 4 REQUIRED)
 # Find libpng package
 find_package(PNG REQUIRED)
 
-add_executable(caitlyn vec3.cc scene.cc rtw_stb_image.cc quad_primitive.cc main.cc) # Required
+file(GLOB_RECURSE SOURCES "*.cc")
+add_executable(caitlyn ${SOURCES}) # Required
 
 # EMBREE CONFIG
 TARGET_LINK_LIBRARIES(caitlyn embree)
