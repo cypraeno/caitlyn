@@ -129,20 +129,16 @@ color colorize_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
             return color_from_emission;
         }
 
-        double scattering_pdf = mat_ptr->scattering_pdf(r, record, scattered);
-        double pdf = scattering_pdf;
-
-        color color_from_scatter = (attenuation * scattering_pdf * colorize_ray(scattered, scene, depth-1)) / pdf;
+        color color_from_scatter = (attenuation * colorize_ray(scattered, scene, depth-1));
 
         return color_from_emission + color_from_scatter;
     }
 
-    return color(0,0,0);
     // Sky background (gradient blue-white)
-    // vec3 unit_direction = r.direction().unit_vector();
-    // auto t = 0.5*(unit_direction.y() + 1.0);
+    vec3 unit_direction = r.direction().unit_vector();
+    auto t = 0.5*(unit_direction.y() + 1.0);
 
-    // return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
+    return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
 }
 
 struct RenderData {
