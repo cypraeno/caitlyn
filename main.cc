@@ -982,15 +982,15 @@ void mesh_example() {
 int main(int argc, char* argv[]) {
     Config config = parseArguments(argc, argv);
     switch (5) {
-        case 1:  random_spheres(); break;
-        case 2:  two_spheres();    break;
-        case 3:  earth();          break;
-        case 4:  quads();          break;
-        case 5:  load_example(config);   break;
-        case 6:  simple_light();   break;
-        case 7:  cornell_box();    break;
-        case 8: two_perlin_spheres(); break;
-        case 9: mesh_example();    break; // download necessary OBJ files from cypraeno/csr-schema/examples/grass_horse/....
+        case 30:  random_spheres(); break;
+        case 48:  two_spheres();    break;
+        case 48.1:  earth();          break;
+        case 50:  quads();          break;
+        case 80:  load_example(config);   break;
+        case 51:  simple_light();   break;
+        case 51.1:  cornell_box();    break;
+        case 49: two_perlin_spheres(); break;
+        case 104: mesh_example();    break; // download necessary OBJ files from cypraeno/csr-schema/examples/grass_horse/....
     }
 }
 
