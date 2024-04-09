@@ -4,6 +4,7 @@
 struct HitInfo {
     point3 pos;
     vec3 normal;
+    vec3 microfacet_normal;
     bool front_face;
     float t;
     double u;

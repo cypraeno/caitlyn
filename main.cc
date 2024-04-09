@@ -8,6 +8,7 @@
 #include "ray.h"
 #include "vec3.h"
 #include "material.h"
+#include "render.h"
 
 #include "sphere_primitive.h"
 #include "quad_primitive.h"
@@ -180,7 +181,7 @@ void render_scanlines(int lines, int start_line, std::shared_ptr<Scene> scene_pt
                 auto u = (i + random_double()) / (image_width-1);
                 auto v = (j + random_double()) / (image_height-1);
                 ray r = cam.get_ray(u, v);
-                pixel_color += colorize_ray(r, scene_ptr, max_depth);
+                pixel_color += trace_ray(r, scene_ptr, max_depth);
             }
 
             int buffer_index = j * image_width + i;
@@ -461,31 +462,31 @@ void output(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_p
     render_data.completed_lines = 0;
 
     // To render entire thing without multithreading, uncomment this line and comment out num_threads -> threads.clear()
-    //render_scanlines_sse(image_height,image_height-1,scene_ptr,render_data,cam);
+    render_scanlines(image_height,image_height-1,scene_ptr,render_data,cam);
 
-    // Threading approach? : Divide the scanlines into N blocks
-    const int num_threads = std::thread::hardware_concurrency() - 1;
+    // // Threading approach? : Divide the scanlines into N blocks
+    // const int num_threads = std::thread::hardware_concurrency() - 1;
 
-    // Image height is the number of scanlines, suppose image_height = 800
-    const int lines_per_thread = image_height / num_threads;
-    const int leftOver = image_height % num_threads;
-    // The first <num_threads> threads are dedicated <lines_per_thread> lines, and the last thread is dedicated to <leftOver>
+    // // Image height is the number of scanlines, suppose image_height = 800
+    // const int lines_per_thread = image_height / num_threads;
+    // const int leftOver = image_height % num_threads;
+    // // The first <num_threads> threads are dedicated <lines_per_thread> lines, and the last thread is dedicated to <leftOver>
 
-    std::vector<color> pixel_colors;
-    std::vector<std::thread> threads;
+    // std::vector<color> pixel_colors;
+    // std::vector<std::thread> threads;
 
 
-    for (int i=0; i < num_threads; i++) {
-        // In the first thead, we want the first lines_per_thread lines to be rendered
-        threads.emplace_back(render_scanlines,lines_per_thread,(image_height-1) - (i * lines_per_thread), scene_ptr, std::ref(render_data),cam);
-    }
-    threads.emplace_back(render_scanlines,leftOver,(image_height-1) - (num_threads * lines_per_thread), scene_ptr, std::ref(render_data),cam);
+    // for (int i=0; i < num_threads; i++) {
+    //     // In the first thead, we want the first lines_per_thread lines to be rendered
+    //     threads.emplace_back(render_scanlines,lines_per_thread,(image_height-1) - (i * lines_per_thread), scene_ptr, std::ref(render_data),cam);
+    // }
+    // threads.emplace_back(render_scanlines,leftOver,(image_height-1) - (num_threads * lines_per_thread), scene_ptr, std::ref(render_data),cam);
 
-    for (auto &thread : threads) {
-            thread.join();
-    }
-    std::cerr << "Joining all threads" << std::endl;
-    threads.clear();
+    // for (auto &thread : threads) {
+    //         thread.join();
+    // }
+    // std::cerr << "Joining all threads" << std::endl;
+    // threads.clear();
 
     int output_type = 2; // 0 for ppm, 1 for jpg, 2 for png
     // hardcoded, but will be updated for CLI in CA-83
@@ -719,7 +720,7 @@ void earth() {
 }
 
 /**
- * @brief loads "example.csr" in the same directory.
+ * @brief loads "scene.csr" in the same directory.
  * @note see example.csr in cypraeno/csr_schema repository
 */
 void load_example(Config& config) {
@@ -829,7 +830,7 @@ void simple_light() {
 void cornell_box() {
     RenderData render_data; 
     const auto aspect_ratio = 1.0;
-    setRenderData(render_data, aspect_ratio, 600, 20, 20);
+    setRenderData(render_data, aspect_ratio, 600, 10, 10);
 
     // Set up Camera
     point3 lookfrom(278, 278, -800);
@@ -862,6 +863,7 @@ void cornell_box() {
     scene_ptr->add_primitive(quad1);
     scene_ptr->add_primitive(quad2);
     scene_ptr->add_primitive(quad3);
+    scene_ptr->add_physical_light(quad3);
     scene_ptr->add_primitive(quad4);
     scene_ptr->add_primitive(quad5);
     scene_ptr->add_primitive(quad6);
@@ -908,9 +910,55 @@ void two_perlin_spheres(){
     output(render_data, cam, scene_ptr);
 }
 
+void brdf_tests() {
+    RenderData render_data; 
+    const auto aspect_ratio = 16.0 / 9.0;
+    setRenderData(render_data, aspect_ratio, 1200, 50, 20);
+
+    point3 lookfrom(10, 3, 0);
+    point3 lookat(0, 2, 0);
+    vec3 vup(0,1,0);
+    double vfov = 60;
+    double aperture = 0.0001;
+    double dist_to_focus = 10.0;
+
+    Camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
+    RTCDevice device = initializeDevice();
+    auto scene_ptr = make_shared<Scene>(device, cam);
+
+    //auto mt = make_shared<metal>(color(0.7, 0.6, 0.77), 0.1);
+    color test = color(1.0, 1.0, 1.0);
+    auto mt = make_shared<lambertian>(test);
+    auto mt2 = make_shared<OrenNayar>(test, 0.0);
+    
+    // Complex example:
+    auto mt3 = make_shared<CookTorrance>(color(1.0, 1.0, 1.0), color(1.0, 1.0, 1.0), 0.05);
+    // Non-complex example:
+    auto mt4 = make_shared<CookTorrance>(color(1.0, 1.0, 1.0), 0.0);
+
+    // Dielectric comparison
+    auto mt5 = make_shared<CookTorranceDielectric>(color(0.6, 1.0, 0.6), 1.5, 0.0001); // model glass
+    auto mt7 = make_shared<CookTorranceDielectric>(color(0.6, 1.0, 0.6), 0.0, 0.0001); // model mirror
+
+    auto sphere1 = make_shared<SpherePrimitive>(point3(0, 2, 2), mt5, 2, device);
+    auto sphere2 = make_shared<SpherePrimitive>(point3(0, 2, -2), mt7, 2, device);
+    scene_ptr->add_primitive(sphere1);
+    scene_ptr->add_primitive(sphere2);
+
+    auto red     = make_shared<lambertian>(color(1.0, 0.2, 0.2));
+    auto ground = make_shared<SpherePrimitive>(point3(0,-10000,0), red, 10000, device);
+    scene_ptr->add_primitive(ground);
+
+    scene_ptr->commitScene();
+    rtcReleaseDevice(device);
+
+    output(render_data, cam, scene_ptr);
+}
+
 int main(int argc, char* argv[]) {
     Config config = parseArguments(argc, argv);
-    switch (5) {
+    switch (9) {
         case 1:  random_spheres(); break;
         case 2:  two_spheres();    break;
         case 3:  earth();          break;
@@ -919,6 +967,7 @@ int main(int argc, char* argv[]) {
         case 6:  simple_light();   break;
         case 7:  cornell_box();    break;
         case 8: two_perlin_spheres(); break;
+        case 9: brdf_tests();      break;
     }
 }
 

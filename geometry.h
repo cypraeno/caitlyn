@@ -14,6 +14,13 @@ class Geometry : public Visual {
     virtual shared_ptr<material> materialById(unsigned int geomID) const = 0;
 
     virtual HitInfo getHitInfo(const ray& r, const vec3& p, const float t, unsigned int geomID) const = 0;
+
+    virtual point3 sample(const HitInfo& rec) const {
+        return point3(0,0,0);
+    };
+    virtual double pdf(const HitInfo& rec, ray sample_ray) const {
+        return 0.0;
+    };
 };
 
 #endif

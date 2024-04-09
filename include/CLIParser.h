@@ -13,7 +13,7 @@ struct Config {
     // Standard flags
     int samples_per_pixel = 50;
     int max_depth = 50;
-    std::string inputFile = "example.csr";
+    std::string inputFile = "scene.csr";
     std::string outputPath = "image.ppm";
     int image_width = 1200;
     int image_height = 675;
@@ -115,6 +115,7 @@ Config parseArguments(int argc, char* argv[]) {
             }
         } else if(arg == "-v" || arg == "--version") {
             config.showVersion = true;
+            std::cout << "caitlyn version 0.1.2" << std::endl;
         } else if(arg == "-h" || arg == "--help") {
             config.showHelp = true;
             outputHelpGuide(std::cout);

@@ -1,10 +1,77 @@
-# The Caitlyn Renderer
-Caitlyn is a Monte Carlo ray tracer built in C++ by a team of students from UWaterloo and Wilfrid Laurier. It is currently being developed towards the visual style originally inspired by the Odd Tales' game, "The Last Night". The project is currently being co-run by Connor Loi and Samuel Bai :D
+<h1 align="center">The Caitlyn Renderer :camera:</h1>
+<p align="center"><img width="600" alt="Render1" src="https://github.com/cypraeno/caitlyn/assets/25397938/9f93e7a7-37d0-43e4-bea1-e81859f75f00"></p>
 
-<img width="898" alt="Render1" src="https://github.com/Astro-Monkeys/caitlyn/assets/25397938/8f088c62-47e1-432d-9c12-9a198214d6b0">
 
-## Contributing and Current Status
-If you wish to contribute to this project, please email one of us at ctloi@uwaterloo.ca and sbai@uwaterloo.ca (or both!)
-We are currently following the fantastic work of [Peter Shirley and his team](https://raytracing.github.io/).
+Caitlyn is an in-development Monte Carlo ray tracer built in C++ by a team of students from the University of Waterloo and Wilfrid Laurier University. Caitlyn is actively working towards being a beautiful tool for bridging the accuracy and lighting of raytracing and the breathtaking visuals of pixel art (see our [portfolio](#our-portfolio) and Odd Tales' "The Last Night"!)
 
-**New Developer? Make sure you've been onboarded with Notion access and check out the [wiki page for how to get started on development](https://www.notion.so/Getting-Started-63fcd5670a69407285e3401e7b590fbf?pvs=4).**
+_Interested in getting involved? Contact [Connor Loi](ctloi@uwaterloo.ca) or [Samuel Bai](sbai@uwaterloo.ca)._
+
+## Table of Contents
+- [Quick Start Guide](#quick-start-guide)
+- [Our Portfolio](#our-portfolio)
+- [In-depth Docs](#docs)
+    - [Writing Scenes](#writing-scenes)
+    - [Rendering](#rendering)
+- [Contribute](#contribute)
+
+## Quick Start Guide
+Caitlyn MCRT is built on Debian 12. It may work on other distros, but we recommend simply pulling our Docker container.
+
+### Setup
+Before continuing:
+- Install `Docker Desktop`.
+- Pull the latest `docker pull connortbot/caitlyn-mcrt:base-vX.X.X`
+
+### Build
+You may pull the `stable` repository from within the container or mount a volume. Either works!
+Run `cmake -B build/ -S .` to create files in the `build` folder. `cd build`, and `make`.
+
+### Basic Rendering
+Caitlyn renders scenes from our custom filetype `.csr`. By default, the `caitlyn` executable will read the scene from a `scene.csr` file, so you need to have one before running. In this guide, we'll just run the `example.csr`, which you can copy from [here](https://github.com/cypraeno/csr-schema/blob/main/examples/example.csr).
+
+To learn how to write CSR files, check out the [Basic Guide](https://github.com/cypraeno/csr-schema/blob/main/basic-guide.md).
+
+Caitlyn has a user-friendly command line interface, allowing you to customize samples, depth, type of multithreading, and more. Once you have the executable, you can run `./caitlyn --help` to see all the options at your disposal.
+
+Let's render a PNG file of the example scene! Ensure that you have your CSR file in the same directory.
+```
+./caitlyn -i example.csr -t png
+```
+This will read the scene from `example.csr` and output as a `png`.
+And now you have your first caitlyn-rendered scene!
+
+## Our Portfolio
+
+## Docs
+
+### Writing Scenes
+As mentioned in the `Quick Start`, `caitlyn` will read and build scenes via CSR files. The CSR [Basic Guide](https://github.com/cypraeno/csr-schema/blob/main/basic-guide.md) covers everything from creating objects to custom materials.
+
+### Rendering
+To see all the options available to `caitlyn`, run:
+```
+./caitlyn --help
+```
+Flags like `--samples` and `--depth` control the amount of time spent on the render. If you are unfamiliar with rendering concepts, `samples` refer to the amount of rays traced per pixel, which decreases the noise of a render as it increases. `depth` refers to the amount of times a ray is simulated to "bounce" around the scene, allowing for realism in reflections, emissives, etc.
+
+Sometimes, CSR files will have features not supported in your version of `caitlyn`. You can check this with the version indicator at the top of the CSR file and with `./caitlyn --version`.
+
+For users who have a better understanding of their computer's resources, the `--threads` and `--vectorization` flags control the use of more efficient architecture. While `threads` dictate the amount of CPU threads to split the workloads on, the `vectorization` flag will dictate the type of SIMD batching. `[NONE|SSE|AVX|AVX512]`.
+
+
+## Contribute
+For contribution or general inquiries, please email one of us at [Connor Loi](ctloi@uwaterloo.ca) or [Samuel Bai](sbai@uwaterloo.ca).
+
+The people the made it happen:
+
+<div align="center">
+<a href="https://github.com/connortbot">Connor Loi</a>,
+<a href="https://github.com/haenlonns">Samuel Bai</a>,
+<a href="https://github.com/Saai151">Saai Arora</a>,
+<a href="https://github.com/dan-the-man639">Danny Yang</a>,
+<a href="https://github.com/ASharpMarble">Jonathan Wang</a>,
+<a href="https://github.com/18gen">Gen Ichihashi</a>,
+<a href="https://github.com/18gen">Max Tan</a>,
+<a href="https://github.com/rickyhuangjh">Ricky Huang</a>,
+<a href="https://github.com/daniel-su1">Daniel Su</a>
+</div>
