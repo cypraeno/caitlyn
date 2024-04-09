@@ -29,11 +29,15 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
             color color_from_emission = mat_ptr->emitted(record.u, record.v, record.pos);
             accumulated_color += weight * color_from_emission;
 
-            if (!mat_ptr->scatter(r_in, record, attenuation, scattered)) { // sets scattered to sampled BRDF
+            BSDFSample sample_data = mat_ptr->sample(r_in, record, scattered);
+            if (!sample_data.scatter) {
                 return accumulated_color;
             }
+            double cos_theta = fabs(dot(record.normal, (sample_data.scatter_direction)));
+            weight = weight * (sample_data.bsdf_value * cos_theta / sample_data.pdf_value);
 
-            if (i == 0) {
+            bool direct = false;
+            if (i == 0 && direct) {
                 // Direct Light Sampling
                 for (auto& light_ptr : scene->physical_lights) { // only accounts for physical lights currently
                     point3 sampled_point = light_ptr->sample(record);
@@ -73,19 +77,13 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
                     }
                 }
             }
-
-            color brdf_value = mat_ptr->generate(r_in, scattered, record);
-            double pdf_value = mat_ptr->pdf(r_in, scattered, record);
-            double cos_theta = fmax(0.0, dot(record.normal, scattered.direction()));
-
-            weight = weight * ((brdf_value * cos_theta) / pdf_value);
         } else {
             // Sky background (gradient blue-white)
             vec3 unit_direction = r_in.direction().unit_vector();
             auto t = 0.5*(unit_direction.y() + 1.0);
 
-            color sky = color(0,0,0);
-            //color sky = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
+            //color sky = color(0,0,0);
+            color sky = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
             accumulated_color += weight * sky;
             return accumulated_color;
         }
