@@ -127,9 +127,9 @@ color colorize_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
         color color_from_emission = mat_ptr->emitted(record.u, record.v, record.pos);
         if (!mat_ptr->scatter(r, record, attenuation, scattered)) {
             return color_from_emission;
-        }
+        } 
 
-        color color_from_scatter = (attenuation * colorize_ray(scattered, scene, depth-1));
+        color color_from_scatter = attenuation * colorize_ray(scattered, scene, depth-1);
 
         return color_from_emission + color_from_scatter;
     }
