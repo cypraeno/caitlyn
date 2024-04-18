@@ -18,7 +18,7 @@ struct Config {
     std::string outputPath = "image.ppm";
     int image_width = 1200;
     int image_height = 675;
-    std::string outputType = "ppm"; // [jpg|png|ppm]
+    std::string outputType = "png"; // [jpg|png|ppm]
     
     // Output flags
     bool showVersion = false;
