@@ -1,0 +1,70 @@
+version 0.1.3
+
+Camera
+lookfrom 0 0 9
+lookat 0 0 0
+vup 0 1 0
+vfov 80
+aspect_ratio 16/9
+aperture 0.0001
+focus_dist 10
+
+Material[Lambertian]
+id left_red
+texture no
+albedo 1.0 0.2 0.2
+
+Material[Lambertian]
+id back_green
+texture no
+albedo 0.2 1.0 0.2 
+
+Material[Lambertian]
+id right_blue
+texture no
+albedo 0.2 0.2 1.0
+
+Material[Lambertian]
+id upper_orange
+texture no
+albedo 1.0 0.5 0.0
+
+Material[Lambertian]
+id lower_teal
+texture no
+albedo 0.2 0.8 0.8
+
+Quad
+id 1
+position -3 -2 5
+u 0 0 -4
+v 0 4 0
+material left_red
+
+Quad
+id 2
+position -2 -2 0
+u 4 0 0
+v 0 4 0
+material back_green
+
+Quad
+id 3
+position 3 -2 1
+u 0 0 4
+v 0 4 0
+material right_blue
+
+Quad
+id 4
+position -2 3 1
+u 4 0 0
+v 0 0 4
+material upper_orange
+
+Quad
+id 5
+position -2 -3 5
+u 4 0 0
+v 0 0 -4
+material lower_teal

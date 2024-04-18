@@ -287,12 +287,27 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                     int current_index = current[i].index;
 
                     // process each ray by editing the temp_buffer and updating current queue
-                    if (rayhit.hit.geomID[i] != RTC_INVALID_GEOMETRY_ID) { // hit
+                    int targetID = -1;
+                    if (rayhit.hit.instID[0][i] != RTC_INVALID_GEOMETRY_ID) { 
+                        targetID = rayhit.hit.instID[0][i]; }
+                    else if (rayhit.hit.geomID[i] != RTC_INVALID_GEOMETRY_ID) {
+                        targetID = rayhit.hit.geomID[i]; }
+                    else { // no hit
+                        // Sky background (gradient blue-white)
+                        vec3 unit_direction = current_ray.direction().unit_vector();
+                        auto t = 0.5*(unit_direction.y() + 1.0);
+
+                        color multiplier = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
+                        if (current[i].depth == 0) { temp_buffer[current_index] = multiplier; }
+                        else { temp_buffer[current_index] = temp_buffer[current_index] + (attenuation_buffer[current_index] * multiplier); }
+                        completeRayQueueTask(current, temp_buffer, full_buffer, queue, mask, i, current_index);
+                    }
+                    if (targetID != -1) {
                         ray scattered;
                         color attenuation;
-                        std::shared_ptr<Geometry> geomhit = scene_ptr->geom_map[rayhit.hit.geomID[i]];
-                        std::shared_ptr<material> mat_ptr = geomhit->materialById(rayhit.hit.geomID[i]);
-                        record = geomhit->getHitInfo(current_ray, current_ray.at(rayhit.ray.tfar[i]), rayhit.ray.tfar[i], rayhit.hit.geomID[i]);
+                        std::shared_ptr<Geometry> geomhit = scene_ptr->geom_map[targetID];
+                        std::shared_ptr<material> mat_ptr = geomhit->materialById(targetID);
+                        record = geomhit->getHitInfo(current_ray, current_ray.at(rayhit.ray.tfar[i]), rayhit.ray.tfar[i], targetID);
                         
                         color color_from_emission = mat_ptr->emitted(record.u, record.v, record.pos);
                         if (!mat_ptr->scatter(current_ray, record, attenuation, scattered)) {
@@ -315,15 +330,6 @@ void render_scanlines_sse(int lines, int start_line, std::shared_ptr<Scene> scen
                                 current[i].r = scattered;
                             }
                         }
-                    } else { // no hit
-                        // Sky background (gradient blue-white)
-                        vec3 unit_direction = current_ray.direction().unit_vector();
-                        auto t = 0.5*(unit_direction.y() + 1.0);
-
-                        color multiplier = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
-                        if (current[i].depth == 0) { temp_buffer[current_index] = multiplier; }
-                        else { temp_buffer[current_index] = temp_buffer[current_index] + (attenuation_buffer[current_index] * multiplier); }
-                        completeRayQueueTask(current, temp_buffer, full_buffer, queue, mask, i, current_index);
                     }
                 }
             }
@@ -400,7 +406,23 @@ void render_scanlines_avx(int lines, int start_line, std::shared_ptr<Scene> scen
                     int current_index = current[i].index;
 
                     // process each ray by editing the temp_buffer and updating current queue
-                    if (rayhit.hit.geomID[i] != RTC_INVALID_GEOMETRY_ID) { // hit
+                    int targetID = -1;
+                    if (rayhit.hit.instID[0][i] != RTC_INVALID_GEOMETRY_ID) { 
+                        targetID = rayhit.hit.instID[0][i]; }
+                    else if (rayhit.hit.geomID[i] != RTC_INVALID_GEOMETRY_ID) {
+                        targetID = rayhit.hit.geomID[i]; }
+                    else { // no hit
+                        // Sky background (gradient blue-white)
+                        vec3 unit_direction = current_ray.direction().unit_vector();
+                        auto t = 0.5*(unit_direction.y() + 1.0);
+
+                        color multiplier = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
+                        if (current[i].depth == 0) { temp_buffer[current_index] = multiplier; }
+                        else { temp_buffer[current_index] = temp_buffer[current_index] + (attenuation_buffer[current_index] * multiplier); }
+                        completeRayQueueTask(current, temp_buffer, full_buffer, queue, mask, i, current_index);
+                    }
+
+                    if (targetID != -1) {
                         ray scattered;
                         color attenuation;
                         std::shared_ptr<Geometry> geomhit = scene_ptr->geom_map[rayhit.hit.geomID[i]];
@@ -428,15 +450,6 @@ void render_scanlines_avx(int lines, int start_line, std::shared_ptr<Scene> scen
                                 current[i].r = scattered;
                             }
                         }
-                    } else { // no hit
-                        // Sky background (gradient blue-white)
-                        vec3 unit_direction = current_ray.direction().unit_vector();
-                        auto t = 0.5*(unit_direction.y() + 1.0);
-
-                        color multiplier = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
-                        if (current[i].depth == 0) { temp_buffer[current_index] = multiplier; }
-                        else { temp_buffer[current_index] = temp_buffer[current_index] + (attenuation_buffer[current_index] * multiplier); }
-                        completeRayQueueTask(current, temp_buffer, full_buffer, queue, mask, i, current_index);
                     }
                 }
             }

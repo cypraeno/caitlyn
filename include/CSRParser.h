@@ -126,7 +126,7 @@ public:
                 std::string id, position, u, v, material;
                 getNextLine(file, id); getNextLine(file, position); getNextLine(file, u); getNextLine(file, v); getNextLine(file, material);
                 auto quad = make_shared<QuadPrimitive>(readXYZProperty(position), readXYZProperty(u), readXYZProperty(v), materials[readStringProperty(material)], device);
-                primitives[id] = quad;
+                primitives[readStringProperty(id)] = quad;
                 scene_ptr->add_primitive(quad);
                 
                 // see above warning in Sphere block
@@ -154,7 +154,21 @@ public:
                     auto instance = make_shared<SpherePrimitiveInstance>(instance_ptr, transform, device);
                     scene_ptr->add_primitive_instance(instance, device);
                 } else if (instanceType == "QuadPrimitive") {
-                    // add here when QuadPrimitiveInstance is done
+                    std::string prim_id, translate;
+                    getNextLine(file, prim_id); getNextLine(file, translate);
+                    vec3 translateVector = readXYZProperty(translate);
+                    float transform[12] = {
+                        1, 0, 0, translateVector.x(),
+                        0, 1, 0, translateVector.y(),
+                        0, 0, 1, translateVector.z()
+                    };
+                    std::shared_ptr<QuadPrimitive> instance_ptr = std::dynamic_pointer_cast<QuadPrimitive>(primitives[readStringProperty(prim_id)]);
+                    if (!instance_ptr) {
+                        rtcReleaseDevice(device);
+                        throw std::runtime_error("Instance key ERROR: " + readStringProperty(prim_id) + " is not a QuadPrimitive!");
+                    }
+                    auto instance = make_shared<QuadPrimitiveInstance>(instance_ptr, transform, device);
+                    scene_ptr->add_primitive_instance(instance, device);
                 } else {
                     rtcReleaseDevice(device);
                     throw std::runtime_error("Instance type UNDEFINED: Instance[SpherePrimitive|QuadPrimitive]");
