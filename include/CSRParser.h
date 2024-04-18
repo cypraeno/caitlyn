@@ -132,6 +132,7 @@ public:
                 // see above warning in Sphere block
                 if (materials[readStringProperty(material)]->emitted(0, 0, point3(0,0,0)).length() > 0) {
                     scene_ptr->add_physical_light(quad);
+                }
             } else if (startsWith(line, "Instance")) {
                 auto idStart = line.find('[') + 1;
                 auto idEnd = line.find(']');

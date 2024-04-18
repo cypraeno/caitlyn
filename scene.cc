@@ -20,6 +20,7 @@ unsigned int Scene::add_primitive(std::shared_ptr<Primitive> prim) {
 
 void Scene::add_physical_light(std::shared_ptr<Geometry> geom_ptr) {
     physical_lights.push_back(geom_ptr);
+}
 
 unsigned int Scene::add_primitive_instance(std::shared_ptr<PrimitiveInstance> pi_ptr, RTCDevice device) {
     RTCGeometry instance_geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_INSTANCE);
