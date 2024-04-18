@@ -16,6 +16,8 @@ FIND_PACKAGE(embree 4 REQUIRED)
 find_package(PNG REQUIRED)
 
 file(GLOB_RECURSE SOURCES "*.cc")
+file(GLOB_RECURSE SRC_FOLDER "src/*.cc")
+list(APPEND SOURCES ${SRC_FOLDER})
 add_executable(caitlyn ${SOURCES}) # Required
 
 # EMBREE CONFIG
