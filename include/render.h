@@ -21,62 +21,11 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
         setupRayHit1(rayhit, r_in);
 
         rtcIntersect1(scene->rtc_scene, &rayhit);
-        if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
-            std::shared_ptr<Geometry> geomhit = scene->geom_map[rayhit.hit.geomID];
-            std::shared_ptr<material> mat_ptr = geomhit->materialById(rayhit.hit.geomID);
-            record = geomhit->getHitInfo(r_in, r_in.at(rayhit.ray.tfar), rayhit.ray.tfar, rayhit.hit.geomID);
-
-            color color_from_emission = mat_ptr->emitted(record.u, record.v, record.pos);
-            accumulated_color += weight * color_from_emission;
-
-            BSDFSample sample_data = mat_ptr->sample(r_in, record, scattered);
-            if (!sample_data.scatter) {
-                return accumulated_color;
-            }
-            double cos_theta = fabs(dot(record.normal, (sample_data.scatter_direction)));
-            weight = weight * (sample_data.bsdf_value * cos_theta / sample_data.pdf_value);
-
-            bool direct = false;
-            if (i == 0 && direct) {
-                // Direct Light Sampling
-                for (auto& light_ptr : scene->physical_lights) { // only accounts for physical lights currently
-                    point3 sampled_point = light_ptr->sample(record);
-                    vec3 light_dir = (sampled_point - record.pos);
-                    ray sampled_ray = ray(record.pos, light_dir, 0.0);
-
-                    // Trace a ray from here to the light
-                    struct RTCRayHit light_rayhit;
-                    setupRayHit1(light_rayhit, sampled_ray);
-
-                    rtcIntersect1(scene->rtc_scene, &light_rayhit);
-                    if (light_rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) { // we hit something
-                        std::shared_ptr<Geometry> light_geomhit = scene->geom_map[light_rayhit.hit.geomID];
-                        if (light_geomhit == light_ptr) { // if it is the light, we are not obscured from the light
-                            // Store hit data of tracing the ray from here to the light
-                            HitInfo light_record;
-                            light_record = light_geomhit->getHitInfo(sampled_ray, sampled_ray.at(light_rayhit.ray.tfar), light_rayhit.ray.tfar, light_rayhit.hit.geomID);
-
-                            // Get the light's material
-                            std::shared_ptr<material> light_mat_ptr = light_geomhit->materialById(light_rayhit.hit.geomID);
-
-                            ray inverse = ray(sampled_point, -light_dir, light_rayhit.ray.tfar);
-                            ray light_scatter;
-                            mat_ptr->scatter(inverse, record, attenuation, light_scatter);
-
-                            // Calculate direct light contribution
-                            color light_color = light_mat_ptr->emitted(light_record.u, light_record.v, light_record.pos);
-                            // BRDF of light as the incoming source
-                            color light_brdf = mat_ptr->generate(inverse, light_scatter, record);
-                            // Calculate cos using the surface normal of the hit object and the direction from the object to the light.
-                            double light_cos_theta = fmax(0.0, dot(record.normal, light_dir.unit_vector()));
-                            // Evaluate the PDF considering the probability of sampling the point on the light source from the objects POV.
-                            double light_pdf_value = light_ptr->pdf(light_record, sampled_ray);
-                            color direct_contribution = (light_brdf * light_color * light_cos_theta) / light_pdf_value;
-                            accumulated_color += weight * direct_contribution;
-                        }
-                    }
-                }
-            }
+        int targetID;
+        if (rayhit.hit.instID[0] != RTC_INVALID_GEOMETRY_ID) {
+            targetID = rayhit.hit.instID[0];
+        } else if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
+            targetID = rayhit.hit.geomID;
         } else {
             // Sky background (gradient blue-white)
             vec3 unit_direction = r_in.direction().unit_vector();
@@ -86,6 +35,67 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
             color sky = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
             accumulated_color += weight * sky;
             return accumulated_color;
+        }
+
+        std::shared_ptr<Geometry> geomhit = scene->geom_map[targetID];
+        std::shared_ptr<material> mat_ptr = geomhit->materialById(targetID);
+        record = geomhit->getHitInfo(r_in, r_in.at(rayhit.ray.tfar), rayhit.ray.tfar, targetID);
+
+        color color_from_emission = mat_ptr->emitted(record.u, record.v, record.pos);
+        accumulated_color += weight * color_from_emission;
+
+        BSDFSample sample_data = mat_ptr->sample(r_in, record, scattered);
+        if (!sample_data.scatter) {
+            return accumulated_color;
+        }
+        double cos_theta = fabs(dot(record.normal, (sample_data.scatter_direction)));
+        weight = weight * (sample_data.bsdf_value * cos_theta / sample_data.pdf_value);
+
+        bool direct = false;
+        if (i == 0 && direct) {
+            // Direct Light Sampling
+            for (auto& light_ptr : scene->physical_lights) { // only accounts for physical lights currently
+                point3 sampled_point = light_ptr->sample(record);
+                vec3 light_dir = (sampled_point - record.pos);
+                ray sampled_ray = ray(record.pos, light_dir, 0.0);
+
+                // Trace a ray from here to the light
+                struct RTCRayHit light_rayhit;
+                setupRayHit1(light_rayhit, sampled_ray);
+
+                rtcIntersect1(scene->rtc_scene, &light_rayhit);
+                int light_targetID;
+                if (light_rayhit.hit.instID[0] != RTC_INVALID_GEOMETRY_ID) {
+                    light_targetID = light_rayhit.hit.instID[0];
+                } else if (light_rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) { 
+                    light_targetID = light_rayhit.hit.geomID;
+                }
+
+                std::shared_ptr<Geometry> light_geomhit = scene->geom_map[light_targetID];
+                if (light_geomhit == light_ptr) { // if it is the light, we are not obscured from the light
+                    // Store hit data of tracing the ray from here to the light
+                    HitInfo light_record;
+                    light_record = light_geomhit->getHitInfo(sampled_ray, sampled_ray.at(light_rayhit.ray.tfar), light_rayhit.ray.tfar, light_targetID);
+
+                    // Get the light's material
+                    std::shared_ptr<material> light_mat_ptr = light_geomhit->materialById(light_targetID);
+
+                    ray inverse = ray(sampled_point, -light_dir, light_rayhit.ray.tfar);
+                    ray light_scatter;
+                    mat_ptr->scatter(inverse, record, attenuation, light_scatter);
+
+                    // Calculate direct light contribution
+                    color light_color = light_mat_ptr->emitted(light_record.u, light_record.v, light_record.pos);
+                    // BRDF of light as the incoming source
+                    color light_brdf = mat_ptr->generate(inverse, light_scatter, record);
+                    // Calculate cos using the surface normal of the hit object and the direction from the object to the light.
+                    double light_cos_theta = fmax(0.0, dot(record.normal, light_dir.unit_vector()));
+                    // Evaluate the PDF considering the probability of sampling the point on the light source from the objects POV.
+                    double light_pdf_value = light_ptr->pdf(light_record, sampled_ray);
+                    color direct_contribution = (light_brdf * light_color * light_cos_theta) / light_pdf_value;
+                    accumulated_color += weight * direct_contribution;
+                }
+            }
         }
 
         r_in = scattered;
