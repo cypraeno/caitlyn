@@ -5,8 +5,9 @@
 #include <map>
 #include "camera.h"
 #include "material.h"
-#include "primitive.h"
 #include "light.h"
+#include "sphere_primitive.h"
+#include "instances.h"
 #include "hitinfo.h"
 
 // SCENE INTERFACE
@@ -42,6 +43,7 @@ class Scene {
     unsigned int add_primitive(std::shared_ptr<Primitive> prim);
 
     void add_physical_light(std::shared_ptr<Geometry> geom_ptr);
+    unsigned int add_primitive_instance(std::shared_ptr<PrimitiveInstance> pi_ptr, RTCDevice device);
 };
 
 void add_sphere(RTCDevice device, RTCScene scene);

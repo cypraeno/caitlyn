@@ -15,6 +15,7 @@
 #include "sphere_primitive.h"
 #include "quad_primitive.h"
 #include "scene.h"
+#include "instances.h"
 
 /**
  * @class CSRParser
@@ -36,6 +37,7 @@ public:
         std::string line;
         std::map<std::string, std::shared_ptr<material>> materials;
         std::map<std::string, std::shared_ptr<texture>> textures;
+        std::map<std::string, std::shared_ptr<Primitive>> primitives;
         
         if (!file.is_open() || !file.good()) {
             rtcReleaseDevice(device);
@@ -44,7 +46,7 @@ public:
 
         // Read in version
         getNextLine(file, line);
-        if (trim(line) != "version 0.1.2") {
+        if (trim(line) != "version 0.1.3") {
             rtcReleaseDevice(device);
             throw std::runtime_error("Unsupported version or missing version marker");
         }
@@ -107,9 +109,10 @@ public:
                     throw std::runtime_error("Texture type UNDEFINED: Texture[Checker|Image|Noise]");
                 }
             } else if (startsWith(line, "Sphere")) {
-                std::string position, material, radius;
-                getNextLine(file, position); getNextLine(file, material); getNextLine(file, radius);
+                std::string id, position, material, radius;
+                getNextLine(file, id); getNextLine(file, position); getNextLine(file, material); getNextLine(file, radius);
                 auto sphere = make_shared<SpherePrimitive>(readXYZProperty(position), materials[readStringProperty(material)], readDoubleProperty(radius), device);
+                primitives[readStringProperty(id)] = sphere;
                 scene_ptr->add_primitive(sphere);
 
                 // This check is if the material emits anything, but it doesn't really work because it assumes
@@ -120,14 +123,40 @@ public:
                     scene_ptr->add_physical_light(sphere);
                 }
             } else if (startsWith(line, "Quad")) {
-                std::string position, u, v, material;
-                getNextLine(file, position); getNextLine(file, u); getNextLine(file, v); getNextLine(file, material);
+                std::string id, position, u, v, material;
+                getNextLine(file, id); getNextLine(file, position); getNextLine(file, u); getNextLine(file, v); getNextLine(file, material);
                 auto quad = make_shared<QuadPrimitive>(readXYZProperty(position), readXYZProperty(u), readXYZProperty(v), materials[readStringProperty(material)], device);
+                primitives[id] = quad;
                 scene_ptr->add_primitive(quad);
                 
                 // see above warning in Sphere block
                 if (materials[readStringProperty(material)]->emitted(0, 0, point3(0,0,0)).length() > 0) {
                     scene_ptr->add_physical_light(quad);
+            } else if (startsWith(line, "Instance")) {
+                auto idStart = line.find('[') + 1;
+                auto idEnd = line.find(']');
+                std::string instanceType = line.substr(idStart, idEnd - idStart);
+                if (instanceType == "SpherePrimitive") {
+                    std::string prim_id, translate;
+                    getNextLine(file, prim_id); getNextLine(file, translate);
+                    vec3 translateVector = readXYZProperty(translate);
+                    float transform[12] = {
+                        1, 0, 0, translateVector.x(),
+                        0, 1, 0, translateVector.y(),
+                        0, 0, 1, translateVector.z()
+                    };
+                    std::shared_ptr<SpherePrimitive> instance_ptr = std::dynamic_pointer_cast<SpherePrimitive>(primitives[readStringProperty(prim_id)]);
+                    if (!instance_ptr) {
+                        rtcReleaseDevice(device);
+                        throw std::runtime_error("Instance key ERROR: " + readStringProperty(prim_id) + " is not a SpherePrimitive!");
+                    }
+                    auto instance = make_shared<SpherePrimitiveInstance>(instance_ptr, transform, device);
+                    scene_ptr->add_primitive_instance(instance, device);
+                } else if (instanceType == "QuadPrimitive") {
+                    // add here when QuadPrimitiveInstance is done
+                } else {
+                    rtcReleaseDevice(device);
+                    throw std::runtime_error("Instance type UNDEFINED: Instance[SpherePrimitive|QuadPrimitive]");
                 }
             }
         }

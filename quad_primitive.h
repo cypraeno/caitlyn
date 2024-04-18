@@ -26,6 +26,12 @@ class QuadPrimitive : public Primitive {
 
         point3 sample(const HitInfo& rec) const override;
         double pdf(const HitInfo& rec, ray sample_ray) const override;
+        vec3 getV(){
+            return v;
+        }
+        vec3 getU(){
+            return u;
+        }
 };
 
 #endif

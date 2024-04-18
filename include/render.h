@@ -128,31 +128,36 @@ color colorize_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
 
     rtcIntersect1(scene->rtc_scene, &rayhit);
 
-    // if hit is found
-    if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
-        ray scattered;
-        color attenuation;
+    int targetID;
+    if (rayhit.hit.instID[0] != RTC_INVALID_GEOMETRY_ID) { // hit an instance
+        targetID = rayhit.hit.instID[0];
+    } else if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
+        targetID = rayhit.hit.geomID;
+    } else {
+        // Sky background (gradient blue-white)
+        vec3 unit_direction = r.direction().unit_vector();
+        auto t = 0.5*(unit_direction.y() + 1.0);
 
-        // get the material of the thing we just hit
-        std::shared_ptr<Geometry> geomhit = scene->geom_map[rayhit.hit.geomID];
-        std::shared_ptr<material> mat_ptr = geomhit->materialById(rayhit.hit.geomID);
-        record = geomhit->getHitInfo(r, r.at(rayhit.ray.tfar), rayhit.ray.tfar, rayhit.hit.geomID);
-
-        color color_from_emission = mat_ptr->emitted(record.u, record.v, record.pos);
-        if (!mat_ptr->scatter(r, record, attenuation, scattered)) {
-            return color_from_emission;
-        } 
-
-        color color_from_scatter = attenuation * colorize_ray(scattered, scene, depth-1);
-
-        return color_from_emission + color_from_scatter;
+        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
     }
 
-    // Sky background (gradient blue-white)
-    vec3 unit_direction = r.direction().unit_vector();
-    auto t = 0.5*(unit_direction.y() + 1.0);
+    // Hit is found
+    ray scattered;
+    color attenuation;
 
-    return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
+    // get the material of the thing we just hit
+    std::shared_ptr<Geometry> geomhit = scene->geom_map[targetID];
+    std::shared_ptr<material> mat_ptr = geomhit->materialById(targetID);
+    record = geomhit->getHitInfo(r, r.at(rayhit.ray.tfar), rayhit.ray.tfar, targetID);
+
+    color color_from_emission = mat_ptr->emitted(record.u, record.v, record.pos);
+    if (!mat_ptr->scatter(r, record, attenuation, scattered)) {
+        return color_from_emission;
+    } 
+
+    color color_from_scatter = attenuation * colorize_ray(scattered, scene, depth-1);
+
+    return color_from_emission + color_from_scatter;
 }
 
 
