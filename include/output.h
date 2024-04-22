@@ -8,7 +8,7 @@
 #include "png_output.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "external/stb_image_write.h"
+#include "stb_image_write.h"
 
 // Threading
 #include <vector>
