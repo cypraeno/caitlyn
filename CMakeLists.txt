@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.26) # Required
 
 
-project(Caitlyn VERSION 0.1.0) # Required
+project(Caitlyn VERSION 0.1.3) # Required
 set(CMAKE_BUILD_TYPE Debug)
 
 # Include SIMD Configuration
@@ -25,7 +25,15 @@ TARGET_LINK_LIBRARIES(caitlyn embree)
 
 # Link with libpng
 target_link_libraries(caitlyn ${PNG_LIBRARY})
-include_directories(${PNG_INCLUDE_DIR})
+include_directories(caitlyn ${PNG_INCLUDE_DIR})
+
+# Option to disable the building of the csr-validator executable
+option(BUILD_CSR_VALIDATOR_EXECUTABLE "Build the CSR Validator executable" OFF)
+
+# Add Submodules
+add_subdirectory(csr-schema)
+target_link_libraries(caitlyn csr-schema-lib)
+target_include_directories(caitlyn PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/csr-schema/include)
 
 target_compile_features(caitlyn PUBLIC cxx_std_11) # Set the C++ standard to C++11
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2") # Set the optimization level to -O2
