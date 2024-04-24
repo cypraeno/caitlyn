@@ -33,6 +33,23 @@ HitInfo SpherePrimitive::getHitInfo(const ray& r, const vec3& p, const float t, 
     return record;
 }
 
+point3 SpherePrimitive::sample(const HitInfo& rec) const {
+    vec3 direction = position - rec.pos;
+    vec3 to_sphere = random_in_hemisphere(direction.unit_vector());
+    return position + (to_sphere * radius);
+    // auto distance_squared = direction.length_squared();
+    // onb uvw;
+    // uvw.build_from_w(direction);
+    // return uvw.local(random_to_sphere(radius, distance_squared));
+}
+
+double SpherePrimitive::pdf(const HitInfo& rec, ray sample_ray) const {
+    auto cos_theta_max = sqrt(1 - radius*radius/(position - sample_ray.origin()).length_squared());
+    auto solid_angle = 2*pi*(1-cos_theta_max);
+    return 1 / solid_angle;
+    //return (4 * pi);
+}
+
 void SpherePrimitive::get_sphere_uv(const point3& p, double& u, double& v) {
     // p: a given point on the sphere of radius one, centered at the origin.
     // u: returned value [0,1] of angle around the Y axis from X=-1.
@@ -46,4 +63,16 @@ void SpherePrimitive::get_sphere_uv(const point3& p, double& u, double& v) {
 
     u = phi / (2*pi);
     v = theta / pi;
+}
+
+vec3 SpherePrimitive::random_to_sphere(double radius, double distance_squared) {
+    auto r1 = random_double();
+    auto r2 = random_double();
+    auto z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
+
+    auto phi = 2*pi*r1;
+    auto x = cos(phi)*sqrt(1-z*z);
+    auto y = sin(phi)*sqrt(1-z*z);
+
+    return vec3(x, y, z);
 }
