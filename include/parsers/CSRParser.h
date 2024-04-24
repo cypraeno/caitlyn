@@ -17,12 +17,14 @@
 #include "scene.h"
 #include "instances.h"
 
+#include "csr_validator.hh"
+
 /**
  * @class CSRParser
  * @brief A parser that constructs Scene objects by reading a given CSR (Caitlyn Scene Representation) file.
  *
  * Call parseCSR(parseCSR(const std::string& filePath, RTCDevice device) to get a std::shared_ptr<Scene>
- * parseCSR does NOT validate the formatting and structure of the CSR file, and may result in a seg fault.
+ * parseCSR does NOT validate the formatting and structure of the CSR file, and may result in a seg fault without prior validation.
 */
 class CSRParser {
 public:
@@ -32,7 +34,9 @@ public:
      * @brief Parses a CSR file and returns a std::shared_ptr<Scene> WITHOUT the scene committed.
      * The user must call scene_ptr->commitScene(); and rtcReleaseDevice(device);.
     */
-    std::shared_ptr<Scene> parseCSR(const std::string& filePath, RTCDevice device) {
+    std::shared_ptr<Scene> parseCSR(std::string& filePath, RTCDevice device) {
+        isCSR(filePath);
+
         file = std::ifstream(filePath);
         std::string line;
         std::map<std::string, std::shared_ptr<material>> materials;

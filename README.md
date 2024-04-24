@@ -41,6 +41,7 @@ This will read the scene from `example.csr` and output as a `png`.
 And now you have your first caitlyn-rendered scene!
 
 ## Our Portfolio
+![image](https://github.com/cypraeno/caitlyn/assets/25397938/38ad0953-1c29-4ae6-aead-fa2523706b3b)
 
 ## Docs
 

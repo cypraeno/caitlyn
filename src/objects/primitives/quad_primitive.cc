@@ -51,3 +51,5 @@ double QuadPrimitive::pdf(const HitInfo& light_record, ray sample_ray) const {
     double area = cross(u,v).length();
     return distance_squared / (cosine * area);
 }
+vec3 QuadPrimitive::getV() { return v; }
+vec3 QuadPrimitive::getU() { return u; }

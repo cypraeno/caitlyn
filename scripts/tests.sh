@@ -2,7 +2,7 @@
 
 # Defaults for if caitlyn is in the build folder. Create a test_outputs folder in build/.
 test_outputs_dir="../build/test_outputs"
-tests_dir="./"
+tests_dir="../tests"
 executable="../build/caitlyn"
 
 if [ $1 == 'yes' ]

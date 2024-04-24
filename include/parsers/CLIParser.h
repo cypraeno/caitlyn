@@ -5,7 +5,8 @@
 #include "render.h"
 
 /**
- * @brief structure to hold all relevant data determined by flags.
+ * @struct Config
+ * @brief Object to hold all relevant data determined by CLI flags.
  * Automatically holds defaults.
  * @note A little redundant with the existence of RenderData. Unsure how to reconcile.
 */

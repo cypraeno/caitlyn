@@ -1,6 +1,5 @@
 #include <embree4/rtcore.h>
 #include "CSRParser.h"
-#include "csr_validator.hh"
 #include "device.h"
 
 #include "CLIParser.h"
@@ -62,7 +61,6 @@ int main(int argc, char* argv[]) {
     setRenderData(render_data, aspect_ratio, config.image_width, config.samples_per_pixel, config.max_depth);
     std::string filePath = config.inputFile;
     RTCDevice device = initializeDevice();
-    isCSR(filePath);
     CSRParser parser;
     auto scene_ptr = parser.parseCSR(filePath, device);
     scene_ptr->commitScene();

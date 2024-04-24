@@ -15,7 +15,7 @@
 
 class Visual : public Base {
     public:
-    Visual(vec3 position) : Base(position) {}
+    Visual(vec3 position);
 };
 
 #endif

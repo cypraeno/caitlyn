@@ -16,7 +16,7 @@ FIND_PACKAGE(embree 4 REQUIRED)
 find_package(PNG REQUIRED)
 
 file(GLOB_RECURSE SOURCES "*.cc")
-file(GLOB_RECURSE SRC_FOLDER "src/*.cc")
+file(GLOB_RECURSE SRC_FOLDER "src/**/*.cc")
 list(APPEND SOURCES ${SRC_FOLDER})
 add_executable(caitlyn ${SOURCES}) # Required
 
@@ -47,10 +47,25 @@ elseif(COMPILER_SUPPORTS_SSE42)
   target_compile_definitions(caitlyn PRIVATE EMBREE_MAX_ISA=SSE4.2)
 endif()
 
+# Target all headers recursively in include/ and external/
+file(GLOB_RECURSE HEADER_LIST "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
+file(GLOB_RECURSE EXTERNAL_HEADER_LIST "${CMAKE_CURRENT_SOURCE_DIR}/external/*.h")
+
 target_include_directories(caitlyn PRIVATE 
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/external
 )
+
+# Get the directories of the header files
+set(DIR_LIST "")
+foreach(FILE_PATH ${HEADER_LIST} ${EXTERNAL_HEADER_LIST})
+  get_filename_component(DIR_PATH ${FILE_PATH} PATH)
+  list(APPEND DIR_LIST ${DIR_PATH})
+endforeach()
+list(REMOVE_DUPLICATES DIR_LIST)
+
+# Include the directories
+target_include_directories(caitlyn PRIVATE ${DIR_LIST})
 
 # Instructions
 # Create build files:
