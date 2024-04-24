@@ -18,7 +18,7 @@ void brdf_tests() {
     double aperture = 0.0001;
     double dist_to_focus = 10.0;
 
-    Camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+    Camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus);
 
     RTCDevice device = initializeDevice();
     auto scene_ptr = make_shared<Scene>(device, cam);
