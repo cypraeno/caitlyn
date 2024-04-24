@@ -12,6 +12,7 @@ class emissive : public material {
     emissive(color emission_color);
     bool scatter(const ray& r_in, const HitInfo& rec, color& attenuation, ray& scattered) const override;
     color emitted(double u, double v, const point3& p) const override;
+};
 
 /**
  * @brief Empty implementation of Light as a Visual. Update as light sampling

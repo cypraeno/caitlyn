@@ -1,7 +1,7 @@
 #ifndef INTERSECTS_H
 #define INTERSECTS_H
 
-// Helper header file for the rtcIntersectX functions.
+// Semi-temporary helper header file for the rtcIntersectX functions.
 // Helpers do not actually fire the ray, they just set up the RTCRayHit objects with rays.
 
 /** @brief modifies given RTCRayHit object to be ready for rtcIntersect1 usage */

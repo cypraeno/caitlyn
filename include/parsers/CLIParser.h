@@ -1,3 +1,6 @@
+#ifndef CLIPARSER_H
+#define CLIPARSER_H
+
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -142,3 +145,5 @@ Config parseArguments(int argc, char* argv[]) {
     }
     return config;
 }
+
+#endif

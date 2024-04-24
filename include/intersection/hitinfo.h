@@ -1,6 +1,8 @@
 #ifndef HITINFO_H
 #define HITINFO_H
 
+#include "ray.h"
+
 struct HitInfo {
     point3 pos;
     vec3 normal;

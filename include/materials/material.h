@@ -9,8 +9,6 @@
 #include <complex>
 #include "microfacet.h"
 
-// NOTE: Is not split into .cc and .h due to the upcoming Casino Epic drastically changing this file. This file MUST be split in CA-89.
-
 class hit_record;
 
 struct BSDFSample {

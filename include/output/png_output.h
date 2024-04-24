@@ -1,3 +1,6 @@
+#ifndef PNG_OUTPUT_H
+#define PNG_OUTPUT_H
+
 #include <png.h>
 #include <vector>
 #include <cstdio>
@@ -52,3 +55,5 @@ void write_png(const char* filename, int width, int height, int samples_per_pixe
     png_destroy_write_struct(&png_ptr, &info_ptr);
     fclose(fp);
 }
+
+#endif
