@@ -205,18 +205,30 @@ void render_scanlines(int lines, int start_line, std::shared_ptr<Scene> scene_pt
     int samples_per_pixel   = data.samples_per_pixel;
     int max_depth           = data.max_depth;
 
+    int sqrt_samples = int(sqrt(samples_per_pixel)); // Assume samples_per_pixel is a perfect square
+
     for (int j=start_line; j>=start_line - (lines - 1); --j) {
 
         for (int i=0; i<image_width; ++i) {
 
             color pixel_color(0, 0, 0);
 
-            for (int s=0; s < samples_per_pixel; s++) {
-                auto u = (i + random_double()) / (image_width-1);
-                auto v = (j + random_double()) / (image_height-1);
-                ray r = cam.get_ray(u, v);
-                pixel_color += trace_ray(r, scene_ptr, max_depth);
+            for (int py = 0; py < sqrt_samples; ++py) {
+                for (int px = 0; px < sqrt_samples; ++px) {
+                    // Stratified sampling within the pixel
+                    auto u = (i + (px + random_double()) / sqrt_samples) / (image_width - 1);
+                    auto v = (j + (py + random_double()) / sqrt_samples) / (image_height - 1);
+                    ray r = cam.get_ray(u, v);
+                    pixel_color += trace_ray(r, scene_ptr, max_depth);
+                }
             }
+            // NO STRATIFICATION; REMOVE ON RELEASE
+            // for (int s=0; s < samples_per_pixel; s++) {
+            //     auto u = (i + random_double()) / (image_width-1);
+            //     auto v = (j + random_double()) / (image_height-1);
+            //     ray r = cam.get_ray(u, v);
+            //     pixel_color += trace_ray(r, scene_ptr, max_depth);
+            // }
 
             int buffer_index = j * image_width + i;
             color buffer_pixel(pixel_color.x(), pixel_color.y(), pixel_color.z());
