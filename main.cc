@@ -26,7 +26,8 @@ void brdf_tests() {
     // ALL MATERIALS
     // DEFAULTS V0.1.X
     auto emit = make_shared<emissive>(color(15.0, 15.0, 15.0));
-    auto mt1 = make_shared<metal>(color(0.7, 0.6, 0.77), 0.1);
+    auto mt0 = make_shared<dielectric>(1.5);
+    auto mt1 = make_shared<metal>(color(1.0, 1.0, 1.0), 0.1);
     auto mt2 = make_shared<lambertian>(color(1.0, 1.0, 1.0));
 
     // Oren-Nayar
@@ -36,7 +37,7 @@ void brdf_tests() {
     // Complex example:
     auto mt4 = make_shared<CookTorrance>(color(1.0, 1.0, 1.0), color(1.0, 1.0, 1.0), 0.05);
     // Non-complex example:
-    auto mt5 = make_shared<CookTorrance>(color(1.0, 1.0, 1.0), 0.0);
+    auto mt5 = make_shared<CookTorrance>(color(1.0, 1.0, 1.0), 0.1);
 
     // Dielectric comparison
     auto mt6 = make_shared<CookTorranceDielectric>(color(1.0, 1.0, 1.0), 1.5, 0.0001); // model glass
