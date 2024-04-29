@@ -9,7 +9,7 @@
 void brdf_tests() {
     RenderData render_data; 
     const auto aspect_ratio = 16.0 / 9.0;
-    setRenderData(render_data, aspect_ratio, 1200, 50, 20);
+    setRenderData(render_data, aspect_ratio, 1200, 25, 20);
 
     point3 lookfrom(10, 3, 0);
     point3 lookat(0, 2, 0);
@@ -23,24 +23,32 @@ void brdf_tests() {
     RTCDevice device = initializeDevice();
     auto scene_ptr = make_shared<Scene>(device, cam);
 
-    //auto mt = make_shared<metal>(color(0.7, 0.6, 0.77), 0.1);
-    color test = color(1.0, 1.0, 1.0);
-    auto mt = make_shared<lambertian>(test);
-    auto mt2 = make_shared<OrenNayar>(test, 0.0);
-    
+    // ALL MATERIALS
+    // DEFAULTS V0.1.X
+    auto emit = make_shared<emissive>(color(15.0, 15.0, 15.0));
+    auto mt1 = make_shared<metal>(color(0.7, 0.6, 0.77), 0.1);
+    auto mt2 = make_shared<lambertian>(color(1.0, 1.0, 1.0));
+
+    // Oren-Nayar
+    auto mt3 = make_shared<OrenNayar>(color(1.0, 1.0, 1.0), 0.0);
+
+    // Cook-Torrance
     // Complex example:
-    auto mt3 = make_shared<CookTorrance>(color(1.0, 1.0, 1.0), color(1.0, 1.0, 1.0), 0.05);
+    auto mt4 = make_shared<CookTorrance>(color(1.0, 1.0, 1.0), color(1.0, 1.0, 1.0), 0.05);
     // Non-complex example:
-    auto mt4 = make_shared<CookTorrance>(color(1.0, 1.0, 1.0), 0.0);
+    auto mt5 = make_shared<CookTorrance>(color(1.0, 1.0, 1.0), 0.0);
 
     // Dielectric comparison
-    auto mt5 = make_shared<CookTorranceDielectric>(color(0.6, 1.0, 0.6), 1.5, 0.0001); // model glass
-    auto mt7 = make_shared<CookTorranceDielectric>(color(0.6, 1.0, 0.6), 0.0, 0.0001); // model mirror
+    auto mt6 = make_shared<CookTorranceDielectric>(color(1.0, 1.0, 1.0), 1.5, 0.0001); // model glass
+    auto mt7 = make_shared<CookTorranceDielectric>(color(1.0, 1.0, 1.0), 0.0, 0.0001); // model mirror
 
     auto sphere1 = make_shared<SpherePrimitive>(point3(0, 2, 2), mt5, 2, device);
-    auto sphere2 = make_shared<SpherePrimitive>(point3(0, 2, -2), mt7, 2, device);
+    auto sphere2 = make_shared<SpherePrimitive>(point3(1, 2, -2), emit, 0.5, device);
+    auto sphere3 = make_shared<SpherePrimitive>(point3(-4, 2, -1), mt6, 2, device);
     scene_ptr->add_primitive(sphere1);
     scene_ptr->add_primitive(sphere2);
+    scene_ptr->add_primitive(sphere3);
+    scene_ptr->add_physical_light(sphere2);
 
     auto red     = make_shared<lambertian>(color(1.0, 0.2, 0.2));
     auto ground = make_shared<SpherePrimitive>(point3(0,-10000,0), red, 10000, device);
