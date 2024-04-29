@@ -6,6 +6,8 @@
 #include "scene.h"
 #include "vec3.h"
 
+#include "sampling.h"
+
 color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
     HitInfo record;
 
@@ -13,6 +15,7 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
     color accumulated_color = color(0,0,0);
 
     ray r_in = r;
+    BSDF_TYPE incoming_type = BSDF_TYPE::DIFFUSE;
 
     for (int i=0; i<depth; i++) {
         ray scattered;
@@ -31,7 +34,7 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
             vec3 unit_direction = r_in.direction().unit_vector();
             auto t = 0.5*(unit_direction.y() + 1.0);
 
-            //color sky = color(0,0,0);
+            // color sky = color(0,0,0);
             color sky = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
             accumulated_color += weight * sky;
             return accumulated_color;
@@ -41,27 +44,34 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
         std::shared_ptr<material> mat_ptr = geomhit->materialById(targetID);
         record = geomhit->getHitInfo(r_in, r_in.at(rayhit.ray.tfar), rayhit.ray.tfar, targetID);
 
+        // Enable of disable direct light sampling (debug only, should always be enabled)
+        bool direct = true;
+
+        // Get emission contribution
         color color_from_emission = mat_ptr->emitted(record.u, record.v, record.pos);
-        accumulated_color += weight * color_from_emission;
 
         BSDFSample sample_data = mat_ptr->sample(r_in, record, scattered);
-        if (!sample_data.scatter) {
-            return accumulated_color;
+        if (sample_data.type == BSDF_TYPE::SPECULAR || sample_data.type == BSDF_TYPE::TRANSMISSION) { direct = false; }
+        if (incoming_type == BSDF_TYPE::SPECULAR || sample_data.type == BSDF_TYPE::TRANSMISSION) {
+            accumulated_color += weight * color_from_emission;
+        } else {
+            // To prevent double contribution of emission, only directly add if and only if:
+            // => we are directly hitting the light, i.e (i==0)
+            if (i == 0) { accumulated_color += weight * color_from_emission; }
         }
-        double cos_theta = fabs(dot(record.normal, (sample_data.scatter_direction)));
-        weight = weight * (sample_data.bsdf_value * cos_theta / sample_data.pdf_value);
 
-        bool direct = false;
-        if (i == 0 && direct) {
-            // Direct Light Sampling
+        // Direct Light Sampling
+        if (direct && color_from_emission.length() == 0.0) {
+            int N = (int)scene->physical_lights.size(); // amount of lights
             for (auto& light_ptr : scene->physical_lights) { // only accounts for physical lights currently
+                // Create ray from hit point to the light
                 point3 sampled_point = light_ptr->sample(record);
-                vec3 light_dir = (sampled_point - record.pos);
-                ray sampled_ray = ray(record.pos, light_dir, 0.0);
+                vec3 light_dir = (sampled_point - record.pos).unit_vector(); // direction from hit point to the light
+                ray light_ray = ray(record.pos, light_dir, 0.0);
 
                 // Trace a ray from here to the light
                 struct RTCRayHit light_rayhit;
-                setupRayHit1(light_rayhit, sampled_ray);
+                setupRayHit1(light_rayhit, light_ray);
 
                 rtcIntersect1(scene->rtc_scene, &light_rayhit);
                 int light_targetID;
@@ -75,30 +85,45 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
                 if (light_geomhit == light_ptr) { // if it is the light, we are not obscured from the light
                     // Store hit data of tracing the ray from here to the light
                     HitInfo light_record;
-                    light_record = light_geomhit->getHitInfo(sampled_ray, sampled_ray.at(light_rayhit.ray.tfar), light_rayhit.ray.tfar, light_targetID);
-
+                    light_record = light_geomhit->getHitInfo(light_ray, light_ray.at(light_rayhit.ray.tfar), light_rayhit.ray.tfar, light_targetID);
+                    
                     // Get the light's material
                     std::shared_ptr<material> light_mat_ptr = light_geomhit->materialById(light_targetID);
 
-                    ray inverse = ray(sampled_point, -light_dir, light_rayhit.ray.tfar);
-                    ray light_scatter;
-                    mat_ptr->scatter(inverse, record, attenuation, light_scatter);
+                    // Sample BSDF of hit point with incoming light
+                    ray light_scattered;
+                    ray inverse_light_ray = ray(light_record.pos, -light_dir, 0.0); // ray from light to the hit point
+                    
+                    BSDFSample light_sample_data;
+                    color att;
+                    light_sample_data.scatter = mat_ptr->scatter(r_in, record, att, light_scattered);
+                    light_sample_data.bsdf_value = mat_ptr->generate(r_in, light_ray, record);
+                    light_sample_data.pdf_value = mat_ptr->pdf(r_in, light_ray, record);
+                    
+                    // Find pdf for the light hit point
+                    double light_pdf_value = light_ptr->pdf(light_record, light_ray);
 
-                    // Calculate direct light contribution
-                    color light_color = light_mat_ptr->emitted(light_record.u, light_record.v, light_record.pos);
-                    // BRDF of light as the incoming source
-                    color light_brdf = mat_ptr->generate(inverse, light_scatter, record);
-                    // Calculate cos using the surface normal of the hit object and the direction from the object to the light.
-                    double light_cos_theta = fmax(0.0, dot(record.normal, light_dir.unit_vector()));
-                    // Evaluate the PDF considering the probability of sampling the point on the light source from the objects POV.
-                    double light_pdf_value = light_ptr->pdf(light_record, sampled_ray);
-                    color direct_contribution = (light_brdf * light_color * light_cos_theta) / light_pdf_value;
-                    accumulated_color += weight * direct_contribution;
+                    // Find contribution of light using MIS power heuristic of light_pdf and sample pdf
+                    double light_cos_theta = fabs(dot(record.normal, light_dir));
+                    color light_contribution = weight * light_sample_data.bsdf_value * light_cos_theta
+                            * MIS::power_heuristic<MIS::EVAL_WEIGHT>(light_pdf_value, light_sample_data.pdf_value) / light_pdf_value;
+
+                    // Get emission of light
+                    color light_Le = light_mat_ptr->emitted(light_record.u, light_record.v, light_record.pos);
+                    accumulated_color += light_contribution * light_Le / N;
                 }
             }
         }
 
+        // Indirect ray contribution
+        if (!sample_data.scatter) {
+            return accumulated_color;
+        }
+        double cos_theta = fabs(dot(record.normal, (sample_data.scatter_direction)));
+        weight = weight * (sample_data.bsdf_value * cos_theta / sample_data.pdf_value);
+
         r_in = scattered;
+        incoming_type = sample_data.type;
 	}
 
     return accumulated_color;
