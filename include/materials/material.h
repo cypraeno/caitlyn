@@ -11,11 +11,22 @@
 
 class hit_record;
 
+// CONSTANTS
+const float SPECULAR_ROUGHNESS_SAMPLING_CUTOFF = 0.1;
+
+enum BSDF_TYPE {
+    DIFFUSE,
+    GLOSSY,
+    SPECULAR,
+    TRANSMISSION
+};
 struct BSDFSample {
+
     bool scatter;
     vec3 scatter_direction;
     color bsdf_value;
     float pdf_value;
+    BSDF_TYPE type = BSDF_TYPE::DIFFUSE;
 };
 
 class material {
@@ -101,6 +112,25 @@ class metal : public material {
             return 1.0;
         }
 
+        virtual BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const override {
+            BSDFSample sample_data;
+            // Sample the microfacet distribution to get the scatter direction.
+            color attenuation; // placeholder until it gets removed from the scatter function header
+            sample_data.scatter = scatter(r_in, rec, attenuation, scattered);
+            sample_data.scatter_direction = scattered.direction().unit_vector();
+
+            // Sample the BRDF for the value
+            sample_data.bsdf_value = generate(r_in, scattered, rec);
+
+            // Find the PDF for the MDF
+            sample_data.pdf_value = pdf(r_in, scattered, rec);
+
+            // Provide type for sample
+            if (fuzz < SPECULAR_ROUGHNESS_SAMPLING_CUTOFF) { sample_data.type = BSDF_TYPE::SPECULAR; } // 0.05 was picked arbitrarily, should experiment
+            else { sample_data.type = BSDF_TYPE::GLOSSY; }
+            return sample_data;
+        }
+
     public:
 
         color albedo;
@@ -141,6 +171,25 @@ class dielectric : public material {
             return 1.0;
         }
 
+        virtual BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const override {
+            BSDFSample sample_data;
+            // Sample the microfacet distribution to get the scatter direction.
+            color attenuation; // placeholder until it gets removed from the scatter function header
+            sample_data.scatter = scatter(r_in, rec, attenuation, scattered);
+            sample_data.scatter_direction = scattered.direction().unit_vector();
+
+            // Sample the BRDF for the value
+            sample_data.bsdf_value = generate(r_in, scattered, rec);
+
+            // Find the PDF for the MDF
+            sample_data.pdf_value = pdf(r_in, scattered, rec);
+
+            // Provide type for sample
+            sample_data.type = BSDF_TYPE::SPECULAR; 
+            // is incorrect. only works because render function uses direct light sampling + bsdf sampling the same way for specular and transmission.
+
+            return sample_data;
+        }
 
     public:
 
@@ -298,6 +347,23 @@ class CookTorrance : public material {
         return D / jacobian;
     }
 
+    virtual BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const override {
+        BSDFSample sample_data;
+        // Sample the microfacet distribution to get the scatter direction.
+        color attenuation; // placeholder until it gets removed from the scatter function header
+        sample_data.scatter = scatter(r_in, rec, attenuation, scattered);
+        sample_data.scatter_direction = scattered.direction().unit_vector();
+
+        // Sample the BRDF for the value
+        sample_data.bsdf_value = generate(r_in, scattered, rec);
+
+        // Find the PDF for the MDF
+        sample_data.pdf_value = pdf(r_in, scattered, rec);
+        if (MDF->roughness < SPECULAR_ROUGHNESS_SAMPLING_CUTOFF) { sample_data.type = BSDF_TYPE::SPECULAR; } // 0.05 was picked arbitrarily, should experiment
+        else { sample_data.type = BSDF_TYPE::GLOSSY; }
+        return sample_data;
+    }
+
     private:
     bool complex;
     color albedo;
@@ -364,7 +430,8 @@ class CookTorranceDielectric : public material {
 
             sample_data.bsdf_value = f_r(r_in, rec, scattered, R);
             sample_data.pdf_value = pdf_r(r_in, rec, scattered, R);
-        
+            if (MDF->roughness < SPECULAR_ROUGHNESS_SAMPLING_CUTOFF) { sample_data.type = BSDF_TYPE::SPECULAR; } // 0.05 was picked arbitrarily, should experiment
+            else { sample_data.type = BSDF_TYPE::GLOSSY; }
         } else { // transmission
             vec3 wi = refract(-wo, wm, refraction_ratio);
             scattered = ray(rec.pos, wi, r_in.time());
@@ -373,6 +440,7 @@ class CookTorranceDielectric : public material {
 
             sample_data.bsdf_value = f_t(r_in, rec, scattered, T);
             sample_data.pdf_value = pdf_t(r_in, rec, scattered, T);
+            sample_data.type = BSDF_TYPE::TRANSMISSION;
         }
 
         return sample_data;
