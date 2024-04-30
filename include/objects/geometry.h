@@ -12,7 +12,8 @@
 */
 class Geometry : public Visual {
     public:
-    Geometry(vec3 position);
+    RTCGeometry geom;
+    Geometry(vec3 position, RTCGeometry geom);
 
     /** @brief given a geomID (referring to ID given by scene attachment), find the material pointer. Usually called by renderer. */
     virtual shared_ptr<material> materialById(unsigned int geomID) const = 0;

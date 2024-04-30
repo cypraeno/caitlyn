@@ -9,7 +9,6 @@
 
 class Primitive : public Geometry {
     public:
-    RTCGeometry geom;
     shared_ptr<material> mat_ptr;
 
 
