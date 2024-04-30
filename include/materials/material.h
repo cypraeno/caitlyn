@@ -405,6 +405,58 @@ class CookTorranceDielectric : public material {
     public:
     CookTorranceDielectric(color albedo, float eta, float roughness) : albedo{albedo}, eta{(eta == 0.0f) ? 0.0f : (float)fmax(eta, 1.0001f)}, MDF{std::make_shared<GGX>(roughness)} {}
 
+    virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const {
+        vec3 wo = -r_in.direction().unit_vector();
+        vec3 N = rec.normal;
+        vec3 wm = MDF->sample(N); // outward microfacet normal.
+        rec.microfacet_normal = wm;
+
+        float cosTheta_i = dot(wo, wm);
+        float R = FrDielectric(cosTheta_i);
+        float T = 1 - R;
+
+        float u = random_double();
+        double refraction_ratio = rec.front_face ? (1.0/eta) : eta;
+        double sinTheta_i = sqrt(1.0 - cosTheta_i*cosTheta_i);
+
+        if (u < (R / (R + T)) || refraction_ratio * sinTheta_i > 1.0) { // reflectance
+            vec3 wi = reflect(-wo, wm);
+            scattered = ray(rec.pos, wi, r_in.time());
+        } else {
+            vec3 wi = refract(-wo, wm, refraction_ratio);
+            scattered = ray(rec.pos, wi, r_in.time());
+        }
+        return true;
+    }
+    virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const { // assumes wm has been defined in rec
+        vec3 wo = -r_in.direction().unit_vector();
+        vec3 N = rec.normal;
+        vec3 wi = scattered.direction();
+        vec3 wm = rec.microfacet_normal;
+        float cosTheta_i = dot(wo, wm);
+        float R = FrDielectric(cosTheta_i);
+        float T = 1 - R;
+        if (cosTheta_i > 0) { // reflectance
+            return f_r(r_in, rec, scattered, R);
+        } else { // refractance
+            return f_t(r_in, rec, scattered, T);
+        }
+    }
+    virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const { // assumes wm has been defined in rec
+        vec3 wo = -r_in.direction().unit_vector();
+        vec3 N = rec.normal;
+        vec3 wi = scattered.direction();
+        vec3 wm = rec.microfacet_normal;
+        float cosTheta_i = dot(wo, wm);
+        float R = FrDielectric(cosTheta_i);
+        float T = 1 - R;
+        if (cosTheta_i > 0) { // reflectance
+            return pdf_r(r_in, rec, scattered, R);
+        } else { // refractance
+            return pdf_t(r_in, rec, scattered, T);
+        }
+    };
+    
     BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const override {
         // Vectors wo and wi are the outgoing and incident directions respectively.
         vec3 wo = -r_in.direction().unit_vector();
@@ -470,7 +522,7 @@ class CookTorranceDielectric : public material {
         return ((r_parallel * r_parallel) + (r_perp * r_perp)) / 2;
     }
     private:
-    color f_r(const ray& r_in, HitInfo& rec, ray& scattered, float R) const {
+    color f_r(const ray& r_in, const HitInfo& rec, const ray& scattered, float R) const {
         vec3 V = -r_in.direction().unit_vector();
         vec3 L = scattered.direction().unit_vector();
         vec3 H = (V + L).unit_vector();
@@ -491,7 +543,7 @@ class CookTorranceDielectric : public material {
         return num / denom;
     }
 
-    float pdf_r(const ray& r_in, HitInfo& rec, ray& scattered, float R) const {
+    float pdf_r(const ray& r_in, const HitInfo& rec, const ray& scattered, float R) const {
         vec3 V = -r_in.direction().unit_vector();
         vec3 L = scattered.direction().unit_vector();
         vec3 H = (V + L).unit_vector();
@@ -510,7 +562,7 @@ class CookTorranceDielectric : public material {
         return (D * R) / jacobian;
     }
 
-    float pdf_t(const ray& r_in, HitInfo& rec, ray& scattered, float T) const {
+    float pdf_t(const ray& r_in, const HitInfo& rec, const ray& scattered, float T) const {
         double etap = rec.front_face ? (1.0/eta) : eta;
 
         vec3 wo = -r_in.direction().unit_vector();
@@ -526,7 +578,7 @@ class CookTorranceDielectric : public material {
         return D * dwm_dwi * T;
     }
 
-    color f_t(const ray& r_in, HitInfo& rec, ray& scattered, float T) const {
+    color f_t(const ray& r_in, const HitInfo& rec, const ray& scattered, float T) const {
         double etap = rec.front_face ? (1.0/eta) : eta;
 
         vec3 wo = -r_in.direction().unit_vector();
