@@ -551,4 +551,20 @@ class CookTorranceDielectric : public material {
     } 
 };
 
+class isotropic : public material {
+    isotropic(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
+    isotropic(shared_ptr<texture> tex) : tex(tex) {}
+
+    virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const {
+        scattered = ray(rec.p, random_unit_vector(), r_in.time());
+        return true;
+    }
+    virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
+        return 1 / (4 * pi);
+    }
+    virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
+        return 1 / (4 * pi);
+    };
+}
+
 #endif
