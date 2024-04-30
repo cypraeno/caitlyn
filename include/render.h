@@ -51,8 +51,8 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
         color color_from_emission = mat_ptr->emitted(record.u, record.v, record.pos);
 
         BSDFSample sample_data = mat_ptr->sample(r_in, record, scattered);
-        if (sample_data.type == BSDF_TYPE::SPECULAR || sample_data.type == BSDF_TYPE::TRANSMISSION) { direct = false; }
-        if (incoming_type == BSDF_TYPE::SPECULAR || sample_data.type == BSDF_TYPE::TRANSMISSION) {
+        if (sample_data.type != BSDF_TYPE::DIFFUSE) { direct = false; }
+        if (incoming_type != BSDF_TYPE::DIFFUSE || sample_data.type == BSDF_TYPE::TRANSMISSION) {
             accumulated_color += weight * color_from_emission;
         } else {
             // To prevent double contribution of emission, only directly add if and only if:
@@ -92,11 +92,13 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
 
                     // Sample BSDF of hit point with incoming light
                     ray light_scattered;
-                    ray inverse_light_ray = ray(light_record.pos, -light_dir, 0.0); // ray from light to the hit point
                     
                     BSDFSample light_sample_data;
                     color att;
-                    light_sample_data.scatter = mat_ptr->scatter(r_in, record, att, light_scattered);
+                    // We do NOT call the above line because it would sample a possibly different microfacet normal
+                    // than what is already sampled previous to the Direct Light Sampling (for complex BSDFs that use microfacets)
+                    // Both generate and pdf assume that, if a microfacet normal is needed, it is already defined. Thus, we use the previous
+                    // and pass in the same HitInfo.
                     light_sample_data.bsdf_value = mat_ptr->generate(r_in, light_ray, record);
                     light_sample_data.pdf_value = mat_ptr->pdf(r_in, light_ray, record);
                     
