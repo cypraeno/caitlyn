@@ -15,7 +15,7 @@ _Interested in getting involved? Contact [Connor Loi](ctloi@uwaterloo.ca) or [Sa
 - [Contribute](#contribute)
 
 ## Quick Start Guide
-Caitlyn MCRT is built on Debian 12. It may work on other distros, but we recommend simply pulling our Docker container.
+Caitlyn MCRT is built on Debian 12. It may work on other distros, but we recommend simply pulling our Docker container with the `connortbot/caitlyn-mcrt` repository. We recommend cloning the repository, mounting a volume, initializing our validation submodule, and compiling.
 
 ### Setup
 Before continuing:
@@ -23,19 +23,19 @@ Before continuing:
 - Pull the latest `docker pull connortbot/caitlyn-mcrt:base-vX.X.X`
 
 ### Build
-You may pull the `stable` repository from within the container or mount a volume. Either works!
-Run `cmake -B build/ -S .` to create files in the `build` folder. `cd build`, and `make`.
+You may pull the repository from within the container or mount a volume. Either works!
+Run `cmake -B build/ -S .` to create files in the `build` folder. `cd build`, and `make`. Don't forget to initialize the submodules.
 
 ### Basic Rendering
 Caitlyn renders scenes from our custom filetype `.csr`. By default, the `caitlyn` executable will read the scene from a `scene.csr` file, so you need to have one before running. In this guide, we'll just run the `example.csr`, which you can copy from [here](https://github.com/cypraeno/csr-schema/blob/main/examples/example.csr).
 
-To learn how to write CSR files, check out the [Basic Guide](https://github.com/cypraeno/csr-schema/blob/main/basic-guide.md).
+To learn how to write CSR files, check out the [Basic Guide](https://github.com/cypraeno/csr-schema/blob/main/docs/basic-guide.md).
 
 Caitlyn has a user-friendly command line interface, allowing you to customize samples, depth, type of multithreading, and more. Once you have the executable, you can run `./caitlyn --help` to see all the options at your disposal.
 
 Let's render a PNG file of the example scene! Ensure that you have your CSR file in the same directory.
 ```
-./caitlyn -i example.csr -t png
+./caitlyn -i example.csr -t png -r 600 600
 ```
 This will read the scene from `example.csr` and output as a `png`.
 And now you have your first caitlyn-rendered scene!
@@ -46,7 +46,7 @@ And now you have your first caitlyn-rendered scene!
 ## Docs
 
 ### Writing Scenes
-As mentioned in the `Quick Start`, `caitlyn` will read and build scenes via CSR files. The CSR [Basic Guide](https://github.com/cypraeno/csr-schema/blob/main/basic-guide.md) covers everything from creating objects to custom materials.
+As mentioned in the `Quick Start`, `caitlyn` will read and build scenes via CSR files. The CSR [Basic Guide](https://github.com/cypraeno/csr-schema/blob/main/docs/basic-guide.md) covers everything from creating objects to custom materials.
 
 ### Rendering
 To see all the options available to `caitlyn`, run:
@@ -72,7 +72,6 @@ The people the made it happen:
 <a href="https://github.com/dan-the-man639">Danny Yang</a>,
 <a href="https://github.com/ASharpMarble">Jonathan Wang</a>,
 <a href="https://github.com/18gen">Gen Ichihashi</a>,
-<a href="https://github.com/18gen">Max Tan</a>,
+<a href="https://github.com/maxtan84">Max Tan</a>,
 <a href="https://github.com/rickyhuangjh">Ricky Huang</a>,
-<a href="https://github.com/daniel-su1">Daniel Su</a>
 </div>
