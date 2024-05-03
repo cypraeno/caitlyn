@@ -8,6 +8,12 @@
 
 #include "sampling.h"
 
+/**
+ * @brief Most updated integrator for path tracing through scenes
+ * @note Is INACCURATE WHEN BEGINNING WITHIN VOLUMES. Tracing relies are intersection with
+ * volume boundary to know if it "enters" or not. If ray begins within the volume, we "enter" and never exit other than
+ * doubling back.
+*/
 color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
     HitInfo record;
 
@@ -17,13 +23,35 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
     ray r_in = r;
     BSDF_TYPE incoming_type = BSDF_TYPE::DIFFUSE;
 
+    shared_ptr<Volume> current_volume = nullptr;
+    shared_ptr<Medium> current_medium = nullptr;
+
     for (int i=0; i<depth; i++) {
+        // Enable of disable direct light sampling (debug only, should always be enabled)
+        bool direct = true;
         ray scattered;
         color attenuation;
         struct RTCRayHit rayhit;
         setupRayHit1(rayhit, r_in);
 
         rtcIntersect1(scene->rtc_scene, &rayhit);
+
+        // Check for volume intersections
+        if (current_medium) {
+            float hitDist = current_medium->particleDistance(); // sample dist
+            float istDist = rayhit.ray.tfar * r_in.direction().length();
+            if (hitDist < istDist) { // volume intersection
+                // Update record
+                record.pos = r_in.at(hitDist / r_in.direction().length());
+                std::shared_ptr<material> mat_ptr = current_medium->phase;
+                BSDFSample sample_data = mat_ptr->sample(r_in, record, scattered);
+                weight = weight * (sample_data.bsdf_value / sample_data.pdf_value);
+                r_in = scattered;
+                incoming_type = BSDF_TYPE::TRANSMISSION;
+                continue;
+            }
+        }
+
         int targetID;
         if (rayhit.hit.instID[0] != RTC_INVALID_GEOMETRY_ID) {
             targetID = rayhit.hit.instID[0];
@@ -42,10 +70,23 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
 
         std::shared_ptr<Geometry> geomhit = scene->geom_map[targetID];
         std::shared_ptr<material> mat_ptr = geomhit->materialById(targetID);
+        record.medium = false; // reset to default, next line updates. hardcoded for now, getHitInfo implementations should already do this.
         record = geomhit->getHitInfo(r_in, r_in.at(rayhit.ray.tfar), rayhit.ray.tfar, targetID);
-
-        // Enable of disable direct light sampling (debug only, should always be enabled)
-        bool direct = true;
+        if (record.medium) {
+            std::shared_ptr<Volume> volhit = std::dynamic_pointer_cast<Volume>(geomhit);
+            if (volhit) {
+                if (current_volume == volhit) { // exiting the volume
+                    current_medium = nullptr;
+                    current_volume = nullptr;
+                } else {
+                    current_medium = volhit->medium;
+                    current_volume = volhit;
+                }
+                r_in = ray(r_in.at(rayhit.ray.tfar), r_in.direction(), 0.0);
+                incoming_type = BSDF_TYPE::TRANSMISSION;
+                continue; // ignore edges of volumes? move to next bounce
+            }
+        }
 
         // Get emission contribution
         color color_from_emission = mat_ptr->emitted(record.u, record.v, record.pos);
@@ -127,7 +168,6 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
         r_in = scattered;
         incoming_type = sample_data.type;
 	}
-
     return accumulated_color;
 }
 
