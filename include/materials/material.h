@@ -604,6 +604,7 @@ class CookTorranceDielectric : public material {
 };
 
 class isotropic : public material {
+    public:
     color albedo;
 
     isotropic(const color& albedo) : albedo{albedo} {}
