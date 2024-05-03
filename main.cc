@@ -9,7 +9,7 @@
 void brdf_tests() {
     RenderData render_data; 
     const auto aspect_ratio = 16.0 / 9.0;
-    setRenderData(render_data, aspect_ratio, 1200, 25, 20);
+    setRenderData(render_data, aspect_ratio, 1200, 25, 200);
 
     point3 lookfrom(10, 3, 0);
     point3 lookat(0, 2, 0);
@@ -46,10 +46,16 @@ void brdf_tests() {
     auto sphere1 = make_shared<SpherePrimitive>(point3(0, 2, 2), mt5, 2, device);
     auto sphere2 = make_shared<SpherePrimitive>(point3(1, 2, -2), emit, 0.5, device);
     auto sphere3 = make_shared<SpherePrimitive>(point3(-4, 2, -1), mt6, 2, device);
-    scene_ptr->add_primitive(sphere1);
+    // scene_ptr->add_primitive(sphere1);
     scene_ptr->add_primitive(sphere2);
     scene_ptr->add_primitive(sphere3);
     scene_ptr->add_physical_light(sphere2);
+
+    // Create volume out of sphere3
+    auto iso = make_shared<isotropic>(color(1,1,1));
+    auto medium = make_shared<Medium>(1, iso);
+    auto volume1 = make_shared<Volume>(medium, sphere1);
+    scene_ptr->add_volume(volume1);
 
     auto red     = make_shared<lambertian>(color(1.0, 0.2, 0.2));
     auto ground = make_shared<SpherePrimitive>(point3(0,-10000,0), red, 10000, device);
