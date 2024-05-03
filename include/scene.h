@@ -9,6 +9,7 @@
 #include "sphere_primitive.h"
 #include "instances.h"
 #include "hitinfo.h"
+#include "volume.h"
 
 // SCENE INTERFACE
 // The scene class object covers all relevant objects in a scene:
@@ -41,6 +42,7 @@ class Scene {
     void commitScene();
     void releaseScene();
     unsigned int add_primitive(std::shared_ptr<Primitive> prim);
+    unsigned int add_volume(std::shared_ptr<Volume> vol);
 
     void add_physical_light(std::shared_ptr<Geometry> geom_ptr);
     unsigned int add_primitive_instance(std::shared_ptr<PrimitiveInstance> pi_ptr, RTCDevice device);
