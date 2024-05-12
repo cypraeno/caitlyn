@@ -32,8 +32,12 @@ class Scene {
     std::map<unsigned int, std::shared_ptr<Geometry>> geom_map;
     RTCScene rtc_scene;
 
+    // Lights
     std::vector<std::shared_ptr<Geometry>> physical_lights;
     std::vector<std::shared_ptr<Light>> lights;
+
+    // Relevant storage
+    std::vector<std::shared_ptr<Volume>> volumes; // used to check initial mediums
 
     // Default Constructor
     // requires a device to initialize RTCScene

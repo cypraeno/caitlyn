@@ -19,6 +19,7 @@ unsigned int Scene::add_primitive(std::shared_ptr<Primitive> prim) {
 }
 
 unsigned int Scene::add_volume(std::shared_ptr<Volume> vol) {
+    volumes.push_back(vol);
     unsigned int primID = rtcAttachGeometry(rtc_scene, vol->geom);
     rtcReleaseGeometry(vol->geom);
     geom_map[primID] = vol;
