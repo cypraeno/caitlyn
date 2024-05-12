@@ -4,9 +4,6 @@
 #include "ray.h"
 #include "primitive.h"
 
-struct Vertex3f { float x, y, z; };
-struct Quad { int v0, v1, v2, v3; };
-
 class QuadPrimitive : public Primitive {
 
     private:

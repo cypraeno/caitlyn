@@ -4,6 +4,7 @@
 #include "ray.h"
 #include "primitive.h"
 #include "quad_primitive.h"
+#include "box_primitive.h"
 
 class Instance {
   public:
@@ -40,8 +41,7 @@ class QuadPrimitiveInstance : public PrimitiveInstance {
   public:
 
   QuadPrimitiveInstance(std::shared_ptr<QuadPrimitive> sprim, float* transform, RTCDevice device)
-  : PrimitiveInstance(transform)
-  {
+  : PrimitiveInstance(transform) {
     instance_scene = rtcNewScene(device);
     unsigned int geomID = rtcAttachGeometry(instance_scene, sprim->geom);
     rtcReleaseGeometry(sprim->geom);
@@ -51,6 +51,25 @@ class QuadPrimitiveInstance : public PrimitiveInstance {
     vec3 u = sprim->getU();
     vec3 v = sprim->getV();
     pptr = make_shared<QuadPrimitive>(sprim->position + translate, u, v, sprim->mat_ptr, device);
+  }
+};
+
+class BoxPrimitiveInstance : public PrimitiveInstance {
+
+  public:
+
+  BoxPrimitiveInstance(std::shared_ptr<BoxPrimitive> sprim, float* transform, RTCDevice device)
+  : PrimitiveInstance(transform) {
+    instance_scene = rtcNewScene(device);
+    unsigned int geomID = rtcAttachGeometry(instance_scene, sprim->geom);
+    rtcReleaseGeometry(sprim->geom);
+    rtcCommitScene(instance_scene);
+
+    vec3 translate = vec3(transform[3], transform[7], transform[11]);
+    vec3 a = sprim->getA();
+    vec3 b = sprim->getB();
+    vec3 c = sprim->getC();
+    pptr = make_shared<BoxPrimitive>(sprim->position + translate, a, b, c, sprim->mat_ptr, device);
   }
 };
 
