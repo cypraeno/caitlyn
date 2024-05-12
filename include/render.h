@@ -23,12 +23,37 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
     ray r_in = r;
     BSDF_TYPE incoming_type = BSDF_TYPE::DIFFUSE;
 
-    shared_ptr<Volume> current_volume = nullptr;
-    shared_ptr<Medium> current_medium = nullptr;
+    MediumRecord med_rec(r.origin());
+    // Trace rays in all volume scenes to check which ones we reside in
+    struct RTCRayHit vol_rayhit;
+    HitInfo vol_record;
+    for (const auto& ptr : scene->volumes) {
+        setupRayHit1(vol_rayhit, r_in);
+        rtcIntersect1(ptr->volume_scene, &vol_rayhit);
+        int targetID;
+        if (vol_rayhit.hit.instID[0] != RTC_INVALID_GEOMETRY_ID) {
+            targetID = vol_rayhit.hit.instID[0];
+        } else if (vol_rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
+            targetID = vol_rayhit.hit.geomID;
+        } else {
+            continue;
+        }
+        vol_record = ptr->getHitInfo(r_in, r_in.at(vol_rayhit.ray.tfar), vol_rayhit.ray.tfar, targetID);
+        if (!vol_record.front_face) { // inside the volume!
+            record.medium = false;
+            record = vol_record;
+            if (record.medium) {
+                med_rec.hitVolume(ptr->medium, r_in.origin());
+                incoming_type = BSDF_TYPE::SPECULAR;
+            }
+        }
+    }
 
     for (int i=0; i<depth; i++) {
         // Enable of disable direct light sampling (debug only, should always be enabled)
         bool direct = true;
+        bool raymarched = false; // set to true if we are colliding with a medium particle and not a surface
+        std::shared_ptr<material> mat_ptr = nullptr;
         ray scattered;
         color attenuation;
         struct RTCRayHit rayhit;
@@ -37,57 +62,50 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
         rtcIntersect1(scene->rtc_scene, &rayhit);
 
         // Check for volume intersections
-        if (current_medium) {
-            float hitDist = current_medium->particleDistance(); // sample dist
+        float particleDist;
+        shared_ptr<Medium> m_ptr = med_rec.particleDistance(particleDist);
+        if (m_ptr) { // we are in a medium
             float istDist = rayhit.ray.tfar * r_in.direction().length();
-            if (hitDist < istDist) { // volume intersection
+            if (particleDist < istDist) { // volume intersection
                 // Update record
-                record.pos = r_in.at(hitDist / r_in.direction().length());
-                std::shared_ptr<material> mat_ptr = current_medium->phase;
-                BSDFSample sample_data = mat_ptr->sample(r_in, record, scattered);
-                weight = weight * (sample_data.bsdf_value / sample_data.pdf_value);
-                r_in = scattered;
-                incoming_type = BSDF_TYPE::TRANSMISSION;
-                continue;
+                record.pos = r_in.at(particleDist / r_in.direction().length());
+                raymarched = true;
             }
         }
 
-        int targetID;
-        if (rayhit.hit.instID[0] != RTC_INVALID_GEOMETRY_ID) {
-            targetID = rayhit.hit.instID[0];
-        } else if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
-            targetID = rayhit.hit.geomID;
-        } else {
-            // Sky background (gradient blue-white)
-            vec3 unit_direction = r_in.direction().unit_vector();
-            auto t = 0.5*(unit_direction.y() + 1.0);
+        if (!raymarched) { // process information of next geometry hit
+            int targetID;
+            if (rayhit.hit.instID[0] != RTC_INVALID_GEOMETRY_ID) {
+                targetID = rayhit.hit.instID[0];
+            } else if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
+                targetID = rayhit.hit.geomID;
+            } else {
+                // Sky background (gradient blue-white)
+                vec3 unit_direction = r_in.direction().unit_vector();
+                auto t = 0.5*(unit_direction.y() + 1.0);
 
-            // color sky = color(0,0,0);
-            color sky = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
-            accumulated_color += weight * sky;
-            return accumulated_color;
-        }
+                // color sky = color(0,0,0);
+                color sky = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
+                accumulated_color += weight * sky;
+                return accumulated_color;
+            }
 
-        std::shared_ptr<Geometry> geomhit = scene->geom_map[targetID];
-        std::shared_ptr<material> mat_ptr = geomhit->materialById(targetID);
-        record.medium = false; // reset to default, next line updates. hardcoded for now, getHitInfo implementations should already do this.
-        record = geomhit->getHitInfo(r_in, r_in.at(rayhit.ray.tfar), rayhit.ray.tfar, targetID);
-        if (record.medium) {
-            std::shared_ptr<Volume> volhit = std::dynamic_pointer_cast<Volume>(geomhit);
-            if (volhit) {
-                if (current_volume == volhit) { // exiting the volume
-                    current_medium = nullptr;
-                    current_volume = nullptr;
-                } else {
-                    current_medium = volhit->medium;
-                    current_volume = volhit;
+            std::shared_ptr<Geometry> geomhit = scene->geom_map[targetID];
+            mat_ptr = geomhit->materialById(targetID);
+            record.medium = false;
+            record = geomhit->getHitInfo(r_in, r_in.at(rayhit.ray.tfar), rayhit.ray.tfar, targetID);
+            if (record.medium) {
+                std::shared_ptr<Volume> volhit = std::dynamic_pointer_cast<Volume>(geomhit);
+                if (volhit) {
+                    med_rec.hitVolume(volhit->medium, r_in.at(rayhit.ray.tfar));
+                    r_in = ray(r_in.at(rayhit.ray.tfar), r_in.direction(), 0.0);
+                    incoming_type = BSDF_TYPE::SPECULAR;
+                    continue; // ignore edges of volumes? move to next bounce
                 }
-                r_in = ray(r_in.at(rayhit.ray.tfar), r_in.direction(), 0.0);
-                incoming_type = BSDF_TYPE::TRANSMISSION;
-                continue; // ignore edges of volumes? move to next bounce
             }
+        } else {
+            mat_ptr = m_ptr->phase;
         }
-
         // Get emission contribution
         color color_from_emission = mat_ptr->emitted(record.u, record.v, record.pos);
 
@@ -110,26 +128,48 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
                 vec3 light_dir = (sampled_point - record.pos).unit_vector(); // direction from hit point to the light
                 ray light_ray = ray(record.pos, light_dir, 0.0);
 
-                // Trace a ray from here to the light
-                struct RTCRayHit light_rayhit;
-                setupRayHit1(light_rayhit, light_ray);
+                float distWithinMedium = (sampled_point - record.pos).length(); // distance to light
 
-                rtcIntersect1(scene->rtc_scene, &light_rayhit);
-                int light_targetID;
-                if (light_rayhit.hit.instID[0] != RTC_INVALID_GEOMETRY_ID) {
-                    light_targetID = light_rayhit.hit.instID[0];
-                } else if (light_rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) { 
-                    light_targetID = light_rayhit.hit.geomID;
+                // MultiIntersect to light to capture medium boundaries
+                MediumRecord light_med_rec(record.pos);
+                light_med_rec.mediums = med_rec.mediums;
+                light_med_rec.highest_density_volume = med_rec.highest_density_volume;
+                std::vector<int> ids;
+                std::vector<float> tfars;
+                // errors warning: overflow in conversion from 'float' to 'int' changes value from '+Inff' to '2147483647' [-Woverflow]
+                // MultiIntersect(std::numeric_limits<float>::infinity(), light_ray, scene->rtc_scene, ids, tfars);
+                MultiIntersect(5, light_ray, scene->rtc_scene, ids, tfars);
+
+                bool non_medium_encountered = false;
+                std::shared_ptr<Geometry> light_geomhit;
+                int light_id;
+                int light_tfar;
+                for (size_t j = 0; j < ids.size(); j++) {
+                    int id = ids[j];
+                    float tfar = tfars[j];
+                    light_geomhit = scene->geom_map[id];
+                    std::shared_ptr<Volume> possible_volume_hit = std::dynamic_pointer_cast<Volume>(light_geomhit);
+                    if (!possible_volume_hit) { // non volume encountered
+                        if (light_geomhit == light_ptr) { // hit the light
+                            light_id = id;
+                            light_tfar = tfar;
+                            light_med_rec.hitVolume(nullptr, light_ray.at(tfar));
+                            break;
+                        }
+                        non_medium_encountered = true;
+                        break;
+                    } else { // one of the intersections was a volume
+                        light_med_rec.hitVolume(possible_volume_hit->medium, light_ray.at(tfar));
+                    }
                 }
-
-                std::shared_ptr<Geometry> light_geomhit = scene->geom_map[light_targetID];
-                if (light_geomhit == light_ptr) { // if it is the light, we are not obscured from the light
+               
+                if (!non_medium_encountered) { // if it is the light, we are not obscured from the light
                     // Store hit data of tracing the ray from here to the light
                     HitInfo light_record;
-                    light_record = light_geomhit->getHitInfo(light_ray, light_ray.at(light_rayhit.ray.tfar), light_rayhit.ray.tfar, light_targetID);
+                    light_record = light_geomhit->getHitInfo(light_ray, light_ray.at(light_tfar), light_tfar, light_id);
                     
                     // Get the light's material
-                    std::shared_ptr<material> light_mat_ptr = light_geomhit->materialById(light_targetID);
+                    std::shared_ptr<material> light_mat_ptr = light_geomhit->materialById(light_id);
 
                     // Sample BSDF of hit point with incoming light
                     ray light_scattered;
@@ -150,7 +190,8 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
                     double light_cos_theta = fabs(dot(record.normal, light_dir));
                     color light_contribution = weight * light_sample_data.bsdf_value * light_cos_theta
                             * MIS::power_heuristic<MIS::EVAL_WEIGHT>(light_pdf_value, light_sample_data.pdf_value) / light_pdf_value;
-
+                    float transmittance_coeff = light_med_rec.transmittance;
+                    light_contribution *= transmittance_coeff;
                     // Get emission of light
                     color light_Le = light_mat_ptr->emitted(light_record.u, light_record.v, light_record.pos);
                     accumulated_color += light_contribution * light_Le / N;
@@ -163,8 +204,11 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
             return accumulated_color;
         }
         double cos_theta = fabs(dot(record.normal, (sample_data.scatter_direction)));
-        weight = weight * (sample_data.bsdf_value * cos_theta / sample_data.pdf_value);
-
+        if (!raymarched) {
+            weight = weight * (sample_data.bsdf_value * cos_theta / sample_data.pdf_value);
+        } else {
+            weight = weight * (sample_data.bsdf_value / sample_data.pdf_value);
+        }
         r_in = scattered;
         incoming_type = sample_data.type;
 	}
