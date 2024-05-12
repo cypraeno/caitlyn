@@ -99,7 +99,7 @@ void MultiIntersect(int max, ray r_in, RTCScene& rtc_scene, std::vector<int>& id
         }
         ids.push_back(targetID);
         // Calculate tfar for the original ray
-        float time = (r.at(rayhit.ray.tfar) - r_in.origin()).length() / (r.direction().length());
+        float time = (r.at(rayhit.ray.tfar) - r_in.origin()).length() / (r_in.direction().length());
         tfars.push_back(time);
         r = ray(r.at(rayhit.ray.tfar), r.direction(), 0.0);
         setupRayHit1(rayhit, r);
