@@ -54,7 +54,7 @@ void brdf_tests() {
     // Create volume out of sphere3
     auto iso = make_shared<isotropic>(color(1,1,1));
     auto medium = make_shared<Medium>(1, iso);
-    auto volume1 = make_shared<Volume>(medium, sphere1), device;
+    auto volume1 = make_shared<Volume>(medium, sphere1, device);
     scene_ptr->add_volume(volume1);
 
     auto red     = make_shared<lambertian>(color(1.0, 0.2, 0.2));
