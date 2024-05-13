@@ -18,6 +18,14 @@ unsigned int Scene::add_primitive(std::shared_ptr<Primitive> prim) {
     return primID;
 }
 
+unsigned int Scene::add_volume(std::shared_ptr<Volume> vol) {
+    volumes.push_back(vol);
+    unsigned int primID = rtcAttachGeometry(rtc_scene, vol->geom);
+    rtcReleaseGeometry(vol->geom);
+    geom_map[primID] = vol;
+    return primID;
+}
+
 void Scene::add_physical_light(std::shared_ptr<Geometry> geom_ptr) {
     physical_lights.push_back(geom_ptr);
 }
