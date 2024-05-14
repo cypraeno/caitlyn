@@ -3,7 +3,7 @@
 
 #include "visual.h"
 #include "material.h"
-#include "hitinfo.h"
+#include "hit_info.hh"
 #include <embree4/rtcore.h>
 
 /**

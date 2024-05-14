@@ -34,11 +34,11 @@ color checker_texture::value(double u, double v, const point3& p) const {
 }
 
 
-image_texture::image_texture(const char* filename) : image(filename) {}
+image_texture::image_texture(const char* filename) : image_data(filename) {}
 
 color image_texture::value(double u, double v, const point3& p) const {
     // If we have no texture data, then return solid cyan as a debugging aid.
-    if (image.height() <= 0) return color(0,1,1);
+    if (image_data.height() <= 0) return color(0,1,1);
 
     // Clamp input texture coordinates to [0,1] x [1,0]
     if(u < 0) u = 0;
@@ -47,9 +47,9 @@ color image_texture::value(double u, double v, const point3& p) const {
     if(v < 0) v = 0;
     else if(v > 1) v = 1;
     else v = 1 - v;
-    auto i = static_cast<int>(u * image.width());
-    auto j = static_cast<int>(v * image.height());
-    auto pixel = image.pixel_data(i,j);
+    auto i = static_cast<int>(u * image_data.width());
+    auto j = static_cast<int>(v * image_data.height());
+    auto pixel = image_data.pixel_data(i,j);
 
     auto color_scale = 1.0 / 255.0;
     return color(color_scale*pixel[0], color_scale*pixel[1], color_scale*pixel[2]);

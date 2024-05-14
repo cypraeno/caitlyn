@@ -1,41 +1,10 @@
-#ifndef CLIPARSER_H
-#define CLIPARSER_H
-
 #include <iostream>
 #include <string>
 #include <sstream>
 #include <cstdlib>
 #include "render.h"
 
-/**
- * @struct Config
- * @brief Object to hold all relevant data determined by CLI flags.
- * Automatically holds defaults.
- * @note A little redundant with the existence of RenderData. Unsure how to reconcile.
-*/
-struct Config {
-
-    // Standard flags
-    int samples_per_pixel = 50;
-    int max_depth = 50;
-    std::string inputFile = "scene.csr";
-    std::string outputPath = "image.ppm";
-    int image_width = 1200;
-    int image_height = 675;
-    std::string outputType = "png"; // [jpg|png|ppm]
-    
-    // Output flags
-    bool showVersion = false;
-    bool showHelp = false;
-    bool verbose = false;
-    std::string debugFile = "debug.txt";
-
-    // Optimization flags
-    bool multithreading = false;
-    int threads = -1; // if -1, then uses hardware concurrency. only used if multithreading is true.
-    int vectorization = 0; // [NONE|4|8|16], NONE = 0    
-
-};
+#include "cli_parser.hh"
 
 void outputHelpGuide(std::ostream& out) {
     out << "Usage: ./caitlyn [options]\n"
@@ -55,15 +24,15 @@ void outputHelpGuide(std::ostream& out) {
     exit(0);
 }
 
-void outputRenderInfo(std::ofstream& out, Config& config, RenderData& render_data, float time) {
+void outputRenderInfo(std::ostream& out, Config& config, RenderData& render_data, float time) {
     out << "======== " << config.inputFile << " ========" << std::endl;
     out << "Samples: " << render_data.samples_per_pixel << std::endl;
     out << "Depth: " << render_data.max_depth << std::endl;
     out << "Time: " << time << " seconds" << std::endl;
-    if (config.multithreading) { out << "Multithreading: YES" << std::endl; }
-    else { out << "Multithreading: NO" << std::endl; }
-    if (config.vectorization == 0) { out << "Vectorization: NONE" << std::endl; }
-    else{ out << "Vectorization: " << config.vectorization << std::endl; }
+    if (config.multithreading) out << "Multithreading: YES" << std::endl;
+    else out << "Multithreading: NO" << std::endl;
+    if (config.vectorization == 0) out << "Vectorization: NONE" << std::endl;
+    else out << "Vectorization: " << config.vectorization << std::endl;
 }
 
 int checkValidIntegerInput(int& i, int argc, char* argv[], std::string flagName) {
@@ -85,65 +54,73 @@ int checkValidIntegerInput(int& i, int argc, char* argv[], std::string flagName)
     return result;
 }
 
-/**
- * @brief given argc, argv, process and return a Config struct containing all the settings.
- * Doesn't account for some invalid input, such as:
- * -> invalid output path
- * -> no checks for if threads or vectorization is supported by hardware
-*/
 Config parseArguments(int argc, char* argv[]) {
+    
     Config config;
+
+    if (argc == 1) throw std::invalid_argument("No arguments provided. Use '--help' for more information.");
+
     for(int i = 1; i < argc; ++i) {
+
         std::string arg(argv[i]);
+        
         if(arg == "-s" || arg == "--samples") {
             config.samples_per_pixel = checkValidIntegerInput(i, argc, argv, "-s/--samples");
-        } else if(arg == "-d" || arg == "--depth") {
+        } 
+        
+        else if(arg == "-d" || arg == "--depth") {
             config.max_depth = checkValidIntegerInput(i, argc, argv, "-d/--depth");
-        } else if(arg == "-i" || arg == "--input") {
-            if(i + 1 < argc) {
-                config.inputFile = argv[++i];
-            }
-        } else if(arg == "-o" || arg == "--output") {
-            if(i + 1 < argc) {
-                config.outputPath = argv[++i];
-            }
-        } else if(arg == "-r" || arg == "--resolution") {
+        } 
+        
+        else if(arg == "-i" || arg == "--input") {
+            if(i + 1 < argc) config.inputFile = argv[++i];
+        } 
+        
+        else if(arg == "-o" || arg == "--output") {
+            if(i + 1 < argc) config.outputPath = argv[++i];
+        } 
+        
+        else if(arg == "-r" || arg == "--resolution") {
             config.image_width = checkValidIntegerInput(i, argc, argv, "-r/--resolution <width> <height>");
             config.image_height = checkValidIntegerInput(i, argc, argv, "-r/--resolution <width> <height>");
-        } else if(arg == "-t" || arg == "--type") {
+        } 
+        
+        else if(arg == "-t" || arg == "--type") {
             if(i + 1 < argc) {
                 std::string type(argv[++i]);
-                if (type == "ppm" || type == "png" || type == "jpg") {
-                    config.outputType = type;
-                } else {
-                    throw std::invalid_argument("Invalid argument for -t/--type [ppm]");
-                }
+                if (type == "ppm" || type == "png" || type == "jpg") config.outputType = type;
+                else throw std::invalid_argument("Invalid argument for -t/--type [ppm]");
             }
-        } else if(arg == "-m" || arg == "--multithreading") {
+        } 
+
+        else if(arg == "-m" || arg == "--multithreading") {
             config.multithreading = true;
-        } else if(arg == "-T" || arg == "--threads") {
+        } 
+
+        else if(arg == "-T" || arg == "--threads") {
             config.threads = checkValidIntegerInput(i, argc, argv, "-T/--threads");
-        } else if(arg == "-Vx" || arg == "--vectorization") {
+        } 
+
+        else if(arg == "-Vx" || arg == "--vectorization") {
             int choice = checkValidIntegerInput(i, argc, argv, "-Vx/--vectorization");
-            if (choice == 0 || choice == 4 || choice == 8 || choice == 16) {
-                config.vectorization = choice;
-            } else {
-                throw std::invalid_argument("Error: Invalid option for --vectorization [1|4|8|16]. Use '--help' for more information.");
-            }
-        } else if(arg == "-v" || arg == "--version") {
+            if (choice == 0 || choice == 4 || choice == 8 || choice == 16) config.vectorization = choice;
+            else throw std::invalid_argument("Error: Invalid option for --vectorization [1|4|8|16]. Use '--help' for more information.");
+        } 
+
+        else if(arg == "-v" || arg == "--version") {
             config.showVersion = true;
             std::cout << "caitlyn version 0.1.3" << std::endl;
-        } else if(arg == "-h" || arg == "--help") {
+        } 
+        
+        else if(arg == "-h" || arg == "--help") {
             config.showHelp = true;
             outputHelpGuide(std::cout);
-        } else if(arg == "-V" || arg == "--verbose") {
-            config.verbose = true;
-        }
-        if (i + 1 < argc && argv[i + 1][0] != '-') {
-            throw std::invalid_argument("Too many arguments for "+arg+" flag.");
-        }
+        } 
+        
+        else if(arg == "-V" || arg == "--verbose") config.verbose = true;
+
+        if (i + 1 < argc && argv[i + 1][0] != '-') throw std::invalid_argument("Too many arguments for "+arg+" flag.");
     }
+    
     return config;
 }
-
-#endif

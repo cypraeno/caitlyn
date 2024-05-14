@@ -1,6 +1,5 @@
 # Prerequisites
 *.d
-*.json
 
 # Compiled Object files
 *.slo
@@ -32,4 +31,6 @@
 
 # CMake Build Directory
 build/
-.vscode/settings.json
+
+# Allow devcontainer.json
+!devcontainer.json

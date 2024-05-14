@@ -48,8 +48,8 @@ elseif(COMPILER_SUPPORTS_SSE42)
 endif()
 
 # Target all headers recursively in include/ and external/
-file(GLOB_RECURSE HEADER_LIST "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
-file(GLOB_RECURSE EXTERNAL_HEADER_LIST "${CMAKE_CURRENT_SOURCE_DIR}/external/*.h")
+file(GLOB_RECURSE HEADER_LIST "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hh")
+file(GLOB_RECURSE EXTERNAL_HEADER_LIST "${CMAKE_CURRENT_SOURCE_DIR}/external/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/external/*.hh")
 
 target_include_directories(caitlyn PRIVATE 
   ${CMAKE_CURRENT_SOURCE_DIR}/include

@@ -1,0 +1,16 @@
+{
+    "name": "Caitlyn MCRT",
+    "image": "connortbot/caitlyn-mcrt:base-v0.2.1",
+    "mounts": ["source=${localWorkspaceFolder},target=/app,type=bind"],
+    "workspaceFolder": "/app",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools"
+            ]
+        },
+        "settings": {
+            "terminal.integrated.shell.linux": "/bin/bash"
+        }
+    }
+}

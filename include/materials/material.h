@@ -2,7 +2,7 @@
 #define MATERIAL_H
 
 #include "general.h"
-#include "hitinfo.h"
+#include "hit_info.hh"
 #include "texture.h"
 #include "onb.h"
 

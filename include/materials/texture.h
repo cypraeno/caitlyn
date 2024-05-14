@@ -2,9 +2,8 @@
 #define TEXTURE_H
 
 #include "general.h"
-#include "rtw_stb_image.h"
+#include "image.hh"
 #include "perlin.h"
-
 
 class texture {
   public:
@@ -58,7 +57,7 @@ class image_texture : public texture {
     color value(double u, double v, const point3& p) const;
 
   private:
-    rtw_image image;
+    image image_data;
 };
 
 #endif
