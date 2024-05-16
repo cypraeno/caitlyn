@@ -24,7 +24,7 @@ class image {
     // images/ subdirectory, then the _parent's_ images/ subdirectory, and then _that_
     // parent, on so on, for six levels up. If the image was not loaded successfully,
     // width() and height() will return 0.
-    image(const char* image_filename);
+    image(const char* image_filename, int bytes_per_pixel = 3);
 
     ~image();
 
@@ -38,7 +38,7 @@ class image {
     const unsigned char* pixel_data(int x, int y) const;
 
   private:
-    const int bytes_per_pixel = 3;
+    int bytes_per_pixel = 3;
     unsigned char *data;
     int image_width, image_height;
     int bytes_per_scanline;

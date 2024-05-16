@@ -41,16 +41,44 @@ color image_texture::value(double u, double v, const point3& p) const {
     if (image_data.height() <= 0) return color(0,1,1);
 
     // Clamp input texture coordinates to [0,1] x [1,0]
-    if(u < 0) u = 0;
-    else if(u > 1) u = 1;
+    u = clamp(u, 0.0, 1.0);
 
-    if(v < 0) v = 0;
-    else if(v > 1) v = 1;
-    else v = 1 - v;
+    if (0 <= v && v <= 1) v = 1 - v;
+    else v = clamp(v, 0.0, 1.0);
+    
     auto i = static_cast<int>(u * image_data.width());
     auto j = static_cast<int>(v * image_data.height());
     auto pixel = image_data.pixel_data(i,j);
 
     auto color_scale = 1.0 / 255.0;
     return color(color_scale*pixel[0], color_scale*pixel[1], color_scale*pixel[2]);
+}
+
+// Pixel Image Textures
+PixelImageTexture::PixelImageTexture(const char* filename) : img(filename, 4) {}
+
+color PixelImageTexture::value(double u, double v, const point3& p) const {
+    throw std::runtime_error("Incorrect value func. called. Use { color4 value(double u, double v) } instead.");
+    return color(0,1,1);
+}
+
+color4 PixelImageTexture::value(double u, double v) const {
+
+    if (img.height() <= 0) throw std::invalid_argument("Image height is less than 0");
+
+    u = clamp(u, 0.0, 1.0);
+
+    if (0 <= v && v <= 1) v = 1 - v;
+    else v = clamp(v, 0.0, 1.0);
+
+    auto i = static_cast<int>(u * img.width());
+    auto j = static_cast<int>(v * img.height());
+
+    auto pixel = img.pixel_data(i,j);
+    auto color_scale = 1.0 / 255.0;
+
+    return color4 {
+        static_cast<float>(color_scale)*pixel[3],
+        color(color_scale*pixel[0], color_scale*pixel[1], color_scale*pixel[2]), 
+    };
 }

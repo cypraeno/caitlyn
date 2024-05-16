@@ -55,6 +55,7 @@ class CSRParser {
         bool startsWith(const std::string& str, const std::string& prefix);
 
         // Property Readers
+        bool readBooleanProperty(std::string line);
         point3 readXYZProperty(std::string line);
         double readDoubleProperty(std::string line);
         std::string readStringProperty(std::string line);

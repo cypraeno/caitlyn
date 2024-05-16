@@ -17,7 +17,7 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
 
     // Read in version
     getNextLine(file, line);
-    if (trim(line) != "version 0.1.3") {
+    if (trim(line) != "version 0.1.5") {
         rtcReleaseDevice(device);
         throw std::runtime_error("Unsupported version or missing version marker");
     }
@@ -68,9 +68,10 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
                 getNextLine(file, textureId); getNextLine(file, scale); getNextLine(file, c1); getNextLine(file, c2);
                 textures[readStringProperty(textureId)] = std::make_shared<checker_texture>(readDoubleProperty(scale), readXYZProperty(c1), readXYZProperty(c2));
             } else if (textureType == "Image") {
-                std::string textureId, path;
-                getNextLine(file, textureId); getNextLine(file, path);
-                textures[readStringProperty(textureId)] = std::make_shared<image_texture>(readStringProperty(path).c_str());
+                std::string textureId, transparency, path;
+                getNextLine(file, textureId); getNextLine(file, transparency); getNextLine(file, path);
+                if (readBooleanProperty(transparency)) textures[readStringProperty(textureId)] = std::make_shared<PixelImageTexture>(readStringProperty(path).c_str());
+                else textures[readStringProperty(textureId)] = std::make_shared<image_texture>(readStringProperty(path).c_str());
             } else if (textureType == "Noise") {
                 std::string textureId, scale;
                 getNextLine(file, textureId); getNextLine(file, scale);
@@ -181,6 +182,13 @@ std::string CSRParser::trim(const std::string& str) {
 bool CSRParser::startsWith(const std::string& str, const std::string& prefix) {
     return str.size() >= prefix.size() &&
         str.compare(0, prefix.size(), prefix) == 0;
+}
+
+bool CSRParser::readBooleanProperty(std::string line) {
+    auto tokens = split(line);
+    bool value;
+    std::istringstream(tokens[1]) >> std::boolalpha >> value;
+    return value;
 }
 
 point3 CSRParser::readXYZProperty(std::string line) {

@@ -60,4 +60,21 @@ class image_texture : public texture {
     image image_data;
 };
 
+struct color4 {
+  float A = 1.0;
+  color RGB = color(0,1,1);
+};
+// Specifically takes in PNGs and also accounts for alpha channel.
+class PixelImageTexture : public texture {
+  public:
+  PixelImageTexture(const char* filename);
+
+  color value(double u, double v, const point3& p) const; // should never be used, its simply purely virtual above
+
+  color4 value(double u, double v) const;
+
+  private:
+    image img;
+};
+
 #endif

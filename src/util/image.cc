@@ -3,14 +3,13 @@
 
 image::image() : data(nullptr) {}
 
-image::image(const char* image_filename) {
+image::image(const char* image_filename, int bytes_per_pixel) : bytes_per_pixel{bytes_per_pixel} {
     auto filename = std::string(image_filename);
     auto imagedir = getenv("IMAGES");
 
     // Hunt for the image file in some likely locations.
     if (imagedir && load(std::string(imagedir) + "/" + image_filename)) return;
     if (load(filename)) return;
-
 
     std::cerr << "ERROR: Could not load image file '" << image_filename << "'.\n";
 }

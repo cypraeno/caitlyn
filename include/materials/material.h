@@ -18,7 +18,8 @@ enum BSDF_TYPE {
     DIFFUSE,
     GLOSSY,
     SPECULAR,
-    TRANSMISSION
+    TRANSMISSION,
+    TRANSPARENT
 };
 struct BSDFSample {
 
@@ -619,6 +620,62 @@ class isotropic : public material {
     virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
         return 1 / (4 * pi);
     };
+};
+
+
+class pixel_lambertian : public material {
+
+    public:
+        pixel_lambertian(shared_ptr<PixelImageTexture> a) : albedo(a) {}
+
+        virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const override {
+            float t = random_double();
+            color4 val = albedo->value(rec.u, rec.v);
+            if (t > val.A) { // transparent
+                rec.transparent = true;
+                scattered = ray(rec.pos, r_in.direction(), 0.0);
+            } else {
+                onb uvw;
+                uvw.build_from_w(rec.normal);
+                auto scatter_direction = uvw.local(random_cosine_direction());
+                scattered = ray(rec.pos, scatter_direction, r_in.time());
+            }
+            
+            
+            return true;
+        }
+
+        virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
+            if (!rec.transparent) {
+                return albedo->value(rec.u, rec.v, rec.pos) / pi;
+            } else {
+                return color(1.0, 1.0, 1.0) / pi;
+            }
+        }
+
+        virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
+            auto cos_theta = dot(rec.normal, scattered.direction().unit_vector());
+            return fmax(0.0, cos_theta / pi);
+        }
+
+        virtual BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const {
+            BSDFSample sample_data;
+            // Sample the microfacet distribution to get the scatter direction.
+            color attenuation; // placeholder until it gets removed from the scatter function header
+            sample_data.scatter = scatter(r_in, rec, attenuation, scattered);
+            sample_data.scatter_direction = scattered.direction().unit_vector();
+
+            // Sample the BRDF for the value
+            sample_data.bsdf_value = generate(r_in, scattered, rec);
+
+            // Find the PDF for the MDF
+            sample_data.pdf_value = pdf(r_in, scattered, rec);
+            if (rec.transparent) { sample_data.type = BSDF_TYPE::TRANSPARENT; }
+            return sample_data;
+        }
+
+    private:
+    shared_ptr<PixelImageTexture> albedo;
 };
 
 #endif
