@@ -11,6 +11,7 @@ struct HitInfo {
     float t;
     double u;
     double v;
+    bool transparent = false;
 
     bool medium = false;
 
