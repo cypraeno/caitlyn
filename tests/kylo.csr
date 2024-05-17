@@ -1,0 +1,27 @@
+# Simple test for transparent PNGs as textures
+version 0.1.5
+
+Camera
+lookfrom 10 4 0
+lookat 0 0 0
+vup 0 1 0
+vfov 60
+aspect_ratio 16/9
+aperture 0.0001
+focus_dist 10.0
+
+Texture[Image]
+id kylo_texture
+transparency true
+path kylo.png
+
+Material[Lambertian]
+id kylo_material
+texture kylo_texture
+
+Quad
+id 0
+position 0 -2.5 2.5
+u 0 0 -5
+v 0 5 0
+material kylo_material

@@ -41,7 +41,12 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
                     getNextLine(file, albedo);
                     materials[readStringProperty(materialId)] = std::make_shared<lambertian>(readXYZProperty(albedo));  
                 } else {
-                    materials[readStringProperty(materialId)] = std::make_shared<lambertian>(textures[texture_id]);
+                    std::shared_ptr<PixelImageTexture> plamb = std::dynamic_pointer_cast<PixelImageTexture>(textures[texture_id]);
+                    if (plamb) { // texture is a pixel lambert
+                        materials[readStringProperty(materialId)] = std::make_shared<pixel_lambertian>(plamb);
+                    } else { // texture is a normal lambert
+                        materials[readStringProperty(materialId)] = std::make_shared<lambertian>(textures[texture_id]);
+                    }
                 }
             } else if (materialType == "Metal") {
                 std::string materialId, albedo, fuzz;
