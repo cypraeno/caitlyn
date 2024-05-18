@@ -647,7 +647,7 @@ class pixel_lambertian : public material {
 
         virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
             if (!rec.transparent) {
-                return albedo->value(rec.u, rec.v, rec.pos) / pi;
+                return albedo->value(rec.u, rec.v).RGB / pi;
             } else {
                 return color(1.0, 1.0, 1.0) / pi;
             }
@@ -655,7 +655,8 @@ class pixel_lambertian : public material {
 
         virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
             auto cos_theta = dot(rec.normal, scattered.direction().unit_vector());
-            return fmax(0.0, cos_theta / pi);
+            if (!rec.transparent) { return fmax(0.0, cos_theta / pi); }
+            else { return fabs(cos_theta) / pi; }
         }
 
         virtual BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const {
