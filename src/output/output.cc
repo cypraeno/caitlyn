@@ -91,7 +91,8 @@ void output(RenderData& render_data, Camera& cam, std::shared_ptr<Scene> scene_p
         }
     }
 
-    if (config.verbose) {
+    if (true) {
+    // if (config.verbose) {
         auto current_time = std::chrono::high_resolution_clock::now();
         auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
         double time_seconds = elapsed_time / 1000.0;

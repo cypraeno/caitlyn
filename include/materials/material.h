@@ -679,4 +679,70 @@ class pixel_lambertian : public material {
     shared_ptr<PixelImageTexture> albedo;
 };
 
+/**
+ * @class MixtureBSDF
+ * @brief A linearly interpolated mixture of N materials, using a vector of weights and materials.
+ * The mixture is done by simple randomization, where the weights decide the frequency that a certain mixed
+ * material is used. This means that there is no confusing interpolation between outgoing directions or sampling.
+ * 
+ * @param weights Vector of floats representing weights of each material. Should sum to 1 to retain energy conservation.
+ * @param mats Vector of materials.
+ * 
+ * @note It is assumed that the given vectors are of the same length and that the weights sum to 1.
+*/
+class MixtureBSDF : public material {
+    public:
+    MixtureBSDF(std::vector<float> weights, std::vector<std::shared_ptr<material>> mats) : weights{weights}, mats{mats} {}
+
+    virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const {
+        rec.rand = random_double();
+        int mat_ix = chooseSampleMaterial(rec.rand);
+        if (mat_ix >= 0) { // weights is valid
+            return mats[mat_ix]->scatter(r_in, rec, attenuation, scattered);
+        } else {
+            return false;
+        }
+    }
+
+    // assumes that scatter has already been called or sample has already been called, and thus rand is already generated.
+    virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
+        int mat_ix = chooseSampleMaterial(rec.rand);
+        if (mat_ix >= 0) { return mats[mat_ix]->generate(r_in, scattered, rec);
+        } else { return color(1,1,1); }
+    }
+
+    virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
+        int mat_ix = chooseSampleMaterial(rec.rand);
+        if (mat_ix >= 0) { return mats[mat_ix]->pdf(r_in, scattered, rec);
+        } else { return 1.0; }
+    }
+
+    // NOTE: ASSUMES WEIGHTS IS AT LEAST OF SIZE 1 OTHERWISE BEHAVIOUR IS UNDEFINED
+    BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const override {
+        rec.rand = random_double();
+        int mat_ix = chooseSampleMaterial(rec.rand);
+        if (mat_ix >= 0) { return mats[mat_ix]->sample(r_in, rec, scattered);
+        } else {
+            BSDFSample sample_data;
+            return sample_data;
+        }
+    }
+
+    private:
+    std::vector<float> weights;
+    std::vector<std::shared_ptr<material>> mats;
+
+    // Returns negative if weights vector has nothing.
+    int chooseSampleMaterial(float rand) const {
+        float cumulative_weight = 0.0f;
+        for (size_t i = 0; i < weights.size(); i++) {
+            cumulative_weight += weights[i];
+            if (rand < cumulative_weight) {
+                return i;
+            }
+        }
+        return (int)weights.size() - 1;
+    }
+};
+
 #endif

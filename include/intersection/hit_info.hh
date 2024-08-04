@@ -15,6 +15,8 @@ struct HitInfo {
 
     bool medium = false;
 
+    float rand = 0.5; // used in MixtureBSDF
+
     /** @brief Given a face's outward normal and the initial ray, sets front_face to represent
     if collision hits it from the front or not. */
     void set_face_normal(const ray& r, const vec3& outward_normal);

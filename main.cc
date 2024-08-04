@@ -42,15 +42,23 @@ void brdf_tests() {
     auto mt6 = make_shared<CookTorranceDielectric>(color(1.0, 1.0, 1.0), 1.5, 0.0001); // model glass
     auto mt7 = make_shared<CookTorranceDielectric>(color(1.0, 1.0, 1.0), 0.0, 0.0001); // model mirror
 
+    // Example of MixtureBSDF
+    std::vector<float> weights = {0.333f, 0.334f, 0.333f};
+    std::vector<std::shared_ptr<material>> mats;
+    mats.push_back(mt3);
+    mats.push_back(mt6);
+    mats.push_back(mt7);
+    auto mt8 = make_shared<MixtureBSDF>(weights, mats);
+
+    // Adding 3 spheres
     auto sphere1 = make_shared<SpherePrimitive>(point3(0, 2, 2), mt5, 2, device);
     auto sphere2 = make_shared<SpherePrimitive>(point3(1, 2, -2), emit, 0.5, device);
-    auto sphere3 = make_shared<SpherePrimitive>(point3(-4, 2, -1), mt6, 2, device);
-    // scene_ptr->add_primitive(sphere1);
+    auto sphere3 = make_shared<SpherePrimitive>(point3(-4, 2, -1), mt8, 2, device);
     scene_ptr->add_primitive(sphere2);
     scene_ptr->add_primitive(sphere3);
     scene_ptr->add_physical_light(sphere2);
 
-    // Create volume out of sphere3
+    // Create volume out of sphere1
     auto iso = make_shared<isotropic>(color(1,1,1));
     auto medium = make_shared<Medium>(1, iso);
     auto volume1 = make_shared<Volume>(medium, sphere1, device);
