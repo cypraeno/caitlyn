@@ -745,4 +745,94 @@ class MixtureBSDF : public material {
     }
 };
 
+/**
+ * @class LayeredBSDF
+ * @brief A representation of a top BSDF layered over a bottom BSDF with no medium inside. All sampling is done by tracing ray stochastically
+ * through the layers and sampling each time.
+ * 
+ * @param top Top Layer BSDF.
+ * @param bottom Bottom Layer BSDF.
+ * @param termination Russian Roulette termination condition for number of bounces. If exceeded, pretends light is absorbed.
+ * 
+ * @note Generate creates a copy of rec, scattered for simulation. Possibly better way...?
+*/
+class LayeredBSDF : public material {
+    public:
+    LayeredBSDF(std::shared_ptr<material> top, std::shared_ptr<material> bottom, int termination = 10) : top{top}, bottom{bottom}, termination{termination} {}
+
+    virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const {
+        int bounce_count = 0;
+        bool on_top = true;
+        
+        ray b = r_in;
+
+        while (bounce_count <= termination) {
+            bool layer_scatter;
+            if (on_top) { layer_scatter = top->scatter(b, rec, attenuation, scattered); }
+            else { layer_scatter = bottom->scatter(b, rec, attenuation, scattered); }
+
+            if (!layer_scatter) { return false; }
+            
+            if (dot(rec.normal, scattered.direction()) <= 0) {
+                if (on_top) { // refract top
+                    b = ray(b.origin(), scattered.direction(), b.time()); // change direction to scattered
+                    bounce_count++;
+                    continue;
+                } else { return true; } // full transmission
+            } else {
+                if (on_top) { return true; } // reflect top
+                else { // reflect bottom
+                    b = ray(b.origin(), scattered.direction(), b.time());
+                    bounce_count++;
+                    continue;
+                }
+            }
+        }
+    }
+
+    virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
+        int bounce_count = 0;
+        bool on_top = true;
+
+        ray b = r_in;
+
+        // Variables to run layered simulation
+        color attenuation; // placeholder for scatter functions. attenuation is not used and should eventually be removed
+         // from the scatter function signature.
+        HitInfo rec_manip = rec;
+        ray scattered_manip = scattered;
+        color f = color(1, 1, 1);
+
+        while (bounce_count <= termination) {
+            bool layer_scatter;
+            if (on_top) {
+                layer_scatter = top->scatter(b, rec_manip, attenuation, scattered_manip);
+                f = f * top->generate(b, scattered_manip, rec_manip);
+            } else {
+                layer_scatter = bottom->scatter(b, rec_manip, attenuation, scattered_manip);
+                f = f * bottom->generate(b, scattered_manip, rec_manip);
+            }
+
+            if (!layer_scatter) { return color(0.0, 0.0, 0.0); } // no scattering, black
+
+            if (dot(rec_manip.normal, scattered_manip.direction()) <= 0) {
+                if (on_top) { // refract top
+                    b = ray(b.origin(), scattered_manip.direction(), b.time()); // change direction to scattered
+                    bounce_count++;
+                    continue;
+                } else { return f; } // full transmission
+            } else {
+                if (on_top) { return f; } // reflect top
+                else { // reflect bottom
+                    b = ray(b.origin(), scattered_manip.direction(), b.time());
+                    bounce_count++;
+                    continue;
+                }
+            }
+        }
+    }
+
+    private:
+    int termination;
+    std::shared_ptr<material> top;
 #endif
