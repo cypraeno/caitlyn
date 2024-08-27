@@ -835,4 +835,7 @@ class LayeredBSDF : public material {
     private:
     int termination;
     std::shared_ptr<material> top;
+    std::shared_ptr<material> bottom;
+};
+
 #endif
