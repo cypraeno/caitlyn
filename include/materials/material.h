@@ -777,6 +777,7 @@ class LayeredBSDF : public material {
                 if (on_top) { // refract top
                     b = ray(b.origin(), scattered.direction(), b.time()); // change direction to scattered
                     bounce_count++;
+                    on_top = false;
                     continue;
                 } else { return true; } // full transmission
             } else {
@@ -784,10 +785,12 @@ class LayeredBSDF : public material {
                 else { // reflect bottom
                     b = ray(b.origin(), scattered.direction(), b.time());
                     bounce_count++;
+                    on_top = true;
                     continue;
                 }
             }
         }
+        return false; // if termination, absorb light
     }
 
     virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
@@ -819,6 +822,7 @@ class LayeredBSDF : public material {
                 if (on_top) { // refract top
                     b = ray(b.origin(), scattered_manip.direction(), b.time()); // change direction to scattered
                     bounce_count++;
+                    on_top = false;
                     continue;
                 } else { return f; } // full transmission
             } else {
@@ -826,10 +830,117 @@ class LayeredBSDF : public material {
                 else { // reflect bottom
                     b = ray(b.origin(), scattered_manip.direction(), b.time());
                     bounce_count++;
+                    on_top = true;
                     continue;
                 }
             }
         }
+        return color(0, 0, 0); // if termination, absorb light.
+    }
+
+    virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
+        int bounce_count = 0;
+        bool on_top = true;
+
+        ray b = r_in;
+
+        // Variables to run layered simulation
+        color attenuation; // placeholder for scatter functions. attenuation is not used and should eventually be removed
+         // from the scatter function signature.
+        HitInfo rec_manip = rec;
+        ray scattered_manip = scattered;
+        double pdf = 1.0;
+
+        while (bounce_count <= termination) {
+            bool layer_scatter;
+            if (on_top) {
+                layer_scatter = top->scatter(b, rec_manip, attenuation, scattered_manip);
+                pdf = pdf * top->pdf(b, scattered_manip, rec_manip);
+            } else {
+                layer_scatter = bottom->scatter(b, rec_manip, attenuation, scattered_manip);
+                pdf = pdf * bottom->pdf(b, scattered_manip, rec_manip);
+            }
+
+            if (!layer_scatter) { return 1.0; } // no scattering, black
+
+            if (dot(rec_manip.normal, scattered_manip.direction()) <= 0) {
+                if (on_top) { // refract top
+                    b = ray(b.origin(), scattered_manip.direction(), b.time()); // change direction to scattered
+                    bounce_count++;
+                    on_top = false;
+                    continue;
+                } else { return pdf; } // full transmission
+            } else {
+                if (on_top) { return pdf; } // reflect top
+                else { // reflect bottom
+                    b = ray(b.origin(), scattered_manip.direction(), b.time());
+                    bounce_count++;
+                    on_top = true;
+                    continue;
+                }
+            }
+        }
+        return 0.0; // if termination, absorb light (more accurately, we return infinity?)
+    }
+
+    // Structure courtesy of 14.3.2, pbrt
+    BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const override {
+        HitInfo rec_manip = rec;
+        BSDFSample absorbed; absorbed.scatter = false;
+        // Sample BSDF at entrance interface to get initial direction w
+        bool on_top = rec_manip.front_face;
+        vec3 outward_normal = rec_manip.front_face ? rec_manip.normal : -rec_manip.normal;
+
+        BSDFSample bs = on_top ? top->sample(r_in, rec_manip, scattered) : bottom->sample(r_in, rec_manip, scattered);
+        if (!bs.scatter) { return absorbed; }
+        if (dot(rec_manip.normal, bs.scatter_direction) > 0) { return bs; }
+        vec3 w = bs.scatter_direction;
+
+        color f = bs.bsdf_value * fabs(dot(rec_manip.normal, (bs.scatter_direction)));
+        float pdf = bs.pdf_value;
+
+        for (int depth = 0; depth < termination; depth++) {
+            // Follow random walk through layers to sample layered BSDF
+            // Possibly terminate layered BSDF sampling with Russian Roulette
+            float rrBeta = fmax(fmax(f.x(), f.y()), f.z()) / bs.pdf_value;
+            if (depth > 3 && rrBeta < 0.25) {
+                float q = fmax(0, 1-rrBeta);
+                if (random_double() < q) { return absorbed; } // absorb light
+                // otherwise, account pdf for possibility of termination
+                pdf *= 1 - q;
+            }
+
+            // Initialize new surface
+            std::shared_ptr<material> layer = on_top ? bottom : top;
+
+            // Sample layer BSDF for determine new path direction
+            ray r_new = ray(r_in.origin() - w, w, 0.0);
+            BSDFSample bs = layer->sample(r_new, rec_manip, scattered);
+            if (!bs.scatter) { return absorbed; }
+            f = f * bs.bsdf_value;
+            pdf = pdf * bs.pdf_value;
+            w = bs.scatter_direction;
+
+            // Return sample if path has left the layers
+            if (bs.type == BSDF_TYPE::TRANSMISSION) {
+                BSDF_TYPE flag = dot(outward_normal, w) ? BSDF_TYPE::SPECULAR : BSDF_TYPE::TRANSMISSION;
+                BSDFSample out_sample;
+                out_sample.scatter = true;
+                out_sample.scatter_direction = w;
+                out_sample.bsdf_value = f;
+                out_sample.pdf_value = pdf;
+                out_sample.type = flag;
+                return out_sample;
+            }
+            
+            f = f * fabs(dot(rec_manip.normal, (bs.scatter_direction)));
+
+            // Flip
+            on_top = !on_top;
+            rec_manip.front_face = !rec_manip.front_face;
+            rec_manip.normal = -rec_manip.normal;
+        }
+        return absorbed;
     }
 
     private:

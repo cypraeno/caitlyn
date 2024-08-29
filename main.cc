@@ -50,10 +50,24 @@ void brdf_tests() {
     mats.push_back(mt7);
     auto mt8 = make_shared<MixtureBSDF>(weights, mats);
 
+    // Example of LayeredBSDF: glass on diffuse
+    auto mt9 = make_shared<LayeredBSDF>(mt6, mt3, 200);
+
+    // TEST ON LAYEREDBSDF
+    // HitInfo rec;
+    // rec.pos = point3(0,0,0);
+    // rec.normal = vec3(0,1,0);
+    // rec.front_face = true;
+    // rec.t = 0.0;
+
+    // ray wi = ray(point3(1, 1, 0), (vec3(0,0,0) - vec3(1,1,0)).unit_vector(), 0.0);
+    // ray scattered;
+    // BSDFSample test_sample = mt9->sample(wi, rec, scattered);
+
     // Adding 3 spheres
     auto sphere1 = make_shared<SpherePrimitive>(point3(0, 2, 2), mt5, 2, device);
     auto sphere2 = make_shared<SpherePrimitive>(point3(1, 2, -2), emit, 0.5, device);
-    auto sphere3 = make_shared<SpherePrimitive>(point3(-4, 2, -1), mt8, 2, device);
+    auto sphere3 = make_shared<SpherePrimitive>(point3(-4, 2, -1), mt9, 2, device);
     scene_ptr->add_primitive(sphere2);
     scene_ptr->add_primitive(sphere3);
     scene_ptr->add_physical_light(sphere2);
