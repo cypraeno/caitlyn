@@ -50,19 +50,14 @@ void brdf_tests() {
     mats.push_back(mt7);
     auto mt8 = make_shared<MixtureBSDF>(weights, mats);
 
-    // Example of LayeredBSDF: glass on diffuse
-    auto mt9 = make_shared<LayeredBSDF>(mt6, mt3, 200);
+    // Example of creating medium with isotropic phase function
+    auto iso = make_shared<isotropic>(color(1.0,1.0,1.0));
+    auto medium = make_shared<Medium>(1, iso);
 
-    // TEST ON LAYEREDBSDF
-    // HitInfo rec;
-    // rec.pos = point3(0,0,0);
-    // rec.normal = vec3(0,1,0);
-    // rec.front_face = true;
-    // rec.t = 0.0;
-
-    // ray wi = ray(point3(1, 1, 0), (vec3(0,0,0) - vec3(1,1,0)).unit_vector(), 0.0);
-    // ray scattered;
-    // BSDFSample test_sample = mt9->sample(wi, rec, scattered);
+    // Example of LayeredBSDF: glass on diffuse with white cloud inside
+    auto layered_iso = make_shared<isotropic>(color(0.1,0.8,0.1));
+    auto layered_medium = make_shared<Medium>(0.1, layered_iso);
+    auto mt9 = make_shared<LayeredBSDF>(mt6, mt3, layered_medium, 200);
 
     // Adding 3 spheres
     auto sphere1 = make_shared<SpherePrimitive>(point3(0, 2, 2), mt5, 2, device);
@@ -73,8 +68,6 @@ void brdf_tests() {
     scene_ptr->add_physical_light(sphere2);
 
     // Create volume out of sphere1
-    auto iso = make_shared<isotropic>(color(1,1,1));
-    auto medium = make_shared<Medium>(1, iso);
     auto volume1 = make_shared<Volume>(medium, sphere1, device);
     scene_ptr->add_volume(volume1);
 

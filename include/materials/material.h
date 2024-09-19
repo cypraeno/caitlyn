@@ -10,6 +10,7 @@
 #include "microfacet.h"
 
 class hit_record;
+class Medium;
 
 // CONSTANTS
 const float SPECULAR_ROUGHNESS_SAMPLING_CUTOFF = 0.1;
@@ -789,7 +790,8 @@ class MixtureBSDF : public material {
 */
 class LayeredBSDF : public material {
     public:
-    LayeredBSDF(std::shared_ptr<material> top, std::shared_ptr<material> bottom, int termination = 10) : top{top}, bottom{bottom}, termination{termination} {}
+    LayeredBSDF(std::shared_ptr<material> top, std::shared_ptr<material> bottom, std::shared_ptr<Medium> medium, int termination = 10)
+        : top{top}, bottom{bottom}, medium{medium}, termination{termination} {}
 
     virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const {
         ray r = r_in;
@@ -896,71 +898,14 @@ class LayeredBSDF : public material {
     //   We can check if the ray is bouncing back towards the INITIAL LAYER by if rec.front_face = on_top
     //   This means that it can never exit via the non-initial layer as a result of Russian Roulette. This is a sacrifice becasue
     //   there are currently no flags to check if a layer is transmissible or not to exit. However, we know that the initial layer must be.
-    BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const override {
-        // Return in case calculating a full simulation becomes impossible or irrelevant
-        BSDFSample absorbed; absorbed.scatter = false;
-        
-        ray r = r_in;
-        HitInfo rec_manip = rec;
-
-        bool on_top = rec_manip.front_face;
-        rec_manip.front_face ? rec_manip.normal : -rec_manip.normal;
-
-        std::shared_ptr<material> current = on_top ? top : bottom;
-        BSDFSample bs = current->sample(r, rec_manip, scattered);
-
-        color f = bs.bsdf_value;
-        float pdf = bs.pdf_value;
-
-        if (!bs.scatter) { return absorbed; }
-        if (bs.type != BSDF_TYPE::TRANSMISSION && bs.type != BSDF_TYPE::TRANSPARENT) {
-            bs.type = (dot(bs.scatter_direction, rec.normal) < 0) ? BSDF_TYPE::TRANSMISSION : BSDF_TYPE::SPECULAR;
-            return bs;
-        }
-        for (int depth = 0; depth < termination; depth++) {
-            
-            // Follow random walk through layers to sample layered BSDF
-            on_top = !on_top;
-            current = on_top ? top : bottom;
-
-            // Possibly terminate layered BSDF sampling with Russian Roulette
-            float rrBeta = fmax(fmax(f.x(), f.y()), f.z()) / bs.pdf_value;
-            if (depth > 3 && rrBeta < 0.25) {
-                float q = fmax(0, 1-rrBeta);
-                if (random_double() < q) {
-                    if (on_top == rec.front_face) {
-                        bs.type = (dot(bs.scatter_direction, rec.normal) < 0) ? BSDF_TYPE::TRANSMISSION : BSDF_TYPE::SPECULAR;
-                        return bs;
-                    }
-                }
-                pdf *= 1 - q;
-            }
-
-            f = f * fabs(dot(rec_manip.normal, (bs.scatter_direction)));
-            r = ray(rec_manip.pos - bs.scatter_direction, bs.scatter_direction, r.time());
-
-            bs = current->sample(r, rec_manip, scattered);
-            f = f * bs.bsdf_value;
-            pdf = pdf * bs.pdf_value;
-            bs.bsdf_value = f;
-            bs.pdf_value = pdf;
-
-            if (on_top && bs.type == BSDF_TYPE::TRANSMISSION) {
-                bs.type = (dot(bs.scatter_direction, rec.normal) < 0) ? BSDF_TYPE::TRANSMISSION : BSDF_TYPE::SPECULAR;
-                return bs;
-            }
-
-            // Flip since coming from the bottom!
-            rec_manip.front_face = false;
-            rec_manip.normal = -rec_manip.normal;
-        }
-        bs.type = (dot(bs.scatter_direction, rec.normal) < 0) ? BSDF_TYPE::TRANSMISSION : BSDF_TYPE::SPECULAR;
-        return bs;
-    }
+    BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const override;
 
     private:
+    float thickness = 1.0;
+
     int termination;
     std::shared_ptr<material> top;
+    std::shared_ptr<Medium> medium;
     std::shared_ptr<material> bottom;
 };
 
