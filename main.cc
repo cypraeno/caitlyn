@@ -53,17 +53,6 @@ void brdf_tests() {
     // Example of LayeredBSDF: glass on diffuse
     auto mt9 = make_shared<LayeredBSDF>(mt6, mt3, 200);
 
-    // TEST ON LAYEREDBSDF
-    // HitInfo rec;
-    // rec.pos = point3(0,0,0);
-    // rec.normal = vec3(0,1,0);
-    // rec.front_face = true;
-    // rec.t = 0.0;
-
-    // ray wi = ray(point3(1, 1, 0), (vec3(0,0,0) - vec3(1,1,0)).unit_vector(), 0.0);
-    // ray scattered;
-    // BSDFSample test_sample = mt9->sample(wi, rec, scattered);
-
     // Adding 3 spheres
     auto sphere1 = make_shared<SpherePrimitive>(point3(0, 2, 2), mt5, 2, device);
     auto sphere2 = make_shared<SpherePrimitive>(point3(1, 2, -2), emit, 0.5, device);
@@ -90,17 +79,21 @@ void brdf_tests() {
 }
 
 int main(int argc, char* argv[]) {
-    Config config = parseArguments(argc, argv);
-    
-    RenderData render_data;
-    const auto aspect_ratio = static_cast<float>(config.image_width) / config.image_height;
-    setRenderData(render_data, aspect_ratio, config.image_width, config.samples_per_pixel, config.max_depth);
-    std::string filePath = config.inputFile;
-    RTCDevice device = initializeDevice();
-    CSRParser parser;
-    auto scene_ptr = parser.parseCSR(filePath, device);
-    scene_ptr->commitScene();
-    rtcReleaseDevice(device);
+    // LUT_test();
+    // measurePerformance();
+    brdf_tests();
 
-    output(render_data, scene_ptr->cam, scene_ptr, config);
+    // Config config = parseArguments(argc, argv);
+    
+    // RenderData render_data;
+    // const auto aspect_ratio = static_cast<float>(config.image_width) / config.image_height;
+    // setRenderData(render_data, aspect_ratio, config.image_width, config.samples_per_pixel, config.max_depth);
+    // std::string filePath = config.inputFile;
+    // RTCDevice device = initializeDevice();
+    // CSRParser parser;
+    // auto scene_ptr = parser.parseCSR(filePath, device);
+    // scene_ptr->commitScene();
+    // rtcReleaseDevice(device);
+
+    // output(render_data, scene_ptr->cam, scene_ptr, config);
 }
