@@ -26,8 +26,9 @@ class GGX : public Microfacet {
 
     float D(float NoH) const override {
         float r = fmax(0.0001, roughness);
-        float alpha = r * r;
-        float alpha2 = alpha * alpha;
+        // float alpha = r * r;
+        // float alpha2 = alpha * alpha;
+        float alpha2 = r * r;
         float NoH2 = NoH * NoH;
         float b = (NoH2 * (alpha2 - 1.0) + 1.0);
         return (alpha2 / pi) / (b * b);
