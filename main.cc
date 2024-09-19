@@ -83,10 +83,7 @@ void brdf_tests() {
 }
 
 int main(int argc, char* argv[]) {
-    // LUT_test();
-    // measurePerformance();
     brdf_tests();
-
     // Config config = parseArguments(argc, argv);
     
     // RenderData render_data;
