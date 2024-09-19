@@ -754,7 +754,8 @@ class MixtureBSDF : public material {
  * @param bottom Bottom Layer BSDF.
  * @param termination Russian Roulette termination condition for number of bounces. If exceeded, pretends light is absorbed.
  * 
- * @note Generate creates a copy of rec, scattered for simulation. Possibly better way...?
+ * @note SCATTER, GENERATE, AND PDF DO NOT CONTAIN NECESSARY RUSSIAN ROULETTE OR LOGARITHMIC ACCUMULATION. THEY ARE NOT READY.
+ * Use sample instead.
 */
 class LayeredBSDF : public material {
     public:
@@ -811,7 +812,7 @@ class LayeredBSDF : public material {
             f = f * fabs(dot(rec_manip.normal, (bs.scatter_direction)));
             r = ray(rec_manip.pos - bs.scatter_direction, bs.scatter_direction, r.time());
 
-            bs = current->sample(r, rec_manip, scattered);
+            bs = current->sample(r, rec_manip, scattered_copy);
             f = f * bs.bsdf_value;
 
             if (on_top && bs.type == BSDF_TYPE::TRANSMISSION) { return f; }
@@ -857,7 +858,14 @@ class LayeredBSDF : public material {
         return 1.0;
     }
 
-    // Structure courtesy of 14.3.2, pbrt
+    // NOTES:
+    // - The D term in GGX is known to scale at ridiculous amounts to overflow to inf when multiple products, as seen in layering.
+    //   For now, since we know that D exists in the f and pdf, it is safe to arbitrarily set it to 1 or omit it completely, but a better solution is needed.
+    // - Russian Roulette termination does not return black. This is to avoid black specks, but is PHYSICALLY IMPLAUSIBLE.
+    //   There may be a better solution!
+    //   We can check if the ray is bouncing back towards the INITIAL LAYER by if rec.front_face = on_top
+    //   This means that it can never exit via the non-initial layer as a result of Russian Roulette. This is a sacrifice becasue
+    //   there are currently no flags to check if a layer is transmissible or not to exit. However, we know that the initial layer must be.
     BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const override {
         // Return in case calculating a full simulation becomes impossible or irrelevant
         BSDFSample absorbed; absorbed.scatter = false;
@@ -880,9 +888,24 @@ class LayeredBSDF : public material {
             return bs;
         }
         for (int depth = 0; depth < termination; depth++) {
-
+            
+            // Follow random walk through layers to sample layered BSDF
             on_top = !on_top;
             current = on_top ? top : bottom;
+
+            // Possibly terminate layered BSDF sampling with Russian Roulette
+            float rrBeta = fmax(fmax(f.x(), f.y()), f.z()) / bs.pdf_value;
+            if (depth > 3 && rrBeta < 0.25) {
+                float q = fmax(0, 1-rrBeta);
+                if (random_double() < q) {
+                    if (on_top == rec.front_face) {
+                        bs.type = (dot(bs.scatter_direction, rec.normal) < 0) ? BSDF_TYPE::TRANSMISSION : BSDF_TYPE::SPECULAR;
+                        return bs;
+                    }
+                }
+                pdf *= 1 - q;
+            }
+
             f = f * fabs(dot(rec_manip.normal, (bs.scatter_direction)));
             r = ray(rec_manip.pos - bs.scatter_direction, bs.scatter_direction, r.time());
 
@@ -901,7 +924,8 @@ class LayeredBSDF : public material {
             rec_manip.front_face = false;
             rec_manip.normal = -rec_manip.normal;
         }
-        return absorbed;
+        bs.type = (dot(bs.scatter_direction, rec.normal) < 0) ? BSDF_TYPE::TRANSMISSION : BSDF_TYPE::SPECULAR;
+        return bs;
     }
 
     private:
