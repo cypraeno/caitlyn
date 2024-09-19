@@ -39,7 +39,7 @@ void brdf_tests() {
     auto mt5 = make_shared<CookTorrance>(color(1.0, 1.0, 1.0), 0.1);
 
     // Dielectric comparison
-    auto mt6 = make_shared<CookTorranceDielectric>(color(1.0, 1.0, 1.0), 1.5, 0.0001); // model glass
+    auto mt6 = make_shared<CookTorranceDielectric>(color(1.0, 1.0, 1.0), 1.5, 0.0001, 5); // model glass
     auto mt7 = make_shared<CookTorranceDielectric>(color(1.0, 1.0, 1.0), 0.0, 0.0001); // model mirror
 
     // Example of MixtureBSDF

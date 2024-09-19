@@ -401,10 +401,24 @@ class CookTorrance : public material {
 
 };
 
+/**
+ * @class CookTorranceDielectric
+ * @brief Implements the Cook-Torrance Dielectric BxDF model.
+ * This implementation uses the GGX (Trowbridge-Reitz) microfacet distribution to simulate the roughness.
+ * 
+ * @param albedo
+ * @param eta Index of refraction (e.g 1.5 for glass)
+ * @param roughness In range [0-1] defines how rough the surface of the material becomes (less shiny).
+ * @param complexFresnel Indicates type of F term to calculate. 0 uses FrComplex, and any positive integer is used as the exponent to the
+ * Schlick approximation.
+ * @note by default, if no MDF is specified in the constructor, GGX is used.
+*/
 class CookTorranceDielectric : public material {
 
     public:
-    CookTorranceDielectric(color albedo, float eta, float roughness) : albedo{albedo}, eta{(eta == 0.0f) ? 0.0f : (float)fmax(eta, 1.0001f)}, MDF{std::make_shared<GGX>(roughness)} {}
+    CookTorranceDielectric(color albedo, float eta, float roughness, int complexFresnel = 0) 
+        : albedo{albedo}, eta{(eta == 0.0f) ? 0.0f : (float)fmax(eta, 1.0001f)}, 
+        MDF{std::make_shared<GGX>(roughness)}, complexFresnel{(int)fmax(complexFresnel, 0)} {}
 
     virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const {
         vec3 wo = -r_in.direction().unit_vector();
@@ -413,7 +427,9 @@ class CookTorranceDielectric : public material {
         rec.microfacet_normal = wm;
 
         float cosTheta_i = dot(wo, wm);
-        float R = FrDielectric(cosTheta_i);
+        float R;
+        if (complexFresnel == 0) { R = FrDielectric(cosTheta_i); }
+        else { R = fresnelSchlick(cosTheta_i, complexFresnel); }
         float T = 1 - R;
 
         float u = random_double();
@@ -435,7 +451,9 @@ class CookTorranceDielectric : public material {
         vec3 wi = scattered.direction();
         vec3 wm = rec.microfacet_normal;
         float cosTheta_i = dot(wo, wm);
-        float R = FrDielectric(cosTheta_i);
+        float R;
+        if (complexFresnel == 0) { R = FrDielectric(cosTheta_i); }
+        else { R = fresnelSchlick(cosTheta_i, complexFresnel); }
         float T = 1 - R;
         if (cosTheta_i > 0) { // reflectance
             return f_r(r_in, rec, scattered, R);
@@ -449,7 +467,9 @@ class CookTorranceDielectric : public material {
         vec3 wi = scattered.direction();
         vec3 wm = rec.microfacet_normal;
         float cosTheta_i = dot(wo, wm);
-        float R = FrDielectric(cosTheta_i);
+        float R;
+        if (complexFresnel == 0) { R = FrDielectric(cosTheta_i); }
+        else { R = fresnelSchlick(cosTheta_i, complexFresnel); }
         float T = 1 - R;
         if (cosTheta_i > 0) { // reflectance
             return pdf_r(r_in, rec, scattered, R);
@@ -468,7 +488,9 @@ class CookTorranceDielectric : public material {
         rec.microfacet_normal = wm;
 
         float cosTheta_i = dot(wo, wm);
-        float R = FrDielectric(cosTheta_i);
+        float R;
+        if (complexFresnel == 0) { R = FrDielectric(cosTheta_i); }
+        else { R = fresnelSchlick(cosTheta_i, complexFresnel); }
         float T = 1 - R;
 
         float u = random_double();
@@ -503,6 +525,7 @@ class CookTorranceDielectric : public material {
     color albedo;
     float eta;
     std::shared_ptr<Microfacet> MDF;
+    int complexFresnel;
 
     float FrDielectric(float cosTheta_i) const {
         float temp_eta = eta;
@@ -522,7 +545,14 @@ class CookTorranceDielectric : public material {
         float r_perp = (cosTheta_i - (temp_eta * cosTheta_t)) / (cosTheta_i + (eta * cosTheta_t));
         return ((r_parallel * r_parallel) + (r_perp * r_perp)) / 2;
     }
+
+    float fresnelSchlick(float cosTheta, int exponent) const {
+        float F0 = pow(((1 - eta) / (1 + eta)), 2);
+        return F0 + (1.0 - F0) * pow(1.0 - cosTheta, exponent);
+    }
+
     private:
+
     color f_r(const ray& r_in, const HitInfo& rec, const ray& scattered, float R) const {
         vec3 V = -r_in.direction().unit_vector();
         vec3 L = scattered.direction().unit_vector();
@@ -754,7 +784,8 @@ class MixtureBSDF : public material {
  * @param bottom Bottom Layer BSDF.
  * @param termination Russian Roulette termination condition for number of bounces. If exceeded, pretends light is absorbed.
  * 
- * @note Generate creates a copy of rec, scattered for simulation. Possibly better way...?
+ * @note SCATTER, GENERATE, AND PDF DO NOT CONTAIN NECESSARY RUSSIAN ROULETTE OR LOGARITHMIC ACCUMULATION. THEY ARE NOT READY.
+ * Use sample instead.
 */
 class LayeredBSDF : public material {
     public:
@@ -811,7 +842,7 @@ class LayeredBSDF : public material {
             f = f * fabs(dot(rec_manip.normal, (bs.scatter_direction)));
             r = ray(rec_manip.pos - bs.scatter_direction, bs.scatter_direction, r.time());
 
-            bs = current->sample(r, rec_manip, scattered);
+            bs = current->sample(r, rec_manip, scattered_copy);
             f = f * bs.bsdf_value;
 
             if (on_top && bs.type == BSDF_TYPE::TRANSMISSION) { return f; }
@@ -857,7 +888,14 @@ class LayeredBSDF : public material {
         return 1.0;
     }
 
-    // Structure courtesy of 14.3.2, pbrt
+    // NOTES:
+    // - The D term in GGX is known to scale at ridiculous amounts to overflow to inf when multiple products, as seen in layering.
+    //   For now, since we know that D exists in the f and pdf, it is safe to arbitrarily set it to 1 or omit it completely, but a better solution is needed.
+    // - Russian Roulette termination does not return black. This is to avoid black specks, but is PHYSICALLY IMPLAUSIBLE.
+    //   There may be a better solution!
+    //   We can check if the ray is bouncing back towards the INITIAL LAYER by if rec.front_face = on_top
+    //   This means that it can never exit via the non-initial layer as a result of Russian Roulette. This is a sacrifice becasue
+    //   there are currently no flags to check if a layer is transmissible or not to exit. However, we know that the initial layer must be.
     BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const override {
         // Return in case calculating a full simulation becomes impossible or irrelevant
         BSDFSample absorbed; absorbed.scatter = false;
@@ -880,9 +918,24 @@ class LayeredBSDF : public material {
             return bs;
         }
         for (int depth = 0; depth < termination; depth++) {
-
+            
+            // Follow random walk through layers to sample layered BSDF
             on_top = !on_top;
             current = on_top ? top : bottom;
+
+            // Possibly terminate layered BSDF sampling with Russian Roulette
+            float rrBeta = fmax(fmax(f.x(), f.y()), f.z()) / bs.pdf_value;
+            if (depth > 3 && rrBeta < 0.25) {
+                float q = fmax(0, 1-rrBeta);
+                if (random_double() < q) {
+                    if (on_top == rec.front_face) {
+                        bs.type = (dot(bs.scatter_direction, rec.normal) < 0) ? BSDF_TYPE::TRANSMISSION : BSDF_TYPE::SPECULAR;
+                        return bs;
+                    }
+                }
+                pdf *= 1 - q;
+            }
+
             f = f * fabs(dot(rec_manip.normal, (bs.scatter_direction)));
             r = ray(rec_manip.pos - bs.scatter_direction, bs.scatter_direction, r.time());
 
@@ -901,7 +954,8 @@ class LayeredBSDF : public material {
             rec_manip.front_face = false;
             rec_manip.normal = -rec_manip.normal;
         }
-        return absorbed;
+        bs.type = (dot(bs.scatter_direction, rec.normal) < 0) ? BSDF_TYPE::TRANSMISSION : BSDF_TYPE::SPECULAR;
+        return bs;
     }
 
     private:
