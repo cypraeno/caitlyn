@@ -35,7 +35,7 @@ BSDFSample LayeredBSDF::sample(const ray& r_in, HitInfo& rec, ray& scattered) co
 
         // Possibly terminate layered BSDF sampling with Russian Roulette
         float rrBeta = fmax(fmax(f.x(), f.y()), f.z()) / bs.pdf_value;
-        if (depth > 3 && rrBeta < 0.50) {
+        if (depth > 3 && rrBeta < 0.25) { // rrBeta < 0.50 reduces by more, but probably reduces accuracy
             float q = fmax(0, 1-rrBeta);
             if (random_double() < q) {
                 if (on_top == rec.front_face) {
