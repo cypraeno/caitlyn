@@ -67,8 +67,307 @@ double OrenNayar::pdf(const ray& r_in, const ray& scattered, const HitInfo& rec)
 }
 
 // ===================== COOK TORRANCE ===============================
+
+bool CookTorrance::scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const {
+    vec3 microfacet_normal = MDF->sample(rec.normal);
+    rec.microfacet_normal = microfacet_normal;
+    vec3 scatter_direction = reflect(r_in.direction().unit_vector(), microfacet_normal);
+    scattered = ray(rec.pos, scatter_direction, r_in.time());
+
+    return (dot(scattered.direction(), rec.normal) > 0);
+}
+
+color CookTorrance::generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
+    vec3 L = scattered.direction().unit_vector();
+    vec3 N = rec.normal;
+    vec3 V = -(r_in.direction().unit_vector());
+    vec3 H = (V + L).unit_vector();
+
+    float NoV = clamp(dot(N, V), 0.0, 1.0);
+    float NoL = clamp(dot(N, L), 0.0, 1.0);
+    float NoH = clamp(dot(N, H), 0.0, 1.0);
+    float VoH = clamp(dot(V, H), 0.0, 1.0);
+
+    vec3 f0 = albedo; vec3 F;
+    if (complex) { F = FrComplex(fabs(dot(V,rec.microfacet_normal)), absorption_coefficient, eta); }
+    else { F = fresnelSchlick(VoH, f0); }
+
+    float D = MDF->D(NoH);
+    float G = MDF->G(NoV, NoL);
+
+    vec3 spec = (F * D * G) / (4.0 * fmax(NoV, 0.001) * fmax(NoL, 0.001));
+
+    return spec;
+}
+
+double CookTorrance::pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
+    vec3 V = -r_in.direction().unit_vector();
+    vec3 L = scattered.direction().unit_vector();
+    vec3 H = (V + L).unit_vector();
+    vec3 N = rec.normal;
+
+    float NoH = clamp(dot(N, H), 0.0, 1.0);
+    float VoH = clamp(dot(V, H), 0.0, 1.0);
+
+    float D = MDF->D(NoH);
+    // Convert D(N·H) to pdf based on the microfacet normal distribution.
+    // The Jacobian of the half-vector reflection transformation is |4 * (V·H)|.
+    // This accounts for the change in area density when mapping from H to L.
+    float jacobian = 4.0 * abs(dot(V, H));
+    if (jacobian < 0.0001) return 0;
+
+    return D / jacobian;
+}
+
+BSDFSample CookTorrance::sample(const ray& r_in, HitInfo& rec, ray& scattered) const {
+    BSDFSample sample_data;
+    // Sample the microfacet distribution to get the scatter direction.
+    color attenuation; // placeholder until it gets removed from the scatter function header
+    sample_data.scatter = scatter(r_in, rec, attenuation, scattered);
+    sample_data.scatter_direction = scattered.direction().unit_vector();
+
+    // Sample the BRDF for the value
+    sample_data.bsdf_value = generate(r_in, scattered, rec);
+
+    // Find the PDF for the MDF
+    sample_data.pdf_value = pdf(r_in, scattered, rec);
+    if (MDF->roughness < SPECULAR_ROUGHNESS_SAMPLING_CUTOFF) { sample_data.type = BSDF_TYPE::SPECULAR; } // 0.05 was picked arbitrarily, should experiment
+    else { sample_data.type = BSDF_TYPE::GLOSSY; }
+    return sample_data;
+}
+
+vec3 CookTorrance::fresnelSchlick(float cosTheta, vec3 F0) const {
+    return F0 + (color(1.0, 1.0, 1.0) - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+float CookTorrance::FrComplex(float cosTheta_i, std::complex<float> eta) const {
+    using Complex = std::complex<float>;
+    cosTheta_i = clamp(cosTheta_i, 0, 1);
+    float sin2Theta_i = 1 - (cosTheta_i * cosTheta_i);
+    Complex sin2Theta_t = sin2Theta_i / (eta * eta);
+    Complex val(1, -2);
+    Complex cosTheta_t = std::sqrt(val - sin2Theta_t);
+    
+    Complex r_parl = (eta * cosTheta_i - cosTheta_t) /
+                    (eta * cosTheta_i + cosTheta_t);
+    Complex r_perp = (cosTheta_i - eta * cosTheta_t) /
+                    (cosTheta_i + eta * cosTheta_t);
+    return (std::norm(r_parl) + std::norm(r_perp)) / 2;
+}
+
+vec3 CookTorrance::FrComplex(float cosTheta_v, vec3 k, vec3 eta) const {
+    float x = FrComplex(cosTheta_v, std::complex<float>(eta.x(), k.x()));
+    float y = FrComplex(cosTheta_v, std::complex<float>(eta.y(), k.y()));
+    float z = FrComplex(cosTheta_v, std::complex<float>(eta.z(), k.z()));
+    return vec3(x,y,z);
+}
+
 // ===================== COOK DIELECTRIC ===============================
 
+bool CookTorranceDielectric::scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const {
+    vec3 wo = -r_in.direction().unit_vector();
+    vec3 N = rec.normal;
+    vec3 wm = MDF->sample(N); // outward microfacet normal.
+    rec.microfacet_normal = wm;
+
+    float cosTheta_i = dot(wo, wm);
+    float R;
+    if (complexFresnel == 0) { R = FrDielectric(cosTheta_i); }
+    else { R = fresnelSchlick(cosTheta_i, complexFresnel); }
+    float T = 1 - R;
+
+    float u = random_double();
+    double refraction_ratio = rec.front_face ? (1.0/eta) : eta;
+    double sinTheta_i = sqrt(1.0 - cosTheta_i*cosTheta_i);
+
+    if (u < (R / (R + T)) || refraction_ratio * sinTheta_i > 1.0) { // reflectance
+        vec3 wi = reflect(-wo, wm);
+        scattered = ray(rec.pos, wi, r_in.time());
+    } else {
+        vec3 wi = refract(-wo, wm, refraction_ratio);
+        scattered = ray(rec.pos, wi, r_in.time());
+    }
+    return true;
+}
+color CookTorranceDielectric::generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const { // assumes wm has been defined in rec
+    vec3 wo = -r_in.direction().unit_vector();
+    vec3 N = rec.normal;
+    vec3 wi = scattered.direction();
+    vec3 wm = rec.microfacet_normal;
+    float cosTheta_i = dot(wo, wm);
+    float R;
+    if (complexFresnel == 0) { R = FrDielectric(cosTheta_i); }
+    else { R = fresnelSchlick(cosTheta_i, complexFresnel); }
+    float T = 1 - R;
+    if (cosTheta_i > 0) { // reflectance
+        return f_r(r_in, rec, scattered, R);
+    } else { // refractance
+        return f_t(r_in, rec, scattered, T);
+    }
+}
+double CookTorranceDielectric::pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const { // assumes wm has been defined in rec
+    vec3 wo = -r_in.direction().unit_vector();
+    vec3 N = rec.normal;
+    vec3 wi = scattered.direction();
+    vec3 wm = rec.microfacet_normal;
+    float cosTheta_i = dot(wo, wm);
+    float R;
+    if (complexFresnel == 0) { R = FrDielectric(cosTheta_i); }
+    else { R = fresnelSchlick(cosTheta_i, complexFresnel); }
+    float T = 1 - R;
+    if (cosTheta_i > 0) { // reflectance
+        return pdf_r(r_in, rec, scattered, R);
+    } else { // refractance
+        return pdf_t(r_in, rec, scattered, T);
+    }
+};
+
+BSDFSample CookTorranceDielectric::sample(const ray& r_in, HitInfo& rec, ray& scattered) const {
+    // Vectors wo and wi are the outgoing and incident directions respectively.
+    vec3 wo = -r_in.direction().unit_vector();
+
+    BSDFSample sample_data;
+    vec3 N = rec.normal;
+    vec3 wm = MDF->sample(N); // outward microfacet normal.
+    rec.microfacet_normal = wm;
+
+    float cosTheta_i = dot(wo, wm);
+    float R;
+    if (complexFresnel == 0) { R = FrDielectric(cosTheta_i); }
+    else { R = fresnelSchlick(cosTheta_i, complexFresnel); }
+    float T = 1 - R;
+
+    float u = random_double();
+    double refraction_ratio = rec.front_face ? (1.0/eta) : eta;
+    double sinTheta_i = sqrt(1.0 - cosTheta_i*cosTheta_i);
+
+    if (u < (R / (R + T)) || refraction_ratio * sinTheta_i > 1.0) { // reflectance
+        vec3 wi = reflect(-wo, wm);
+        scattered = ray(rec.pos, wi, r_in.time());
+        sample_data.scatter_direction = wi;
+        sample_data.scatter = (dot(wi, N) > 0);
+
+        sample_data.bsdf_value = f_r(r_in, rec, scattered, R);
+        sample_data.pdf_value = pdf_r(r_in, rec, scattered, R);
+        if (MDF->roughness < SPECULAR_ROUGHNESS_SAMPLING_CUTOFF) { sample_data.type = BSDF_TYPE::SPECULAR; } // 0.05 was picked arbitrarily, should experiment
+        else { sample_data.type = BSDF_TYPE::GLOSSY; }
+    } else { // transmission
+        vec3 wi = refract(-wo, wm, refraction_ratio);
+        scattered = ray(rec.pos, wi, r_in.time());
+        sample_data.scatter_direction = wi;
+        sample_data.scatter = (dot(wi, N) < 0);
+
+        sample_data.bsdf_value = f_t(r_in, rec, scattered, T);
+        sample_data.pdf_value = pdf_t(r_in, rec, scattered, T);
+        sample_data.type = BSDF_TYPE::TRANSMISSION;
+    }
+
+    return sample_data;
+}
+
+float CookTorranceDielectric::FrDielectric(float cosTheta_i) const {
+    float temp_eta = eta;
+    cosTheta_i = clamp(cosTheta_i, -1.0, 1.0);
+    if (cosTheta_i < 0) {
+        temp_eta = 1 / eta;
+        cosTheta_i = -cosTheta_i;
+    }
+
+    float sin2Theta_i = 1 - (cosTheta_i * cosTheta_i);
+    float sin2Theta_t = sin2Theta_i / (temp_eta * temp_eta);
+    if (sin2Theta_t >= 1.0) {
+        return 1.0;
+    }
+    float cosTheta_t = sqrt(1 - sin2Theta_t);
+    float r_parallel = (temp_eta * cosTheta_i - cosTheta_t) / (temp_eta * cosTheta_i + cosTheta_t);
+    float r_perp = (cosTheta_i - (temp_eta * cosTheta_t)) / (cosTheta_i + (eta * cosTheta_t));
+    return ((r_parallel * r_parallel) + (r_perp * r_perp)) / 2;
+}
+
+float CookTorranceDielectric::fresnelSchlick(float cosTheta, int exponent) const {
+    float F0 = pow(((1 - eta) / (1 + eta)), 2);
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, exponent);
+}
+
+color CookTorranceDielectric::f_r(const ray& r_in, const HitInfo& rec, const ray& scattered, float R) const {
+    vec3 V = -r_in.direction().unit_vector();
+    vec3 L = scattered.direction().unit_vector();
+    vec3 H = (V + L).unit_vector();
+    vec3 N = rec.normal;
+
+    float NoH = clamp(dot(N, H), 0.0, 1.0);
+    float NoV = clamp(dot(N, V), 0.0, 1.0);
+    float NoL = clamp(dot(N, L), 0.0, 1.0);
+
+    float D = MDF->D(NoH);
+    float G = MDF->G(NoV, NoL);
+    
+    color R_col = color(R, R, R) * albedo;
+
+    color num = D * G * R_col;
+    float denom = (4.0 * fmax(NoV, 0.001) * fmax(NoL, 0.001));
+
+    return num / denom;
+}
+
+float CookTorranceDielectric::pdf_r(const ray& r_in, const HitInfo& rec, const ray& scattered, float R) const {
+    vec3 V = -r_in.direction().unit_vector();
+    vec3 L = scattered.direction().unit_vector();
+    vec3 H = (V + L).unit_vector();
+    vec3 N = rec.normal;
+
+    float NoH = clamp(dot(N, H), 0.0, 1.0);
+    float VoH = clamp(dot(V, H), 0.0, 1.0);
+
+    float D = MDF->D(NoH);
+    // Convert D(N·H) to pdf based on the microfacet normal distribution.
+    // The Jacobian of the half-vector reflection transformation is |4 * (V·H)|.
+    // This accounts for the change in area density when mapping from H to L.
+    float jacobian = 4.0 * abs(dot(V, H));
+    if (jacobian < 0.0001) return 0;
+
+    return (D * R) / jacobian;
+}
+
+float CookTorranceDielectric::pdf_t(const ray& r_in, const HitInfo& rec, const ray& scattered, float T) const {
+    double etap = rec.front_face ? (1.0/eta) : eta;
+
+    vec3 wo = -r_in.direction().unit_vector();
+    vec3 wi = scattered.direction().unit_vector();
+    vec3 wn = rec.normal;
+    vec3 wm = rec.microfacet_normal;
+    vec3 h = (wo + wi).unit_vector();
+
+    float denom = (dot(wi, wm) + dot(wo, wm) / etap) * (dot(wi, wm) + dot(wo, wm) / etap);
+    float dwm_dwi = fabs(dot(wi, wm)) / denom;
+    float NoM = dot(wm, wn);
+    float D = MDF->D(NoM);
+    return D * dwm_dwi * T;
+}
+
+color CookTorranceDielectric::f_t(const ray& r_in, const HitInfo& rec, const ray& scattered, float T) const {
+    double etap = rec.front_face ? (1.0/eta) : eta;
+
+    vec3 wo = -r_in.direction().unit_vector();
+    vec3 wi = scattered.direction().unit_vector();
+    vec3 wn = rec.normal;
+    vec3 wm = rec.microfacet_normal;
+    vec3 h = (wo + wi).unit_vector();
+
+    float NoM = dot(wm, wn);
+    float NoO = dot(wn, wo);
+    float NoI = dot(wn, wi);
+    float D = MDF->D(NoM);
+    float G = MDF->G(fabs(NoO), fabs(NoI));
+    color T_col = color(T, T, T) * albedo;
+    color num = D * G * T_col;
+
+    float IoM = dot(wi, wm);
+    float OoM = dot(wo, wm);
+    float denom = (IoM + OoM / etap) * (IoM + OoM / etap);
+    float dotabs = fabs(IoM * OoM / (dot(wi, wn) * dot(wo, wn) * denom)); // 1: e+14, 2: inf
+    return num * dotabs;
+} 
 // ===================== ISOTROPIC ===============================
 bool isotropic::scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const {
     scattered = ray(rec.pos, random_unit_vector(), r_in.time());
@@ -129,6 +428,49 @@ BSDFSample pixel_lambertian::sample(const ray& r_in, HitInfo& rec, ray& scattere
 }
 
 // ===================== MIXTURE ===============================
+bool MixtureBSDF::scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const {
+    rec.rand = random_double();
+    int mat_ix = chooseSampleMaterial(rec.rand);
+    if (mat_ix >= 0) { // weights is valid
+        return mats[mat_ix]->scatter(r_in, rec, attenuation, scattered);
+    } else {
+        return false;
+    }
+}
+
+// assumes that scatter has already been called or sample has already been called, and thus rand is already generated.
+color MixtureBSDF::generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
+    int mat_ix = chooseSampleMaterial(rec.rand);
+    if (mat_ix >= 0) { return mats[mat_ix]->generate(r_in, scattered, rec);
+    } else { return color(1,1,1); }
+}
+
+double MixtureBSDF::pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
+    int mat_ix = chooseSampleMaterial(rec.rand);
+    if (mat_ix >= 0) { return mats[mat_ix]->pdf(r_in, scattered, rec);
+    } else { return 1.0; }
+}
+
+// NOTE: ASSUMES WEIGHTS IS AT LEAST OF SIZE 1 OTHERWISE BEHAVIOUR IS UNDEFINED
+BSDFSample MixtureBSDF::sample(const ray& r_in, HitInfo& rec, ray& scattered) const {
+    rec.rand = random_double();
+    int mat_ix = chooseSampleMaterial(rec.rand);
+    if (mat_ix >= 0) { return mats[mat_ix]->sample(r_in, rec, scattered);
+    } else {
+        BSDFSample sample_data;
+        return sample_data;
+    }
+}
+int MixtureBSDF::chooseSampleMaterial(float rand) const {
+    float cumulative_weight = 0.0f;
+    for (size_t i = 0; i < weights.size(); i++) {
+        cumulative_weight += weights[i];
+        if (rand < cumulative_weight) {
+            return i;
+        }
+    }
+    return (int)weights.size() - 1;
+}
 // ===================== LAYERED ===============================
 BSDFSample LayeredBSDF::sample(const ray& r_in, HitInfo& rec, ray& scattered) const {
     // Return in case calculating a full simulation becomes impossible or irrelevant
