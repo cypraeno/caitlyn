@@ -224,46 +224,11 @@ class OrenNayar : public material {
     public:
     OrenNayar(color albedo, float roughness) : albedo{albedo}, roughness{roughness} {}
 
-    virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const override {
-        onb uvw;
-        uvw.build_from_w(rec.normal);
-        auto scatter_direction = uvw.local(random_cosine_direction());
-        scattered = ray(rec.pos, scatter_direction, r_in.time());
-        
-        return true;
-    }
+    virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const override;
 
-    virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
-        vec3 w_i = scattered.direction().unit_vector();
-        vec3 w_o = -(r_in.direction().unit_vector());
+    virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const override;
 
-        // Calculate azimuthal angles.
-        vec3 projected_i = (w_i - (dot(w_i, rec.normal) * rec.normal)).unit_vector();
-        vec3 projected_o = (w_o - (dot(w_o, rec.normal) * rec.normal)).unit_vector();
-        float cos_azimuth = dot(projected_i, projected_o);
-
-
-        float theta_i = acos(dot(w_i, rec.normal));
-        float theta_o = acos(dot(w_o, rec.normal));
-        
-        float sigma2 = roughness * roughness;
-        float A = 1 - (sigma2 / (2 * (sigma2 + 0.33)));
-
-        float B = (0.45 * sigma2) / (sigma2 + 0.09);
-
-        float alpha = fmax(theta_i, theta_o);
-        float beta = fmin(theta_i, theta_o);
-
-        color diffuse_term = albedo / pi;
-
-
-        return diffuse_term * (A + B * (fmax(0, cos_azimuth) * sin(alpha) * tan(beta)));
-    }
-
-    virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
-        auto cos_theta = dot(rec.normal, scattered.direction().unit_vector());
-        return fmax(0.0, cos_theta / pi);
-    }
+    virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const override;
 
     private:
     color albedo;
@@ -641,16 +606,9 @@ class isotropic : public material {
 
     isotropic(const color& albedo) : albedo{albedo} {}
 
-    virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const {
-        scattered = ray(rec.pos, random_unit_vector(), r_in.time());
-        return true;
-    }
-    virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
-        return albedo / (4 * pi);
-    }
-    virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
-        return 1 / (4 * pi);
-    };
+    virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const;
+    virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const;
+    virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const;
 };
 
 
@@ -659,52 +617,10 @@ class pixel_lambertian : public material {
     public:
         pixel_lambertian(shared_ptr<PixelImageTexture> a) : albedo(a) {}
 
-        virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const override {
-            float t = random_double();
-            color4 val = albedo->value(rec.u, rec.v);
-            if (t > val.A) { // transparent
-                rec.transparent = true;
-                scattered = ray(rec.pos, r_in.direction(), 0.0);
-            } else {
-                onb uvw;
-                uvw.build_from_w(rec.normal);
-                auto scatter_direction = uvw.local(random_cosine_direction());
-                scattered = ray(rec.pos, scatter_direction, r_in.time());
-            }
-            
-            
-            return true;
-        }
-
-        virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
-            if (!rec.transparent) {
-                return albedo->value(rec.u, rec.v).RGB / pi;
-            } else {
-                return color(1.0, 1.0, 1.0) / pi;
-            }
-        }
-
-        virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const override {
-            auto cos_theta = dot(rec.normal, scattered.direction().unit_vector());
-            if (!rec.transparent) { return fmax(0.0, cos_theta / pi); }
-            else { return fabs(cos_theta) / pi; }
-        }
-
-        virtual BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const {
-            BSDFSample sample_data;
-            // Sample the microfacet distribution to get the scatter direction.
-            color attenuation; // placeholder until it gets removed from the scatter function header
-            sample_data.scatter = scatter(r_in, rec, attenuation, scattered);
-            sample_data.scatter_direction = scattered.direction().unit_vector();
-
-            // Sample the BRDF for the value
-            sample_data.bsdf_value = generate(r_in, scattered, rec);
-
-            // Find the PDF for the MDF
-            sample_data.pdf_value = pdf(r_in, scattered, rec);
-            if (rec.transparent) { sample_data.type = BSDF_TYPE::TRANSPARENT; }
-            return sample_data;
-        }
+        virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const override;
+        virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const override;
+        virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const override;
+        virtual BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const;
 
     private:
     shared_ptr<PixelImageTexture> albedo;
@@ -798,99 +714,14 @@ class LayeredBSDF : public material {
         : top{top}, bottom{bottom}, medium{medium}, termination{termination} {}
 
     virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const {
-        ray r = r_in;
-        HitInfo rec_manip = rec;
-
-        bool on_top = rec_manip.front_face;
-        rec_manip.front_face ? rec_manip.normal : -rec_manip.normal;
-
-        std::shared_ptr<material> current = on_top ? top : bottom;
-        BSDFSample bs = current->sample(r, rec_manip, scattered);
-
-        if (!bs.scatter) { return false; }
-        if (bs.type != BSDF_TYPE::TRANSMISSION && bs.type != BSDF_TYPE::TRANSPARENT) { return true; }
-        for (int depth = 0; depth < termination; depth++) {
-
-            on_top = !on_top;
-            current = on_top ? top : bottom;
-            r = ray(rec_manip.pos - bs.scatter_direction, bs.scatter_direction, r.time());
-
-            bs = current->sample(r, rec_manip, scattered);
-
-            if (on_top && bs.type == BSDF_TYPE::TRANSMISSION) { return true; }
-
-            // Flip since coming from the bottom!
-            rec_manip.front_face = false;
-            rec_manip.normal = -rec_manip.normal;
-        }
-        return false;
+        return true;
     }
 
     virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
-        
-        ray r = r_in;
-        HitInfo rec_manip = rec;
-
-        bool on_top = rec_manip.front_face;
-        rec_manip.front_face ? rec_manip.normal : -rec_manip.normal;
-
-        ray scattered_copy = scattered;
-        std::shared_ptr<material> current = on_top ? top : bottom;
-        BSDFSample bs = current->sample(r, rec_manip, scattered_copy);
-        color f = bs.bsdf_value;
-
-        if (!bs.scatter) { return color(1.0, 1.0, 1.0); }
-        if (bs.type != BSDF_TYPE::TRANSMISSION && bs.type != BSDF_TYPE::TRANSPARENT) { return f; }
-        for (int depth = 0; depth < termination; depth++) {
-
-            on_top = !on_top;
-            current = on_top ? top : bottom;
-            f = f * fabs(dot(rec_manip.normal, (bs.scatter_direction)));
-            r = ray(rec_manip.pos - bs.scatter_direction, bs.scatter_direction, r.time());
-
-            bs = current->sample(r, rec_manip, scattered_copy);
-            f = f * bs.bsdf_value;
-
-            if (on_top && bs.type == BSDF_TYPE::TRANSMISSION) { return f; }
-
-            // Flip since coming from the bottom!
-            rec_manip.front_face = false;
-            rec_manip.normal = -rec_manip.normal;
-        }
-        return color(1.0, 1.0, 1.0);
+        return color(1,1,1);
     }
 
     virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
-        ray r = r_in;
-        HitInfo rec_manip = rec;
-
-        bool on_top = rec_manip.front_face;
-        rec_manip.front_face ? rec_manip.normal : -rec_manip.normal;
-
-        ray scattered_copy = scattered;
-        std::shared_ptr<material> current = on_top ? top : bottom;
-        BSDFSample bs = current->sample(r, rec_manip, scattered_copy);
-        float pdf = bs.pdf_value;
-
-        if (!bs.scatter) { return 1.0; }
-        if (bs.type != BSDF_TYPE::TRANSMISSION && bs.type != BSDF_TYPE::TRANSPARENT) { return pdf; }
-        for (int depth = 0; depth < termination; depth++) {
-
-            on_top = !on_top;
-            current = on_top ? top : bottom;
-            r = ray(rec_manip.pos - bs.scatter_direction, bs.scatter_direction, r.time());
-
-            bs = current->sample(r, rec_manip, scattered_copy);
-            pdf = pdf * bs.pdf_value;
-
-            if (on_top && bs.type == BSDF_TYPE::TRANSMISSION) {
-                return pdf;
-            }
-
-            // Flip since coming from the bottom!
-            rec_manip.front_face = false;
-            rec_manip.normal = -rec_manip.normal;
-        }
         return 1.0;
     }
 
