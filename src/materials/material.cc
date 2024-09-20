@@ -2,6 +2,28 @@
 
 #include "medium.h"
 
+color material::emitted(double u, double v, const point3& p) const { return color(0,0,0); }
+bool material::scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const { return true; }
+color material::generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const { return color(0,0,0); }
+double material::pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const { return 1.0; };
+
+// Default behaviour for sample unless overriden by material
+BSDFSample material::sample(const ray& r_in, HitInfo& rec, ray& scattered) const {
+    BSDFSample sample_data;
+    // Sample the microfacet distribution to get the scatter direction.
+    color attenuation; // placeholder until it gets removed from the scatter function header
+    sample_data.scatter = scatter(r_in, rec, attenuation, scattered);
+    sample_data.scatter_direction = scattered.direction().unit_vector();
+
+    // Sample the BRDF for the value
+    sample_data.bsdf_value = generate(r_in, scattered, rec);
+
+    // Find the PDF for the MDF
+    sample_data.pdf_value = pdf(r_in, scattered, rec);
+    return sample_data;
+}
+
+
 BSDFSample LayeredBSDF::sample(const ray& r_in, HitInfo& rec, ray& scattered) const {
     // Return in case calculating a full simulation becomes impossible or irrelevant
     BSDFSample absorbed; absorbed.scatter = false;

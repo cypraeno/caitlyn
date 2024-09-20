@@ -34,36 +34,19 @@ struct BSDFSample {
 class material {
 
     public:
-        virtual color emitted(double u, double v, const point3& p) const {
-            return color(0,0,0);
-        }
+        virtual color emitted(double u, double v, const point3& p) const;
+        virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const;
+        virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const;
+	    virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const;
 
-        virtual bool scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const {
-            return true;
-        }
-        virtual color generate(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
-            return color(0,0,0);
-        }
-	    virtual double pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
-            return 1.0;
-        };
-
-        virtual BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const {
-            BSDFSample sample_data;
-            // Sample the microfacet distribution to get the scatter direction.
-            color attenuation; // placeholder until it gets removed from the scatter function header
-            sample_data.scatter = scatter(r_in, rec, attenuation, scattered);
-            sample_data.scatter_direction = scattered.direction().unit_vector();
-
-            // Sample the BRDF for the value
-            sample_data.bsdf_value = generate(r_in, scattered, rec);
-
-            // Find the PDF for the MDF
-            sample_data.pdf_value = pdf(r_in, scattered, rec);
-            return sample_data;
-        }
+        virtual BSDFSample sample(const ray& r_in, HitInfo& rec, ray& scattered) const;
 };
 
+/**
+ * @class lambertian
+ * @brief Implements basic lambertian material with cosine direction sampling.
+ * @deprecated Use Oren-Nayar for diffuse if possible. At some point, CSR schema should use Diffuse and defualt to Oren-Nayar anyways.
+*/
 class lambertian : public material {
 
     public:
@@ -92,6 +75,9 @@ class lambertian : public material {
     private:
     shared_ptr<texture> albedo;
 };
+
+
+
 
 class metal : public material {
 
