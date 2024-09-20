@@ -11,7 +11,6 @@ BSDFSample LayeredBSDF::sample(const ray& r_in, HitInfo& rec, ray& scattered) co
     vec3 outward_normal = rec.front_face ? rec.normal : -rec.normal;
 
     bool on_top = rec_manip.front_face;
-    rec_manip.front_face ? rec_manip.normal : -rec_manip.normal;
 
     std::shared_ptr<material> current = on_top ? top : bottom;
     BSDFSample bs = current->sample(r, rec_manip, scattered);
@@ -87,13 +86,13 @@ BSDFSample LayeredBSDF::sample(const ray& r_in, HitInfo& rec, ray& scattered) co
         bs.bsdf_value = f;
         bs.pdf_value = pdf;
 
-        if (on_top && bs.type == BSDF_TYPE::TRANSMISSION) {
+        if (bs.type == BSDF_TYPE::TRANSMISSION) {
             bs.type = (dot(bs.scatter_direction, rec.normal) < 0) ? BSDF_TYPE::TRANSMISSION : BSDF_TYPE::SPECULAR;
             return bs;
         }
 
         // Flip since coming from the bottom!
-        rec_manip.front_face = false;
+        rec_manip.front_face = !rec_manip.front_face;
         rec_manip.normal = -rec_manip.normal;
     }
     bs.type = (dot(bs.scatter_direction, rec.normal) < 0) ? BSDF_TYPE::TRANSMISSION : BSDF_TYPE::SPECULAR;
