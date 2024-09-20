@@ -77,8 +77,14 @@ class lambertian : public material {
 };
 
 
-
-
+/**
+ * @class metal
+ * @brief Implements simple coloured perfect specular with fuzz, which is done by randomly warping output direction. Is not physically accurate
+ * since fuzz is not taken into account in f or pdf. Fresnel is not used.
+ * 
+ * @deprecated Use CookTorrance instead. CSR should at some point use Metal, which is CookTorrance and NOT this class.
+ * 
+*/
 class metal : public material {
 
     public:
@@ -125,6 +131,14 @@ class metal : public material {
         double fuzz;
 };
 
+/**
+ * @class dielectric
+ * @brief Implements simple coloured perfect dielectric (without implementing roughness). Is physically incorrect, does not use fresnel or
+ * any worthwhile techniques.
+ * 
+ * @deprecated Use CookTorranceDielectric instead. CSR should at some point use Transmission, which is CookTorranceDielectric and NOT this class.
+ * 
+*/
 class dielectric : public material {
 
     public:
