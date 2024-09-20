@@ -39,7 +39,7 @@ void brdf_tests() {
     auto mt5 = make_shared<CookTorrance>(color(1.0, 1.0, 1.0), 0.1);
 
     // Dielectric comparison
-    auto mt6 = make_shared<CookTorranceDielectric>(color(1.0, 1.0, 1.0), 1.5, 0.0001); // model glass
+    auto mt6 = make_shared<CookTorranceDielectric>(color(1.0, 1.0, 1.0), 1.5, 0.0001, 5); // model glass
     auto mt7 = make_shared<CookTorranceDielectric>(color(1.0, 1.0, 1.0), 0.0, 0.0001); // model mirror
 
     // Example of MixtureBSDF
@@ -50,17 +50,24 @@ void brdf_tests() {
     mats.push_back(mt7);
     auto mt8 = make_shared<MixtureBSDF>(weights, mats);
 
+    // Example of creating medium with isotropic phase function
+    auto iso = make_shared<isotropic>(color(1.0,1.0,1.0));
+    auto medium = make_shared<Medium>(1, iso);
+
+    // Example of LayeredBSDF: glass on diffuse with white cloud inside
+    auto layered_iso = make_shared<isotropic>(color(0.1,0.8,0.1));
+    auto layered_medium = make_shared<Medium>(0.1, layered_iso);
+    auto mt9 = make_shared<LayeredBSDF>(mt6, mt3, layered_medium, 200);
+
     // Adding 3 spheres
     auto sphere1 = make_shared<SpherePrimitive>(point3(0, 2, 2), mt5, 2, device);
     auto sphere2 = make_shared<SpherePrimitive>(point3(1, 2, -2), emit, 0.5, device);
-    auto sphere3 = make_shared<SpherePrimitive>(point3(-4, 2, -1), mt8, 2, device);
+    auto sphere3 = make_shared<SpherePrimitive>(point3(-4, 2, -1), mt9, 2, device);
     scene_ptr->add_primitive(sphere2);
     scene_ptr->add_primitive(sphere3);
     scene_ptr->add_physical_light(sphere2);
 
     // Create volume out of sphere1
-    auto iso = make_shared<isotropic>(color(1,1,1));
-    auto medium = make_shared<Medium>(1, iso);
     auto volume1 = make_shared<Volume>(medium, sphere1, device);
     scene_ptr->add_volume(volume1);
 
@@ -76,17 +83,18 @@ void brdf_tests() {
 }
 
 int main(int argc, char* argv[]) {
-    Config config = parseArguments(argc, argv);
+    brdf_tests();
+    // Config config = parseArguments(argc, argv);
     
-    RenderData render_data;
-    const auto aspect_ratio = static_cast<float>(config.image_width) / config.image_height;
-    setRenderData(render_data, aspect_ratio, config.image_width, config.samples_per_pixel, config.max_depth);
-    std::string filePath = config.inputFile;
-    RTCDevice device = initializeDevice();
-    CSRParser parser;
-    auto scene_ptr = parser.parseCSR(filePath, device);
-    scene_ptr->commitScene();
-    rtcReleaseDevice(device);
+    // RenderData render_data;
+    // const auto aspect_ratio = static_cast<float>(config.image_width) / config.image_height;
+    // setRenderData(render_data, aspect_ratio, config.image_width, config.samples_per_pixel, config.max_depth);
+    // std::string filePath = config.inputFile;
+    // RTCDevice device = initializeDevice();
+    // CSRParser parser;
+    // auto scene_ptr = parser.parseCSR(filePath, device);
+    // scene_ptr->commitScene();
+    // rtcReleaseDevice(device);
 
-    output(render_data, scene_ptr->cam, scene_ptr, config);
+    // output(render_data, scene_ptr->cam, scene_ptr, config);
 }

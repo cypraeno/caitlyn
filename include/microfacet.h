@@ -26,11 +26,15 @@ class GGX : public Microfacet {
 
     float D(float NoH) const override {
         float r = fmax(0.0001, roughness);
-        float alpha = r * r;
-        float alpha2 = alpha * alpha;
+        // float alpha = r * r;
+        // float alpha2 = alpha * alpha;
+        float alpha2 = r * r;
         float NoH2 = NoH * NoH;
         float b = (NoH2 * (alpha2 - 1.0) + 1.0);
-        return (alpha2 / pi) / (b * b);
+        // return (alpha2 / pi) / (b * b);
+        return 1;
+        // - The D term in GGX is known to scale at ridiculous amounts to overflow to inf when multiple products, as seen in layering.
+        //   For now, since we know that D exists in the f and pdf, it is safe to arbitrarily set it to 1 or omit it completely, but a better solution is needed.
     }
 
     float G(float NoV, float NoL) const override {
