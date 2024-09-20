@@ -58,6 +58,7 @@ Flags like `--samples` and `--depth` control the amount of time spent on the ren
 Sometimes, CSR files will have features not supported in your version of `caitlyn`. You can check this with the version indicator at the top of the CSR file and with `./caitlyn --version`.
 
 For users who have a better understanding of their computer's resources, the `--threads` and `--vectorization` flags control the use of more efficient architecture. While `threads` dictate the amount of CPU threads to split the workloads on, the `vectorization` flag will dictate the type of SIMD batching. `[NONE|SSE|AVX|AVX512]`.
+However, its important to note that this is increasingly untested with the new pathtracer. It is currently DEPRECATED. Use at own risk.
 
 
 ## Contribute
