@@ -57,7 +57,7 @@ void brdf_tests() {
     // Example of LayeredBSDF: glass on diffuse with white cloud inside
     auto layered_iso = make_shared<isotropic>(color(0.1,0.8,0.1));
     auto layered_medium = make_shared<Medium>(0.1, layered_iso);
-    auto mt9 = make_shared<LayeredBSDF>(mt6, mt3, layered_medium, 200);
+    auto mt9 = make_shared<LayeredBSDF>(mt6, mt3, layered_medium, 10);
 
     // Adding 3 spheres
     auto sphere1 = make_shared<SpherePrimitive>(point3(0, 2, 2), mt5, 2, device);
