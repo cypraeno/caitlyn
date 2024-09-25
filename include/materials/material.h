@@ -391,8 +391,10 @@ class MixtureBSDF : public material {
  * USE SAMPLE INSTEAD.
  * 
  * @bug Using mediums will cause black artifacts that increase as samples increase. This is likely due to amount of bounces and loss of energy.
- * This also occurs on a much lower scale without mediums, and is greatly remedied by Russian Roulette termination. But it is not perfect, and a better
- * solution should be found!
+ * This also occurs on a much lower scale without mediums, and is partially remedied by:
+ * -> Russian Roulette termination. 
+ * -> Setting a termination integer close to the default (e.g 20).
+ * But it is not perfect, and a better solution should be found!
 */
 class LayeredBSDF : public material {
     public:
