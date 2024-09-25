@@ -99,6 +99,12 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
             auto quad = make_shared<QuadPrimitive>(readXYZProperty(position), readXYZProperty(u), readXYZProperty(v), materials[readStringProperty(material)], device);
             primitives[readStringProperty(id)] = quad;
             scene_ptr->add_primitive(quad);
+        } else if (startsWith(line, "Box")) {
+            std::string id, position, a, b, c, material;
+            getNextLine(file, id); getNextLine(file, position); getNextLine(file, a); getNextLine(file, b); getNextLine(file, c); getNextLine(file, material);
+            auto box = make_shared<BoxPrimitive>(readXYZProperty(position), readXYZProperty(a), readXYZProperty(b), readXYZProperty(c), materials[readStringProperty(material)], device);
+            primitives[readStringProperty(id)] = box;
+            scene_ptr->add_primitive(box);
         } else if (startsWith(line, "Instance")) {
             auto idStart = line.find('[') + 1;
             auto idEnd = line.find(']');
@@ -135,9 +141,25 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
                 }
                 auto instance = make_shared<QuadPrimitiveInstance>(instance_ptr, transform, device);
                 scene_ptr->add_primitive_instance(instance, device);
+            } else if (instanceType == "BoxPrimitive") {
+                std::string prim_id, translate;
+                getNextLine(file, prim_id); getNextLine(file, translate);
+                vec3 translateVector = readXYZProperty(translate);
+                float transform[12] = {
+                    1, 0, 0, translateVector.x(),
+                    0, 1, 0, translateVector.y(),
+                    0, 0, 1, translateVector.z()
+                };
+                std::shared_ptr<BoxPrimitive> instance_ptr = std::dynamic_pointer_cast<BoxPrimitive>(primitives[readStringProperty(prim_id)]);
+                if (!instance_ptr) {
+                    rtcReleaseDevice(device);
+                    throw std::runtime_error("Instance key ERROR: " + readStringProperty(prim_id) + " is not a BoxPrimitive!");
+                }
+                auto instance = make_shared<BoxPrimitiveInstance>(instance_ptr, transform, device);
+                scene_ptr->add_primitive_instance(instance, device);
             } else {
                 rtcReleaseDevice(device);
-                throw std::runtime_error("Instance type UNDEFINED: Instance[SpherePrimitive|QuadPrimitive]");
+                throw std::runtime_error("Instance type UNDEFINED: Instance[SpherePrimitive|QuadPrimitive|BoxPrimitive]");
             }
         }
     }
