@@ -9,15 +9,17 @@ aspect_ratio 16/9
 aperture 0.0001
 focus_dist 10.0
 
-Material[Lambertian]
+Material[Diffuse]
 id red
 texture no
 albedo 1.0 0.2 0.2
+roughness 0.0001
 
-Material[Lambertian]
+Material[Diffuse]
 id green
 texture no
 albedo 0.2 1.0 0.2
+roughness 0.0001
 
 Sphere
 id 1

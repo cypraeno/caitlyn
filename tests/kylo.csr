@@ -15,7 +15,7 @@ id kylo_texture
 transparency true
 path kylo.png
 
-Material[Lambertian]
+Material[Diffuse]
 id kylo_material
 texture kylo_texture
 

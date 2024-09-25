@@ -15,7 +15,7 @@ scale 0.8
 c1 0.2 0.3 0.1
 c2 0.9 0.9 0.9
 
-Material[Lambertian]
+Material[Diffuse]
 id checkered_surface
 texture checker
 

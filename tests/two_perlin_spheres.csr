@@ -13,7 +13,7 @@ Texture[Noise]
 id noise_texture
 scale 4
 
-Material[Lambertian]
+Material[Diffuse]
 id noise_material
 texture noise_texture
 

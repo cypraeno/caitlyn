@@ -14,7 +14,7 @@ id earth_texture
 transparency false
 path earthmap.jpg
 
-Material[Lambertian]
+Material[Diffuse]
 id earth_surface
 texture earth_texture
 
