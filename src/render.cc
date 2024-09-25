@@ -37,7 +37,7 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
 
     for (int i=0; i<depth; i++) {
         // Enable of disable direct light sampling (debug only, should always be enabled)
-        bool direct = true;
+        bool direct = false; // set to false because haven't been able to make add_physical_light work in CSR
         bool raymarched = false; // set to true if we are colliding with a medium particle and not a surface
         std::shared_ptr<material> mat_ptr = nullptr;
         ray scattered;
@@ -99,7 +99,7 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
         if (sample_data.type != BSDF_TYPE::DIFFUSE) { direct = false; }
         if (incoming_type != BSDF_TYPE::DIFFUSE || sample_data.type == BSDF_TYPE::TRANSMISSION) {
             accumulated_color += weight * color_from_emission;
-        } else {
+        } else if (direct == false) { accumulated_color += weight * color_from_emission; } else {
             // To prevent double contribution of emission, only directly add if and only if:
             // => we are directly hitting the light, i.e (i==0)
             if (i == 0) { accumulated_color += weight * color_from_emission; }
