@@ -109,7 +109,7 @@ Config parseArguments(int argc, char* argv[]) {
 
         else if(arg == "-v" || arg == "--version") {
             config.showVersion = true;
-            std::cout << "caitlyn version 0.1.3" << std::endl;
+            std::cout << "caitlyn version 0.1.5" << std::endl;
         } 
         
         else if(arg == "-h" || arg == "--help") {
