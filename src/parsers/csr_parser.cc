@@ -53,9 +53,11 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
                 getNextLine(file, materialId); getNextLine(file, albedo); getNextLine(file, fuzz);
                 materials[readStringProperty(materialId)] = std::make_shared<metal>(readXYZProperty(albedo), readDoubleProperty(fuzz));
             } else if (materialType == "Dielectric") {
-                std::string materialId, ir;
-                getNextLine(file, materialId); getNextLine(file, ir);
-                materials[readStringProperty(materialId)] = std::make_shared<dielectric>(readDoubleProperty(ir));
+                std::string materialId, albedo, eta, roughness, sheen;
+                getNextLine(file, materialId); getNextLine(file, albedo); getNextLine(file, eta); getNextLine(file, roughness); getNextLine(file, sheen);
+                materials[readStringProperty(materialId)] = std::make_shared<CookTorranceDielectric>(
+                    readXYZProperty(albedo), readDoubleProperty(eta), readDoubleProperty(roughness), (int)readDoubleProperty(sheen)
+                );
             } else if (materialType == "Emissive") {
                 std::string materialId, rgb, strength;
                 getNextLine(file, materialId); getNextLine(file, rgb); getNextLine(file, strength);
