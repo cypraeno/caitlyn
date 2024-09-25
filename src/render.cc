@@ -37,7 +37,7 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
 
     for (int i=0; i<depth; i++) {
         // Enable of disable direct light sampling (debug only, should always be enabled)
-        bool direct = true; // set to false because haven't been able to make add_physical_light work in CSR
+        bool direct = true;
         bool raymarched = false; // set to true if we are colliding with a medium particle and not a surface
         std::shared_ptr<material> mat_ptr = nullptr;
         ray scattered;
