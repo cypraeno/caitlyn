@@ -32,14 +32,14 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
             auto idStart = line.find('[') + 1;
             auto idEnd = line.find(']');
             std::string materialType = line.substr(idStart, idEnd - idStart);
-            if (materialType == "Lambertian") {
+            if (materialType == "Diffuse") {
                 std::string materialId, texture;
                 getNextLine(file, materialId); getNextLine(file, texture);
                 std::string texture_id = readStringProperty(texture);
                 if (texture_id == "no") {
-                    std::string albedo;
-                    getNextLine(file, albedo);
-                    materials[readStringProperty(materialId)] = std::make_shared<lambertian>(readXYZProperty(albedo));  
+                    std::string albedo, roughness;
+                    getNextLine(file, albedo); getNextLine(file, roughness);
+                    materials[readStringProperty(materialId)] = std::make_shared<OrenNayar>(readXYZProperty(albedo), readDoubleProperty(roughness));  
                 } else {
                     std::shared_ptr<PixelImageTexture> plamb = std::dynamic_pointer_cast<PixelImageTexture>(textures[texture_id]);
                     if (plamb) { // texture is a pixel lambert
@@ -49,9 +49,9 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
                     }
                 }
             } else if (materialType == "Metal") {
-                std::string materialId, albedo, fuzz;
-                getNextLine(file, materialId); getNextLine(file, albedo); getNextLine(file, fuzz);
-                materials[readStringProperty(materialId)] = std::make_shared<metal>(readXYZProperty(albedo), readDoubleProperty(fuzz));
+                std::string materialId, albedo, roughness;
+                getNextLine(file, materialId); getNextLine(file, albedo); getNextLine(file, roughness);
+                materials[readStringProperty(materialId)] = std::make_shared<CookTorrance>(readXYZProperty(albedo), readDoubleProperty(roughness));
             } else if (materialType == "Dielectric") {
                 std::string materialId, albedo, eta, roughness, sheen;
                 getNextLine(file, materialId); getNextLine(file, albedo); getNextLine(file, eta); getNextLine(file, roughness); getNextLine(file, sheen);
