@@ -10,9 +10,11 @@
 
 /**
  * @brief Most updated integrator for path tracing through scenes
- * @note Is INACCURATE WHEN BEGINNING WITHIN VOLUMES. Tracing relies are intersection with
- * volume boundary to know if it "enters" or not. If ray begins within the volume, we "enter" and never exit other than
- * doubling back.
+ * 
+ * 
+ * @bug Known Issues:
+ * - In expansive_box.csr, direct light sampling does not work -> "light_geomhit->getHitInfo(..." SEGFAULTS. 
+ * There is a catch runtime error "MultiIntersect returned some id that does not exist in geom_map"
 */
 color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth);
 

@@ -37,7 +37,7 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
 
     for (int i=0; i<depth; i++) {
         // Enable of disable direct light sampling (debug only, should always be enabled)
-        bool direct = false; // set to false because haven't been able to make add_physical_light work in CSR
+        bool direct = true; // set to false because haven't been able to make add_physical_light work in CSR
         bool raymarched = false; // set to true if we are colliding with a medium particle and not a surface
         std::shared_ptr<material> mat_ptr = nullptr;
         ray scattered;
@@ -124,8 +124,11 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
                 std::vector<float> tfars;
                 // errors warning: overflow in conversion from 'float' to 'int' changes value from '+Inff' to '2147483647' [-Woverflow]
                 // MultiIntersect(std::numeric_limits<float>::infinity(), light_ray, scene->rtc_scene, ids, tfars);
-                MultiIntersect(5, light_ray, scene->rtc_scene, ids, tfars);
+                int intersections_to_accept = 10;
+                MultiIntersect(intersections_to_accept, light_ray, scene->rtc_scene, ids, tfars); // assume output ids.length() == tfars.length()
 
+                // In this section, we fire trace each recorded intersection from pos -> light
+                // It is hoped/assumed that we find it within 'intersections_to_accept' intersections or we find some obscurement
                 bool non_medium_encountered = false;
                 std::shared_ptr<Geometry> light_geomhit;
                 int light_id;
@@ -134,6 +137,7 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
                     int id = ids[j];
                     float tfar = tfars[j];
                     light_geomhit = scene->geom_map[id];
+                    if (!light_geomhit) { throw std::runtime_error("MultiIntersect returned some id that does not exist in geom_map"); }
                     std::shared_ptr<Volume> possible_volume_hit = std::dynamic_pointer_cast<Volume>(light_geomhit);
                     if (!possible_volume_hit) { // non volume encountered
                         if (light_geomhit == light_ptr) { // hit the light
