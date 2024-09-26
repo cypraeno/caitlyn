@@ -99,3 +99,8 @@ void add_triangle(RTCDevice device, RTCScene scene) {
     unsigned int triangleID = rtcAttachGeometry(scene, geom);
     rtcReleaseGeometry(geom);
 }
+
+void Scene::set_sky_colour(color bottom, color top) {
+    sky_bottom = bottom;
+    sky_top = top;
+}

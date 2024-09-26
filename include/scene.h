@@ -10,6 +10,7 @@
 #include "instances.h"
 #include "volume.h"
 #include "hit_info.hh"
+#include "color.h"
 
 // SCENE INTERFACE
 // The scene class object covers all relevant objects in a scene:
@@ -32,6 +33,10 @@ class Scene {
     std::map<unsigned int, std::shared_ptr<Geometry>> geom_map;
     RTCScene rtc_scene;
 
+    // Sky Colours
+    color sky_bottom;
+    color sky_top;
+
     // Lights
     std::vector<std::shared_ptr<Geometry>> physical_lights;
     std::vector<std::shared_ptr<Light>> lights;
@@ -50,6 +55,8 @@ class Scene {
 
     void add_physical_light(std::shared_ptr<Geometry> geom_ptr);
     unsigned int add_primitive_instance(std::shared_ptr<PrimitiveInstance> pi_ptr, RTCDevice device);
+
+    void set_sky_colour(color bottom, color top);
 };
 
 void add_sphere(RTCDevice device, RTCScene scene);
