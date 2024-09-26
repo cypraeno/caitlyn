@@ -13,8 +13,13 @@
  * 
  * 
  * @bug Known Issues:
- * - In expansive_box.csr, direct light sampling does not work -> "light_geomhit->getHitInfo(..." SEGFAULTS. 
- * There is a catch runtime error "MultiIntersect returned some id that does not exist in geom_map"
+ * - MultiIntersect returns 0 length vector during direct light sampling
+ * - This occurs when sampling FROM a quad, whereby the sampled point of the light yields
+ * a direction PARALLEL to a u or v vector of the quad itself.
+ * e.g if the quad is perpendicular to the y axis and the direction sampled is y=0, then:
+ * -> MultiIntersect returns 0 length vector which normally leads to SEGFAULT.
+ * -> (Unstable?) fix is added, which is to apply a small offset by the normal of the hit progressively until
+ * MultiIntersect succeeds.
 */
 color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth);
 

@@ -126,7 +126,18 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
                 // MultiIntersect(std::numeric_limits<float>::infinity(), light_ray, scene->rtc_scene, ids, tfars);
                 int intersections_to_accept = 10;
                 MultiIntersect(intersections_to_accept, light_ray, scene->rtc_scene, ids, tfars); // assume output ids.length() == tfars.length()
-
+                
+                float epsilon = distWithinMedium * 1e-5;
+                int count = 1;
+                while ((int)ids.size() == 0) {
+                    // This case may occur if the ray sampled runs parallel to a quad.
+                    // To remedy, we apply a small offset by the hit normal.
+                    point3 new_pos = record.pos + count*epsilon * record.normal;
+                    light_ray = ray(new_pos, (sampled_point - light_dir).unit_vector(), 0.0);
+                    MultiIntersect(intersections_to_accept, light_ray, scene->rtc_scene, ids, tfars);
+                    count++;
+                }
+                
                 // In this section, we fire trace each recorded intersection from pos -> light
                 // It is hoped/assumed that we find it within 'intersections_to_accept' intersections or we find some obscurement
                 bool non_medium_encountered = false;
@@ -137,7 +148,6 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
                     int id = ids[j];
                     float tfar = tfars[j];
                     light_geomhit = scene->geom_map[id];
-                    if (!light_geomhit) { throw std::runtime_error("MultiIntersect returned some id that does not exist in geom_map"); }
                     std::shared_ptr<Volume> possible_volume_hit = std::dynamic_pointer_cast<Volume>(light_geomhit);
                     if (!possible_volume_hit) { // non volume encountered
                         if (light_geomhit == light_ptr) { // hit the light
