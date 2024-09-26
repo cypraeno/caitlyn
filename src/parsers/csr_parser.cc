@@ -108,8 +108,8 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
             // bool usesEmissive = (emissives.find(readStringProperty(material)) != emissives.end());
             auto sphere = make_shared<SpherePrimitive>(
                 readXYZProperty(position), 
-                // (usesEmissive ? emissives[readStringProperty(material)] : 
-                materials[readStringProperty(material)]), 
+                // usesEmissive ? emissives[readStringProperty(material)] : 
+                materials[readStringProperty(material)], 
                 readDoubleProperty(radius), device
             );
             primitives[readStringProperty(id)] = sphere;
@@ -121,8 +121,8 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
             // bool usesEmissive = (emissives.find(readStringProperty(material)) != emissives.end());
             auto quad = make_shared<QuadPrimitive>(
                 readXYZProperty(position), readXYZProperty(u), readXYZProperty(v), 
-                // (usesEmissive ? emissives[readStringProperty(material)] : 
-                materials[readStringProperty(material)]), 
+                // usesEmissive ? emissives[readStringProperty(material)] : 
+                materials[readStringProperty(material)], 
                 device
             );
             primitives[readStringProperty(id)] = quad;
