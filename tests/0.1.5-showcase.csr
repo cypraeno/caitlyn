@@ -1,0 +1,176 @@
+version 0.1.5
+
+Camera
+lookfrom 30 8 0
+lookat 0 4 0
+vup 0 1 0
+vfov 50
+aspect_ratio 16/9
+aperture 0.0001
+focus_dist 10.0
+
+# NEW FEATURE: We can set the sky colours!
+Sky
+top 1.0 0.9 0.5
+bottom 1.0 0.0 0.0
+
+# Scene Setup with red ground
+Material[Diffuse]
+id dark_brown
+texture no
+albedo 0.9 0.9 0.9
+roughness 0.0001
+
+Sphere
+id ground
+position 0 -2000 0
+material dark_brown
+radius 2000
+medium false
+
+
+# NEW FEATURE: Making a Volume
+# First, we create a sphere.
+Sphere
+id volume_sphere
+position 0 4 -8
+material dark_brown
+radius 4
+medium true
+
+# Then, we make a Medium (the properties of the volume)
+Medium
+id medium_example
+density 0.75
+albedo 0.23 0.1 0.6
+
+# Finally, we build the physical volume with the 
+# shape of the Sphere and properties of the Medium
+Volume
+id volume_example
+medium_id medium_example
+prim_id volume_sphere
+
+# NEW FEATURE: Making a Box with the new Diamond!
+
+# Lets start with making our new Dielectrics (like a diamond :p)
+Material[Dielectric]
+id cyan_diamond
+albedo 0.1 0.8 0.8
+eta 2.4
+roughness 0.0001
+sheen 0
+
+# And now we make the box with our dielectric material!
+Box
+id diamond_box
+position 0 4 4
+a 8 0 0
+b 0 -4 0
+c 0 0 8
+material cyan_diamond
+medium false
+
+# We can also make volumes with this one
+Box
+id volume_box
+position 0 8 4
+a 8 0 0
+b 0 -8 0
+c 0 0 8
+material cyan_diamond
+medium true
+
+# Then, we make another Medium (the properties of the volume)
+Medium
+id medium_box_example
+density 0.31 # lets make this one a little thinner!
+albedo 0.5 0.1 0.5
+
+# Now make a Medium out of this
+Volume
+id volume_box_example
+medium_id medium_box_example
+prim_id volume_box
+
+
+# We already covered the new dielectric model, but let's also make the two new types!
+
+# First, the new diffuse! (It's actually already visible on the ground, but lets make another).
+Material[Diffuse]
+id green_diffuse
+texture no
+albedo 0.13 0.9 0.1
+roughness 0.0001
+
+Sphere
+id green_sphere
+position -8 6 0
+material green_diffuse
+radius 6
+medium false
+
+# Now, lets check out the new metal!
+# Let's make a very shiny mirror...which involves a Metal and a Quad!
+Material[Metal]
+id mirror_example
+albedo 0.9 0.89 1.0 # to make it easy to see, we'll make it a little scratched up
+roughness 0.005
+
+Quad
+id mirror_quad
+position -20 18 -8
+u 15 0 -15
+v 0 -17 0
+material mirror_example
+
+# A very cool new feature is the Pixel Lambertian
+# You can finally add pixel art into your scenes! In fact, let's make Kylo Ren in front of
+# all the objects. And we'll make it a bit more cinematic...
+
+# Make the Kylo Ren
+Texture[Image]
+id kylo_texture
+transparency true
+path kylo.png
+
+Material[Diffuse]
+id kylo_material
+texture kylo_texture
+
+Quad
+id 0
+position 5 0 2.5
+u 0 0 -7.5
+v 0 7.5 0
+material kylo_material
+
+# Now, let's make it a little more cinematic...
+# Emissive
+Material[Emissive]
+id key_light
+rgb 0.6 0.6 0.1
+strength 10
+
+Sphere
+id key_sphere
+position -4000 0 4000
+material key_light
+radius 2000
+medium false
+
+# You could edit this so that it has a black sky. If it does, maybe you want to add a red fill light 
+# so that Kylo's front isn't black.
+# In this case, lets add a red fill light from the front.
+
+Material[Emissive]
+id fill_light
+rgb 1.0 0.2 0.2
+strength 2.5
+
+Quad
+id 0
+position 35 0 20
+u 0 0 -20
+v 0 20 0
+material fill_light
