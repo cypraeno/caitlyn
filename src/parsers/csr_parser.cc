@@ -63,7 +63,7 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
                 std::string materialId, rgb, strength;
                 getNextLine(file, materialId); getNextLine(file, rgb); getNextLine(file, strength);
                 materials[readStringProperty(materialId)] = std::make_shared<emissive>( (readDoubleProperty(strength) * readXYZProperty(rgb)) );
-                emissives[readStringProperty(materialId)] = std::make_shared<emissive>( (readDoubleProperty(strength) * readXYZProperty(rgb)) );
+                // emissives[readStringProperty(materialId)] = std::make_shared<emissive>( (readDoubleProperty(strength) * readXYZProperty(rgb)) );
             } else if (materialType == "Mixture") {
                 std::vector<float> weights;
                 std::vector<std::shared_ptr<material>> mats;
@@ -105,27 +105,29 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
         } else if (startsWith(line, "Sphere")) {
             std::string id, position, material, radius;
             getNextLine(file, id); getNextLine(file, position); getNextLine(file, material); getNextLine(file, radius);
-            bool usesEmissive = (emissives.find(readStringProperty(material)) != emissives.end());
+            // bool usesEmissive = (emissives.find(readStringProperty(material)) != emissives.end());
             auto sphere = make_shared<SpherePrimitive>(
                 readXYZProperty(position), 
-                (usesEmissive ? emissives[readStringProperty(material)] : materials[readStringProperty(material)]), 
+                // (usesEmissive ? emissives[readStringProperty(material)] : 
+                materials[readStringProperty(material)]), 
                 readDoubleProperty(radius), device
             );
             primitives[readStringProperty(id)] = sphere;
             scene_ptr->add_primitive(sphere);
-            if (usesEmissive) { scene_ptr->add_physical_light(sphere); }
+            // if (usesEmissive) { scene_ptr->add_physical_light(sphere); }
         } else if (startsWith(line, "Quad")) {
             std::string id, position, u, v, material;
             getNextLine(file, id); getNextLine(file, position); getNextLine(file, u); getNextLine(file, v); getNextLine(file, material);
-            bool usesEmissive = (emissives.find(readStringProperty(material)) != emissives.end());
+            // bool usesEmissive = (emissives.find(readStringProperty(material)) != emissives.end());
             auto quad = make_shared<QuadPrimitive>(
                 readXYZProperty(position), readXYZProperty(u), readXYZProperty(v), 
-                (usesEmissive ? emissives[readStringProperty(material)] : materials[readStringProperty(material)]), 
+                // (usesEmissive ? emissives[readStringProperty(material)] : 
+                materials[readStringProperty(material)]), 
                 device
             );
             primitives[readStringProperty(id)] = quad;
             scene_ptr->add_primitive(quad);
-            if (usesEmissive) { scene_ptr->add_physical_light(quad); }
+            // if (usesEmissive) { scene_ptr->add_physical_light(quad); }
         } else if (startsWith(line, "Box")) {
             std::string id, position, a, b, c, material;
             getNextLine(file, id); getNextLine(file, position); getNextLine(file, a); getNextLine(file, b); getNextLine(file, c); getNextLine(file, material);
