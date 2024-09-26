@@ -64,6 +64,19 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
                 getNextLine(file, materialId); getNextLine(file, rgb); getNextLine(file, strength);
                 materials[readStringProperty(materialId)] = std::make_shared<emissive>( (readDoubleProperty(strength) * readXYZProperty(rgb)) );
                 emissives[readStringProperty(materialId)] = std::make_shared<emissive>( (readDoubleProperty(strength) * readXYZProperty(rgb)) );
+            } else if (materialType == "Mixture") {
+                std::vector<float> weights;
+                std::vector<std::shared_ptr<material>> mats;
+                std::string materialId, number;
+                getNextLine(file, materialId); getNextLine(file, number);
+                int num_mats = (int)readDoubleProperty(number);
+                for (int i=0; i<num_mats; i++) {
+                    std::string mixed, weight;
+                    getNextLine(file, mixed); getNextLine(file, weight);
+                    weights.push_back(readDoubleProperty(weight));
+                    mats.push_back(materials[readStringProperty(mixed)]);
+                }
+                materials[readStringProperty(materialId)] = make_shared<MixtureBSDF>(weights, mats);
             } else {
                 rtcReleaseDevice(device);
                 throw std::runtime_error("Material type UNDEFINED: Material[Lambertian|Metal|Dielectric|Emissive]");
