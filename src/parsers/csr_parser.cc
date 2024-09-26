@@ -10,6 +10,10 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
     std::map<std::string, std::shared_ptr<emissive>> emissives;
     std::map<std::string, std::shared_ptr<texture>> textures;
     std::map<std::string, std::shared_ptr<Primitive>> primitives;
+    std::map<std::string, std::shared_ptr<Primitive>> medium_primitives;
+
+    std::map<std::string, std::shared_ptr<Medium>> mediums;
+    std::map<std::string, std::shared_ptr<Volume>> volumes;
     
     if (!file.is_open() || !file.good()) {
         rtcReleaseDevice(device);
@@ -28,7 +32,11 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
 
     while (getNextLine(file, line)) {
         line = trim(line);
-        if (startsWith(line, "Material")) {
+        if (startsWith(line, "Sky")) {
+            std::string top, bottom;
+            getNextLine(file, top); getNextLine(file, bottom);
+            scene_ptr->set_sky_colour(readXYZProperty(bottom), readXYZProperty(top));
+        } else if (startsWith(line, "Material")) {
             // Extract material ID from brackets (e.g., Material[Lambertian] -> Lambertian)
             auto idStart = line.find('[') + 1;
             auto idEnd = line.find(']');
@@ -103,8 +111,9 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
                 throw std::runtime_error("Texture type UNDEFINED: Texture[Checker|Image|Noise]");
             }
         } else if (startsWith(line, "Sphere")) {
-            std::string id, position, material, radius;
+            std::string id, position, material, radius, medium;
             getNextLine(file, id); getNextLine(file, position); getNextLine(file, material); getNextLine(file, radius);
+            getNextLine(file, medium);
             // bool usesEmissive = (emissives.find(readStringProperty(material)) != emissives.end());
             auto sphere = make_shared<SpherePrimitive>(
                 readXYZProperty(position), 
@@ -112,8 +121,12 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
                 materials[readStringProperty(material)], 
                 readDoubleProperty(radius), device
             );
-            primitives[readStringProperty(id)] = sphere;
-            scene_ptr->add_primitive(sphere);
+            if (!readBooleanProperty(medium)) { 
+                primitives[readStringProperty(id)] = sphere;
+                scene_ptr->add_primitive(sphere);
+            } else {
+                medium_primitives[readStringProperty(id)] = sphere;
+            }
             // if (usesEmissive) { scene_ptr->add_physical_light(sphere); }
         } else if (startsWith(line, "Quad")) {
             std::string id, position, u, v, material;
@@ -129,11 +142,16 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
             scene_ptr->add_primitive(quad);
             // if (usesEmissive) { scene_ptr->add_physical_light(quad); }
         } else if (startsWith(line, "Box")) {
-            std::string id, position, a, b, c, material;
+            std::string id, position, a, b, c, material, medium;
             getNextLine(file, id); getNextLine(file, position); getNextLine(file, a); getNextLine(file, b); getNextLine(file, c); getNextLine(file, material);
+            getNextLine(file, medium);
             auto box = make_shared<BoxPrimitive>(readXYZProperty(position), readXYZProperty(a), readXYZProperty(b), readXYZProperty(c), materials[readStringProperty(material)], device);
-            primitives[readStringProperty(id)] = box;
-            scene_ptr->add_primitive(box);
+            if (!readBooleanProperty(medium)) { 
+                primitives[readStringProperty(id)] = box;
+                scene_ptr->add_primitive(box);
+            } else {
+                medium_primitives[readStringProperty(id)] = box;
+            }
         } else if (startsWith(line, "Instance")) {
             auto idStart = line.find('[') + 1;
             auto idEnd = line.find(']');
@@ -190,6 +208,21 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
                 rtcReleaseDevice(device);
                 throw std::runtime_error("Instance type UNDEFINED: Instance[SpherePrimitive|QuadPrimitive|BoxPrimitive]");
             }
+        } else if (startsWith(line, "Medium")) {
+            std::string medium_id, density, albedo;
+            getNextLine(file, medium_id); getNextLine(file, density); getNextLine(file, albedo);
+            auto medium = make_shared<Medium>(readDoubleProperty(density), make_shared<isotropic>(readXYZProperty(albedo)));
+            mediums[readStringProperty(medium_id)] = medium;
+        } else if (startsWith(line, "Volume")) {
+            std::string volume_id, medium_id, prim_id;
+            getNextLine(file, volume_id); getNextLine(file, medium_id); getNextLine(file, prim_id);
+            auto volume = make_shared<Volume>(
+                mediums[readStringProperty(medium_id)],
+                medium_primitives[readStringProperty(prim_id)],
+                device
+            );
+            volumes[readStringProperty(volume_id)] = volume;
+            scene_ptr->add_volume(volume);
         }
     }
 
