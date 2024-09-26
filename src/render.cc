@@ -133,7 +133,7 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
                     // This case may occur if the ray sampled runs parallel to a quad.
                     // To remedy, we apply a small offset by the hit normal.
                     point3 new_pos = record.pos + count*epsilon * record.normal;
-                    light_ray = ray(new_pos, (sampled_point - light_dir).unit_vector(), 0.0);
+                    light_ray = ray(new_pos, (sampled_point - new_pos).unit_vector(), 0.0);
                     MultiIntersect(intersections_to_accept, light_ray, scene->rtc_scene, ids, tfars);
                     count++;
                 }
