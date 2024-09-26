@@ -66,12 +66,10 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
             } else if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
                 targetID = rayhit.hit.geomID;
             } else {
-                // Sky background (gradient blue-white)
                 vec3 unit_direction = r_in.direction().unit_vector();
                 auto t = 0.5*(unit_direction.y() + 1.0);
 
-                // color sky = color(0,0,0);
-                color sky = (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0); // lerp formula (1.0-t)*start + t*endval
+                color sky = (1.0-t)*(scene->sky_top) + t*(scene->sky_bottom); // lerp formula (1.0-t)*start + t*endval
                 accumulated_color += weight * sky;
                 return accumulated_color;
             }
