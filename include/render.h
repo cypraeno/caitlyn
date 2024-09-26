@@ -20,6 +20,8 @@
  * -> MultiIntersect returns 0 length vector which normally leads to SEGFAULT.
  * -> (Unstable?) fix is added, which is to apply a small offset by the normal of the hit progressively until
  * MultiIntersect succeeds.
+ * 
+ * For now, direct is disabled.
 */
 color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth);
 
