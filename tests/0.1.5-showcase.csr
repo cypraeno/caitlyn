@@ -174,7 +174,7 @@ weight 0.334
 
 Quad
 id floor_quad
-position 4 0 -1
-u 0 0 2
-v 2 0 0
+position 1 0 2.5
+u 0 0 -7.5
+v 8 0 0
 material mixture_example
