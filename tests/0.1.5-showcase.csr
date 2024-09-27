@@ -159,18 +159,22 @@ material key_light
 radius 2000
 medium false
 
-# You could edit this so that it has a black sky. If it does, maybe you want to add a red fill light 
-# so that Kylo's front isn't black.
-# In this case, lets add a red fill light from the front.
+# Let's also make a small floor underneath Kylo thats a MIX of multiple different materials!
+# NEW FEATURE: Mixture
 
-Material[Emissive]
-id fill_light
-rgb 1.0 0.2 0.2
-strength 2.5
+Material[Mixture]
+id mixture_example
+num 3
+mixed mirror_example
+weight 0.333
+mixed green_diffuse
+weight 0.333
+mixed cyan_diamond
+weight 0.334
 
 Quad
-id 0
-position 35 0 20
-u 0 0 -20
-v 0 20 0
-material fill_light
+id floor_quad
+position 4 0 -1
+u 0 0 2
+v 2 0 0
+material mixture_example
