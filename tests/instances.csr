@@ -1,3 +1,4 @@
+# sphere.csr
 version 0.1.5
 
 Camera
@@ -28,10 +29,22 @@ u 0 3 0
 v 3 0 0
 material red
 
+Box
+id box1
+position 0 -4 3
+a 1 0 0
+b 0 1 0
+c 0 0 1
+material red
+
 Instance[SpherePrimitive]
 prim_id sphere1
 translate 0 0 -6
 
 Instance[QuadPrimitive]
 prim_id quad1
+translate 0 0 -6
+
+Instance[BoxPrimitive]
+prim_id box1
 translate 0 0 -6
