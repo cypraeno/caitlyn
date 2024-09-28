@@ -24,9 +24,11 @@ id top
 position 0 -10 0
 material checkered_surface
 radius 10
+medium false
 
 Sphere
 id bottom
 position 0 10 0
 material checkered_surface
 radius 10
+medium false

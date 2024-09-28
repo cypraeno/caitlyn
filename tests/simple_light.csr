@@ -26,12 +26,14 @@ id 1
 position 0 -1000 0
 material red
 radius 1000
+medium false
 
 Sphere
 id 2
 position 0 2 0
 material green
 radius 2
+medium false
 
 Material[Emissive]
 id light_material
@@ -43,6 +45,7 @@ id lightsphere
 position 0 7 0
 material light_material
 radius 2
+medium false
 
 Quad
 id lightquad

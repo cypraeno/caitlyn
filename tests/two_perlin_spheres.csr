@@ -22,9 +22,11 @@ id 1
 position 0 -1000 0
 material noise_material
 radius 1000
+medium false
 
 Sphere
 id 2
 position 0 2 0
 material noise_material
 radius 2
+medium false

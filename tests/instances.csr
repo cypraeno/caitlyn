@@ -21,6 +21,7 @@ id sphere1
 position 0 -1 3
 material red
 radius 1
+medium false
 
 Quad
 id quad1
@@ -36,6 +37,7 @@ a 1 0 0
 b 0 1 0
 c 0 0 1
 material red
+medium false
 
 Instance[SpherePrimitive]
 prim_id sphere1
