@@ -21,5 +21,5 @@ fi
 
 for file in "$tests_dir"/*.csr; do
     echo "$file"
-    "$executable" -i "$file" -t png -o "$test_outputs_dir/$(basename "$file" .csr).png" -s 2 -d 2 -V
+    "$executable" -i "$file" -t png -o "$test_outputs_dir/$(basename "$file" .csr).png" -s 5 -d 200 -V
 done

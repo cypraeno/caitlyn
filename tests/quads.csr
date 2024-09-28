@@ -9,6 +9,10 @@ aspect_ratio 16/9
 aperture 0.0001
 focus_dist 10
 
+Sky
+top 0.5 0.7 1.0
+bottom 1.0 1.0 1.0
+
 Material[Diffuse]
 id left_red
 texture no
