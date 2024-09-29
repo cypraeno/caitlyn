@@ -62,7 +62,7 @@ color OrenNayar::generate(const ray& r_in, const ray& scattered, const HitInfo& 
 }
 
 double OrenNayar::pdf(const ray& r_in, const ray& scattered, const HitInfo& rec) const {
-    auto cos_theta = dot(rec.normal, scattered.direction().unit_vector());
+    auto cos_theta = dot(rec.normal, -r_in.direction().unit_vector());
     return fmax(0.0, cos_theta / pi);
 }
 

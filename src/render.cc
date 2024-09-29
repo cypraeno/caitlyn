@@ -104,6 +104,7 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
         }
 
         // Direct Light Sampling
+        // Disabled as of v0.1.5, needs improvements!
         if (direct && color_from_emission.length() == 0.0) {
             int N = (int)scene->physical_lights.size(); // amount of lights
             for (auto& light_ptr : scene->physical_lights) { // only accounts for physical lights currently
@@ -201,7 +202,7 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
         if (!sample_data.scatter) {
             return accumulated_color;
         }
-        double cos_theta = fabs(dot(record.normal, (sample_data.scatter_direction)));
+        double cos_theta = fabs(dot(record.normal, -r_in.direction().unit_vector()));
         if (!raymarched) {
             weight = weight * (sample_data.bsdf_value * cos_theta / sample_data.pdf_value);
         } else {
