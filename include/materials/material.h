@@ -387,14 +387,8 @@ class MixtureBSDF : public material {
  * @param bottom Bottom Layer BSDF.
  * @param termination Russian Roulette termination condition for number of bounces. If exceeded, pretends light is absorbed.
  * 
- * @note SCATTER, GENERATE, AND PDF DO NOT CONTAIN NECESSARY RUSSIAN ROULETTE OR LOGARITHMIC ACCUMULATION. THEY ARE NOT READY.
+ * @note SCATTER, GENERATE, AND PDF ARE NOT READY.
  * USE SAMPLE INSTEAD.
- * 
- * @bug Using mediums will cause black artifacts that increase as samples increase. This is likely due to amount of bounces and loss of energy.
- * This also occurs on a much lower scale without mediums, and is partially remedied by:
- * -> Russian Roulette termination. 
- * -> Setting a termination integer close to the default (e.g 20).
- * But it is not perfect, and a better solution should be found!
 */
 class LayeredBSDF : public material {
     public:
