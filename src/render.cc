@@ -1,5 +1,7 @@
 #include "render.h"
 
+color INVALID_SAMPLE = color(INT16_MIN, INT16_MIN, INT16_MIN);
+
 color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
     HitInfo record;
 
@@ -105,6 +107,9 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
 
         // Direct Light Sampling
         // Disabled as of v0.1.5, needs improvements!
+        // Additionally:
+        // => may be using wrong w in cos term
+        // => check if pdfs are 0 are not in place (invalid sample if so)
         if (direct && color_from_emission.length() == 0.0) {
             int N = (int)scene->physical_lights.size(); // amount of lights
             for (auto& light_ptr : scene->physical_lights) { // only accounts for physical lights currently
@@ -204,8 +209,10 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
         }
         double cos_theta = fabs(dot(record.normal, -r_in.direction().unit_vector()));
         if (!raymarched) {
+            if (sample_data.pdf_value == 0) { return INVALID_SAMPLE; }
             weight = weight * (sample_data.bsdf_value * cos_theta / sample_data.pdf_value);
         } else {
+            if (sample_data.pdf_value == 0) { return INVALID_SAMPLE; }
             weight = weight * (sample_data.bsdf_value / sample_data.pdf_value);
         }
         r_in = scattered;
@@ -284,6 +291,8 @@ void render_scanlines(int lines, int start_line, std::shared_ptr<Scene> scene_pt
         for (int i=0; i<image_width; ++i) {
 
             color pixel_color(0, 0, 0);
+            color valid_sample_accum(0, 0, 0);  // Accumulate only valid samples
+            int valid_sample_count = 0;         // Track number of valid samples
 
             for (int py = 0; py < sqrt_samples; ++py) {
                 for (int px = 0; px < sqrt_samples; ++px) {
@@ -291,7 +300,28 @@ void render_scanlines(int lines, int start_line, std::shared_ptr<Scene> scene_pt
                     auto u = (i + (px + random_double()) / sqrt_samples) / (image_width - 1);
                     auto v = (j + (py + random_double()) / sqrt_samples) / (image_height - 1);
                     ray r = cam.get_ray(u, v);
-                    pixel_color += trace_ray(r, scene_ptr, max_depth);
+                    color curr_sample = trace_ray(r, scene_ptr, max_depth);
+                    
+                    // Check if the sample is invalid (PDF = 0 or another condition)
+                    //if (curr_sample == INVALID_SAMPLE) {
+                    if (
+                        curr_sample.x() == INVALID_SAMPLE.x() &&
+                        curr_sample.y() == INVALID_SAMPLE.y() &&
+                        curr_sample.z() == INVALID_SAMPLE.z()
+                    ) {
+                        // Replace the invalid sample with a "fake" sample that is the average
+                        if (valid_sample_count > 0) {
+                            curr_sample = valid_sample_accum / valid_sample_count;  // Use average of valid samples so far
+                        } else {
+                            curr_sample = color(0, 0, 0);  // No valid samples yet, use default color
+                        }
+                    } else {
+                        // Accumulate the valid sample and increase the count
+                        valid_sample_accum += curr_sample;
+                        valid_sample_count++;
+                    }
+
+                    pixel_color += curr_sample;
                 }
             }
 
