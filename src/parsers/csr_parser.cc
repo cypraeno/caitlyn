@@ -85,6 +85,14 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
                     mats.push_back(materials[readStringProperty(mixed)]);
                 }
                 materials[readStringProperty(materialId)] = make_shared<MixtureBSDF>(weights, mats);
+            } else if (materialType == "Layered") {
+                std::string materialId, top, bottom, medium;
+                getNextLine(file, materialId); getNextLine(file, top); getNextLine(file, bottom); getNextLine(file, medium);
+                materials[readStringProperty(materialId)] = make_shared<LayeredBSDF>(
+                    materials[readStringProperty(top)],
+                    materials[readStringProperty(bottom)],
+                    (readStringProperty(medium) == "no") ? nullptr : mediums[readStringProperty(medium)]
+                );
             } else {
                 rtcReleaseDevice(device);
                 throw std::runtime_error("Material type UNDEFINED: Material[Lambertian|Metal|Dielectric|Emissive]");
