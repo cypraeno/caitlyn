@@ -389,6 +389,11 @@ class MixtureBSDF : public material {
  * 
  * @note SCATTER, GENERATE, AND PDF ARE NOT READY.
  * USE SAMPLE INSTEAD.
+ * 
+ * @bug Bright noise still present
+ * => Replicate with a diffuse overlaid by dielectric (e.g diamond) and notice that
+ * bright noise does not reduce with samples. inf checks do not remove it, its possible that there are
+ * very "large" numbers occurring!
 */
 class LayeredBSDF : public material {
     public:

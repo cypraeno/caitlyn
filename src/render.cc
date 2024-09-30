@@ -303,11 +303,18 @@ void render_scanlines(int lines, int start_line, std::shared_ptr<Scene> scene_pt
                     color curr_sample = trace_ray(r, scene_ptr, max_depth);
                     
                     // Check if the sample is invalid (PDF = 0 or another condition)
+                    // trace_ray should catch invalid sampled, but we do another check here
+                    bool nan_or_inf = (
+                        !std::isfinite(curr_sample.x()) ||
+                        !std::isfinite(curr_sample.y()) ||
+                        !std::isfinite(curr_sample.z())
+                    );
                     //if (curr_sample == INVALID_SAMPLE) {
                     if (
-                        curr_sample.x() == INVALID_SAMPLE.x() &&
+                        (curr_sample.x() == INVALID_SAMPLE.x() &&
                         curr_sample.y() == INVALID_SAMPLE.y() &&
-                        curr_sample.z() == INVALID_SAMPLE.z()
+                        curr_sample.z() == INVALID_SAMPLE.z()) ||
+                        nan_or_inf
                     ) {
                         // Replace the invalid sample with a "fake" sample that is the average
                         if (valid_sample_count > 0) {
