@@ -178,3 +178,20 @@ position 1 0 2.5
 u 0 0 -7.5
 v 8 0 0
 material mixture_example
+
+# NEW FEATURE: Layered materials
+# Lets make a cool combination that isn't a mixture, but rather two layers of materials.
+# What if we want to give the diffuse a diamond exterior?
+
+Material[Layered]
+id layered_example
+top cyan_diamond
+bottom green_diffuse
+medium medium_example # it could also be 'no' if we didn't want to use one
+
+Sphere
+id layered_sphere
+position 7 2 -8
+material layered_example
+radius 2
+medium false
