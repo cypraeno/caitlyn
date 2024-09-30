@@ -207,7 +207,7 @@ color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth) {
         if (!sample_data.scatter) {
             return accumulated_color;
         }
-        double cos_theta = fabs(dot(record.normal, -r_in.direction().unit_vector()));
+        double cos_theta = fabs(dot(record.normal, sample_data.scatter_direction.unit_vector()));
         if (!raymarched) {
             if (sample_data.pdf_value == 0) { return INVALID_SAMPLE; }
             weight = weight * (sample_data.bsdf_value * cos_theta / sample_data.pdf_value);
