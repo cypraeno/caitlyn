@@ -515,7 +515,7 @@ BSDFSample LayeredBSDF::sample(const ray& r_in, HitInfo& rec, ray& scattered) co
             pdf *= 1 - q;
         }
 
-        if (!prev_medium) { f = f * fabs(dot(rec_manip.normal, (r.direction().unit_vector()))); }
+        if (!prev_medium) { f = f * fabs(dot(rec_manip.normal, bs.scatter_direction.unit_vector())); }
         prev_medium = false;
         r = ray(rec_manip.pos - bs.scatter_direction, bs.scatter_direction, r.time());
 
