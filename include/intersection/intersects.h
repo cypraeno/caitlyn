@@ -19,4 +19,9 @@ void setupRayHit8(struct RTCRayHit8& rayhit, std::vector<ray>& rays);
 /** @brief modifies given RTCRayHit object to be ready for rtcIntersect16 usage*/
 void setupRayHit16(struct RTCRayHit16& rayhit, std::vector<ray>& rays);
 
+/**
+ * @brief In a given scene, fires a continuous ray and fills information for multiple hits.
+*/
+void MultiIntersect(int max, ray r_in, RTCScene& rtc_scene, std::vector<int>& ids, std::vector<float>& tfars);
+
 #endif

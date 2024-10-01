@@ -9,30 +9,39 @@ aspect_ratio 16/9
 aperture 0.0001
 focus_dist 10
 
-Material[Lambertian]
+Sky
+top 0.5 0.7 1.0
+bottom 1.0 1.0 1.0
+
+Material[Diffuse]
 id left_red
 texture no
 albedo 1.0 0.2 0.2
+roughness 0.0001
 
-Material[Lambertian]
+Material[Diffuse]
 id back_green
 texture no
 albedo 0.2 1.0 0.2 
+roughness 0.0001
 
-Material[Lambertian]
+Material[Diffuse]
 id right_blue
 texture no
 albedo 0.2 0.2 1.0
+roughness 0.0001
 
-Material[Lambertian]
+Material[Diffuse]
 id upper_orange
 texture no
 albedo 1.0 0.5 0.0
+roughness 0.0001
 
-Material[Lambertian]
+Material[Diffuse]
 id lower_teal
 texture no
 albedo 0.2 0.8 0.8
+roughness 0.0001
 
 Quad
 id 1

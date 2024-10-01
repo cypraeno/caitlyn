@@ -6,6 +6,25 @@
 #include "scene.h"
 #include "vec3.h"
 
+#include "sampling.h"
+
+/**
+ * @brief Most updated integrator for path tracing through scenes
+ * 
+ * 
+ * @bug Known Issues:
+ * - MultiIntersect returns 0 length vector during direct light sampling
+ * - This occurs when sampling FROM a quad, whereby the sampled point of the light yields
+ * a direction PARALLEL to a u or v vector of the quad itself.
+ * e.g if the quad is perpendicular to the y axis and the direction sampled is y=0, then:
+ * -> MultiIntersect returns 0 length vector which normally leads to SEGFAULT.
+ * -> (Unstable?) fix is added, which is to apply a small offset by the normal of the hit progressively until
+ * MultiIntersect succeeds.
+ * 
+ * For now, direct is disabled.
+*/
+color trace_ray(const ray& r, std::shared_ptr<Scene> scene, int depth);
+
 struct RenderData {
     int image_width;
     int image_height;

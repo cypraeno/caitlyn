@@ -13,6 +13,7 @@ using std::make_shared;
 using std::sqrt;
 
 const double infinity = std::numeric_limits<double>::infinity();
+const double euler = std::exp(1.0);
 const double pi = 3.1415926535897932385;
 
 double degrees_to_radians(double degrees);

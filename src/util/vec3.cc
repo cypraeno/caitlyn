@@ -88,6 +88,10 @@ vec3 cross(const vec3 &u, const vec3 &v) {
                 u.x() * v.y() - u.y() * v.x()};
 }
 
+vec3 mix(vec3 x, vec3 y, float a) {
+    return x * (1 - a) + y * a;
+}
+
 std::ostream& operator<<(std::ostream &out, const vec3 &v) {
     return out << v.x() << ' ' << v.y() << ' ' << v.z();
 }
@@ -117,6 +121,18 @@ vec3 random_in_unit_disk() {
 
     vec3 rand_vec = {random_float(), random_float(), 0};
     return rand_vec.unit_vector();
+}
+
+vec3 random_cosine_direction() {
+    auto r1 = random_double();
+    auto r2 = random_double();
+
+    auto phi = 2*pi*r1;
+    auto x = cos(phi)*sqrt(r2);
+    auto y = sin(phi)*sqrt(r2);
+    auto z = sqrt(1-r2);
+
+    return vec3(x, y, z);
 }
 
 vec3 reflect(const vec3& v, const vec3& n) { return v - 2*n * dot(v, n); }

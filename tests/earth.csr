@@ -9,12 +9,16 @@ aspect_ratio 16/9
 aperture 0.0001
 focus_dist 10.0
 
+Sky
+top 0.5 0.7 1.0
+bottom 1.0 1.0 1.0
+
 Texture[Image]
 id earth_texture
 transparency false
 path earthmap.jpg
 
-Material[Lambertian]
+Material[Diffuse]
 id earth_surface
 texture earth_texture
 

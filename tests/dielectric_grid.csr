@@ -1,0 +1,3249 @@
+version 0.1.5
+
+Camera
+lookfrom -30 -10 0
+lookat 0 -10 0
+vup 0 1 0
+vfov 50
+aspect_ratio 16/9
+aperture 0.0001
+focus_dist 10.0
+
+Sky
+top 1.0 0.1 0.1
+bottom 0.1 1.0 0.1
+
+
+Material[Dielectric]
+id 1
+albedo 1 1 1
+eta 1
+roughness 0.0001
+sheen 0
+
+Sphere
+id 1
+position 0 0 -20
+material 1
+radius 1
+medium false
+
+Material[Dielectric]
+id 2
+albedo 1 1 1
+eta 1
+roughness 0.05
+sheen 0
+
+Sphere
+id 2
+position 0 0 -18
+material 2
+radius 1
+medium false
+
+Material[Dielectric]
+id 3
+albedo 1 1 1
+eta 1
+roughness 0.1
+sheen 0
+
+Sphere
+id 3
+position 0 0 -16
+material 3
+radius 1
+medium false
+
+Material[Dielectric]
+id 4
+albedo 1 1 1
+eta 1
+roughness 0.15
+sheen 0
+
+Sphere
+id 4
+position 0 0 -14
+material 4
+radius 1
+medium false
+
+Material[Dielectric]
+id 5
+albedo 1 1 1
+eta 1
+roughness 0.2
+sheen 0
+
+Sphere
+id 5
+position 0 0 -12
+material 5
+radius 1
+medium false
+
+Material[Dielectric]
+id 6
+albedo 1 1 1
+eta 1
+roughness 0.25
+sheen 0
+
+Sphere
+id 6
+position 0 0 -10
+material 6
+radius 1
+medium false
+
+Material[Dielectric]
+id 7
+albedo 1 1 1
+eta 1
+roughness 0.3
+sheen 0
+
+Sphere
+id 7
+position 0 0 -8
+material 7
+radius 1
+medium false
+
+Material[Dielectric]
+id 8
+albedo 1 1 1
+eta 1
+roughness 0.35
+sheen 0
+
+Sphere
+id 8
+position 0 0 -6
+material 8
+radius 1
+medium false
+
+Material[Dielectric]
+id 9
+albedo 1 1 1
+eta 1
+roughness 0.4
+sheen 0
+
+Sphere
+id 9
+position 0 0 -4
+material 9
+radius 1
+medium false
+
+Material[Dielectric]
+id 10
+albedo 1 1 1
+eta 1
+roughness 0.45
+sheen 0
+
+Sphere
+id 10
+position 0 0 -2
+material 10
+radius 1
+medium false
+
+Material[Dielectric]
+id 11
+albedo 1 1 1
+eta 1
+roughness 0.5
+sheen 0
+
+Sphere
+id 11
+position 0 0 0
+material 11
+radius 1
+medium false
+
+Material[Dielectric]
+id 12
+albedo 1 1 1
+eta 1
+roughness 0.55
+sheen 0
+
+Sphere
+id 12
+position 0 0 2
+material 12
+radius 1
+medium false
+
+Material[Dielectric]
+id 13
+albedo 1 1 1
+eta 1
+roughness 0.6
+sheen 0
+
+Sphere
+id 13
+position 0 0 4
+material 13
+radius 1
+medium false
+
+Material[Dielectric]
+id 14
+albedo 1 1 1
+eta 1
+roughness 0.65
+sheen 0
+
+Sphere
+id 14
+position 0 0 6
+material 14
+radius 1
+medium false
+
+Material[Dielectric]
+id 15
+albedo 1 1 1
+eta 1
+roughness 0.7
+sheen 0
+
+Sphere
+id 15
+position 0 0 8
+material 15
+radius 1
+medium false
+
+Material[Dielectric]
+id 16
+albedo 1 1 1
+eta 1
+roughness 0.75
+sheen 0
+
+Sphere
+id 16
+position 0 0 10
+material 16
+radius 1
+medium false
+
+Material[Dielectric]
+id 17
+albedo 1 1 1
+eta 1
+roughness 0.8
+sheen 0
+
+Sphere
+id 17
+position 0 0 12
+material 17
+radius 1
+medium false
+
+Material[Dielectric]
+id 18
+albedo 1 1 1
+eta 1
+roughness 0.85
+sheen 0
+
+Sphere
+id 18
+position 0 0 14
+material 18
+radius 1
+medium false
+
+Material[Dielectric]
+id 19
+albedo 1 1 1
+eta 1
+roughness 0.9
+sheen 0
+
+Sphere
+id 19
+position 0 0 16
+material 19
+radius 1
+medium false
+
+Material[Dielectric]
+id 20
+albedo 1 1 1
+eta 1
+roughness 0.95
+sheen 0
+
+Sphere
+id 20
+position 0 0 18
+material 20
+radius 1
+medium false
+
+Material[Dielectric]
+id 21
+albedo 1 1 1
+eta 1
+roughness 1
+sheen 0
+
+Sphere
+id 21
+position 0 0 20
+material 21
+radius 1
+medium false
+
+Material[Dielectric]
+id 22
+albedo 1 1 1
+eta 1.2
+roughness 0.0001
+sheen 0
+
+Sphere
+id 22
+position 0 -2 -20
+material 22
+radius 1
+medium false
+
+Material[Dielectric]
+id 23
+albedo 1 1 1
+eta 1.2
+roughness 0.05
+sheen 0
+
+Sphere
+id 23
+position 0 -2 -18
+material 23
+radius 1
+medium false
+
+Material[Dielectric]
+id 24
+albedo 1 1 1
+eta 1.2
+roughness 0.1
+sheen 0
+
+Sphere
+id 24
+position 0 -2 -16
+material 24
+radius 1
+medium false
+
+Material[Dielectric]
+id 25
+albedo 1 1 1
+eta 1.2
+roughness 0.15
+sheen 0
+
+Sphere
+id 25
+position 0 -2 -14
+material 25
+radius 1
+medium false
+
+Material[Dielectric]
+id 26
+albedo 1 1 1
+eta 1.2
+roughness 0.2
+sheen 0
+
+Sphere
+id 26
+position 0 -2 -12
+material 26
+radius 1
+medium false
+
+Material[Dielectric]
+id 27
+albedo 1 1 1
+eta 1.2
+roughness 0.25
+sheen 0
+
+Sphere
+id 27
+position 0 -2 -10
+material 27
+radius 1
+medium false
+
+Material[Dielectric]
+id 28
+albedo 1 1 1
+eta 1.2
+roughness 0.3
+sheen 0
+
+Sphere
+id 28
+position 0 -2 -8
+material 28
+radius 1
+medium false
+
+Material[Dielectric]
+id 29
+albedo 1 1 1
+eta 1.2
+roughness 0.35
+sheen 0
+
+Sphere
+id 29
+position 0 -2 -6
+material 29
+radius 1
+medium false
+
+Material[Dielectric]
+id 30
+albedo 1 1 1
+eta 1.2
+roughness 0.4
+sheen 0
+
+Sphere
+id 30
+position 0 -2 -4
+material 30
+radius 1
+medium false
+
+Material[Dielectric]
+id 31
+albedo 1 1 1
+eta 1.2
+roughness 0.45
+sheen 0
+
+Sphere
+id 31
+position 0 -2 -2
+material 31
+radius 1
+medium false
+
+Material[Dielectric]
+id 32
+albedo 1 1 1
+eta 1.2
+roughness 0.5
+sheen 0
+
+Sphere
+id 32
+position 0 -2 0
+material 32
+radius 1
+medium false
+
+Material[Dielectric]
+id 33
+albedo 1 1 1
+eta 1.2
+roughness 0.55
+sheen 0
+
+Sphere
+id 33
+position 0 -2 2
+material 33
+radius 1
+medium false
+
+Material[Dielectric]
+id 34
+albedo 1 1 1
+eta 1.2
+roughness 0.6
+sheen 0
+
+Sphere
+id 34
+position 0 -2 4
+material 34
+radius 1
+medium false
+
+Material[Dielectric]
+id 35
+albedo 1 1 1
+eta 1.2
+roughness 0.65
+sheen 0
+
+Sphere
+id 35
+position 0 -2 6
+material 35
+radius 1
+medium false
+
+Material[Dielectric]
+id 36
+albedo 1 1 1
+eta 1.2
+roughness 0.7
+sheen 0
+
+Sphere
+id 36
+position 0 -2 8
+material 36
+radius 1
+medium false
+
+Material[Dielectric]
+id 37
+albedo 1 1 1
+eta 1.2
+roughness 0.75
+sheen 0
+
+Sphere
+id 37
+position 0 -2 10
+material 37
+radius 1
+medium false
+
+Material[Dielectric]
+id 38
+albedo 1 1 1
+eta 1.2
+roughness 0.8
+sheen 0
+
+Sphere
+id 38
+position 0 -2 12
+material 38
+radius 1
+medium false
+
+Material[Dielectric]
+id 39
+albedo 1 1 1
+eta 1.2
+roughness 0.85
+sheen 0
+
+Sphere
+id 39
+position 0 -2 14
+material 39
+radius 1
+medium false
+
+Material[Dielectric]
+id 40
+albedo 1 1 1
+eta 1.2
+roughness 0.9
+sheen 0
+
+Sphere
+id 40
+position 0 -2 16
+material 40
+radius 1
+medium false
+
+Material[Dielectric]
+id 41
+albedo 1 1 1
+eta 1.2
+roughness 0.95
+sheen 0
+
+Sphere
+id 41
+position 0 -2 18
+material 41
+radius 1
+medium false
+
+Material[Dielectric]
+id 42
+albedo 1 1 1
+eta 1.2
+roughness 1
+sheen 0
+
+Sphere
+id 42
+position 0 -2 20
+material 42
+radius 1
+medium false
+
+Material[Dielectric]
+id 43
+albedo 1 1 1
+eta 1.4
+roughness 0.0001
+sheen 0
+
+Sphere
+id 43
+position 0 -4 -20
+material 43
+radius 1
+medium false
+
+Material[Dielectric]
+id 44
+albedo 1 1 1
+eta 1.4
+roughness 0.05
+sheen 0
+
+Sphere
+id 44
+position 0 -4 -18
+material 44
+radius 1
+medium false
+
+Material[Dielectric]
+id 45
+albedo 1 1 1
+eta 1.4
+roughness 0.1
+sheen 0
+
+Sphere
+id 45
+position 0 -4 -16
+material 45
+radius 1
+medium false
+
+Material[Dielectric]
+id 46
+albedo 1 1 1
+eta 1.4
+roughness 0.15
+sheen 0
+
+Sphere
+id 46
+position 0 -4 -14
+material 46
+radius 1
+medium false
+
+Material[Dielectric]
+id 47
+albedo 1 1 1
+eta 1.4
+roughness 0.2
+sheen 0
+
+Sphere
+id 47
+position 0 -4 -12
+material 47
+radius 1
+medium false
+
+Material[Dielectric]
+id 48
+albedo 1 1 1
+eta 1.4
+roughness 0.25
+sheen 0
+
+Sphere
+id 48
+position 0 -4 -10
+material 48
+radius 1
+medium false
+
+Material[Dielectric]
+id 49
+albedo 1 1 1
+eta 1.4
+roughness 0.3
+sheen 0
+
+Sphere
+id 49
+position 0 -4 -8
+material 49
+radius 1
+medium false
+
+Material[Dielectric]
+id 50
+albedo 1 1 1
+eta 1.4
+roughness 0.35
+sheen 0
+
+Sphere
+id 50
+position 0 -4 -6
+material 50
+radius 1
+medium false
+
+Material[Dielectric]
+id 51
+albedo 1 1 1
+eta 1.4
+roughness 0.4
+sheen 0
+
+Sphere
+id 51
+position 0 -4 -4
+material 51
+radius 1
+medium false
+
+Material[Dielectric]
+id 52
+albedo 1 1 1
+eta 1.4
+roughness 0.45
+sheen 0
+
+Sphere
+id 52
+position 0 -4 -2
+material 52
+radius 1
+medium false
+
+Material[Dielectric]
+id 53
+albedo 1 1 1
+eta 1.4
+roughness 0.5
+sheen 0
+
+Sphere
+id 53
+position 0 -4 0
+material 53
+radius 1
+medium false
+
+Material[Dielectric]
+id 54
+albedo 1 1 1
+eta 1.4
+roughness 0.55
+sheen 0
+
+Sphere
+id 54
+position 0 -4 2
+material 54
+radius 1
+medium false
+
+Material[Dielectric]
+id 55
+albedo 1 1 1
+eta 1.4
+roughness 0.6
+sheen 0
+
+Sphere
+id 55
+position 0 -4 4
+material 55
+radius 1
+medium false
+
+Material[Dielectric]
+id 56
+albedo 1 1 1
+eta 1.4
+roughness 0.65
+sheen 0
+
+Sphere
+id 56
+position 0 -4 6
+material 56
+radius 1
+medium false
+
+Material[Dielectric]
+id 57
+albedo 1 1 1
+eta 1.4
+roughness 0.7
+sheen 0
+
+Sphere
+id 57
+position 0 -4 8
+material 57
+radius 1
+medium false
+
+Material[Dielectric]
+id 58
+albedo 1 1 1
+eta 1.4
+roughness 0.75
+sheen 0
+
+Sphere
+id 58
+position 0 -4 10
+material 58
+radius 1
+medium false
+
+Material[Dielectric]
+id 59
+albedo 1 1 1
+eta 1.4
+roughness 0.8
+sheen 0
+
+Sphere
+id 59
+position 0 -4 12
+material 59
+radius 1
+medium false
+
+Material[Dielectric]
+id 60
+albedo 1 1 1
+eta 1.4
+roughness 0.85
+sheen 0
+
+Sphere
+id 60
+position 0 -4 14
+material 60
+radius 1
+medium false
+
+Material[Dielectric]
+id 61
+albedo 1 1 1
+eta 1.4
+roughness 0.9
+sheen 0
+
+Sphere
+id 61
+position 0 -4 16
+material 61
+radius 1
+medium false
+
+Material[Dielectric]
+id 62
+albedo 1 1 1
+eta 1.4
+roughness 0.95
+sheen 0
+
+Sphere
+id 62
+position 0 -4 18
+material 62
+radius 1
+medium false
+
+Material[Dielectric]
+id 63
+albedo 1 1 1
+eta 1.4
+roughness 1
+sheen 0
+
+Sphere
+id 63
+position 0 -4 20
+material 63
+radius 1
+medium false
+
+Material[Dielectric]
+id 64
+albedo 1 1 1
+eta 1.6
+roughness 0.0001
+sheen 0
+
+Sphere
+id 64
+position 0 -6 -20
+material 64
+radius 1
+medium false
+
+Material[Dielectric]
+id 65
+albedo 1 1 1
+eta 1.6
+roughness 0.05
+sheen 0
+
+Sphere
+id 65
+position 0 -6 -18
+material 65
+radius 1
+medium false
+
+Material[Dielectric]
+id 66
+albedo 1 1 1
+eta 1.6
+roughness 0.1
+sheen 0
+
+Sphere
+id 66
+position 0 -6 -16
+material 66
+radius 1
+medium false
+
+Material[Dielectric]
+id 67
+albedo 1 1 1
+eta 1.6
+roughness 0.15
+sheen 0
+
+Sphere
+id 67
+position 0 -6 -14
+material 67
+radius 1
+medium false
+
+Material[Dielectric]
+id 68
+albedo 1 1 1
+eta 1.6
+roughness 0.2
+sheen 0
+
+Sphere
+id 68
+position 0 -6 -12
+material 68
+radius 1
+medium false
+
+Material[Dielectric]
+id 69
+albedo 1 1 1
+eta 1.6
+roughness 0.25
+sheen 0
+
+Sphere
+id 69
+position 0 -6 -10
+material 69
+radius 1
+medium false
+
+Material[Dielectric]
+id 70
+albedo 1 1 1
+eta 1.6
+roughness 0.3
+sheen 0
+
+Sphere
+id 70
+position 0 -6 -8
+material 70
+radius 1
+medium false
+
+Material[Dielectric]
+id 71
+albedo 1 1 1
+eta 1.6
+roughness 0.35
+sheen 0
+
+Sphere
+id 71
+position 0 -6 -6
+material 71
+radius 1
+medium false
+
+Material[Dielectric]
+id 72
+albedo 1 1 1
+eta 1.6
+roughness 0.4
+sheen 0
+
+Sphere
+id 72
+position 0 -6 -4
+material 72
+radius 1
+medium false
+
+Material[Dielectric]
+id 73
+albedo 1 1 1
+eta 1.6
+roughness 0.45
+sheen 0
+
+Sphere
+id 73
+position 0 -6 -2
+material 73
+radius 1
+medium false
+
+Material[Dielectric]
+id 74
+albedo 1 1 1
+eta 1.6
+roughness 0.5
+sheen 0
+
+Sphere
+id 74
+position 0 -6 0
+material 74
+radius 1
+medium false
+
+Material[Dielectric]
+id 75
+albedo 1 1 1
+eta 1.6
+roughness 0.55
+sheen 0
+
+Sphere
+id 75
+position 0 -6 2
+material 75
+radius 1
+medium false
+
+Material[Dielectric]
+id 76
+albedo 1 1 1
+eta 1.6
+roughness 0.6
+sheen 0
+
+Sphere
+id 76
+position 0 -6 4
+material 76
+radius 1
+medium false
+
+Material[Dielectric]
+id 77
+albedo 1 1 1
+eta 1.6
+roughness 0.65
+sheen 0
+
+Sphere
+id 77
+position 0 -6 6
+material 77
+radius 1
+medium false
+
+Material[Dielectric]
+id 78
+albedo 1 1 1
+eta 1.6
+roughness 0.7
+sheen 0
+
+Sphere
+id 78
+position 0 -6 8
+material 78
+radius 1
+medium false
+
+Material[Dielectric]
+id 79
+albedo 1 1 1
+eta 1.6
+roughness 0.75
+sheen 0
+
+Sphere
+id 79
+position 0 -6 10
+material 79
+radius 1
+medium false
+
+Material[Dielectric]
+id 80
+albedo 1 1 1
+eta 1.6
+roughness 0.8
+sheen 0
+
+Sphere
+id 80
+position 0 -6 12
+material 80
+radius 1
+medium false
+
+Material[Dielectric]
+id 81
+albedo 1 1 1
+eta 1.6
+roughness 0.85
+sheen 0
+
+Sphere
+id 81
+position 0 -6 14
+material 81
+radius 1
+medium false
+
+Material[Dielectric]
+id 82
+albedo 1 1 1
+eta 1.6
+roughness 0.9
+sheen 0
+
+Sphere
+id 82
+position 0 -6 16
+material 82
+radius 1
+medium false
+
+Material[Dielectric]
+id 83
+albedo 1 1 1
+eta 1.6
+roughness 0.95
+sheen 0
+
+Sphere
+id 83
+position 0 -6 18
+material 83
+radius 1
+medium false
+
+Material[Dielectric]
+id 84
+albedo 1 1 1
+eta 1.6
+roughness 1
+sheen 0
+
+Sphere
+id 84
+position 0 -6 20
+material 84
+radius 1
+medium false
+
+Material[Dielectric]
+id 85
+albedo 1 1 1
+eta 1.8
+roughness 0.0001
+sheen 0
+
+Sphere
+id 85
+position 0 -8 -20
+material 85
+radius 1
+medium false
+
+Material[Dielectric]
+id 86
+albedo 1 1 1
+eta 1.8
+roughness 0.05
+sheen 0
+
+Sphere
+id 86
+position 0 -8 -18
+material 86
+radius 1
+medium false
+
+Material[Dielectric]
+id 87
+albedo 1 1 1
+eta 1.8
+roughness 0.1
+sheen 0
+
+Sphere
+id 87
+position 0 -8 -16
+material 87
+radius 1
+medium false
+
+Material[Dielectric]
+id 88
+albedo 1 1 1
+eta 1.8
+roughness 0.15
+sheen 0
+
+Sphere
+id 88
+position 0 -8 -14
+material 88
+radius 1
+medium false
+
+Material[Dielectric]
+id 89
+albedo 1 1 1
+eta 1.8
+roughness 0.2
+sheen 0
+
+Sphere
+id 89
+position 0 -8 -12
+material 89
+radius 1
+medium false
+
+Material[Dielectric]
+id 90
+albedo 1 1 1
+eta 1.8
+roughness 0.25
+sheen 0
+
+Sphere
+id 90
+position 0 -8 -10
+material 90
+radius 1
+medium false
+
+Material[Dielectric]
+id 91
+albedo 1 1 1
+eta 1.8
+roughness 0.3
+sheen 0
+
+Sphere
+id 91
+position 0 -8 -8
+material 91
+radius 1
+medium false
+
+Material[Dielectric]
+id 92
+albedo 1 1 1
+eta 1.8
+roughness 0.35
+sheen 0
+
+Sphere
+id 92
+position 0 -8 -6
+material 92
+radius 1
+medium false
+
+Material[Dielectric]
+id 93
+albedo 1 1 1
+eta 1.8
+roughness 0.4
+sheen 0
+
+Sphere
+id 93
+position 0 -8 -4
+material 93
+radius 1
+medium false
+
+Material[Dielectric]
+id 94
+albedo 1 1 1
+eta 1.8
+roughness 0.45
+sheen 0
+
+Sphere
+id 94
+position 0 -8 -2
+material 94
+radius 1
+medium false
+
+Material[Dielectric]
+id 95
+albedo 1 1 1
+eta 1.8
+roughness 0.5
+sheen 0
+
+Sphere
+id 95
+position 0 -8 0
+material 95
+radius 1
+medium false
+
+Material[Dielectric]
+id 96
+albedo 1 1 1
+eta 1.8
+roughness 0.55
+sheen 0
+
+Sphere
+id 96
+position 0 -8 2
+material 96
+radius 1
+medium false
+
+Material[Dielectric]
+id 97
+albedo 1 1 1
+eta 1.8
+roughness 0.6
+sheen 0
+
+Sphere
+id 97
+position 0 -8 4
+material 97
+radius 1
+medium false
+
+Material[Dielectric]
+id 98
+albedo 1 1 1
+eta 1.8
+roughness 0.65
+sheen 0
+
+Sphere
+id 98
+position 0 -8 6
+material 98
+radius 1
+medium false
+
+Material[Dielectric]
+id 99
+albedo 1 1 1
+eta 1.8
+roughness 0.7
+sheen 0
+
+Sphere
+id 99
+position 0 -8 8
+material 99
+radius 1
+medium false
+
+Material[Dielectric]
+id 100
+albedo 1 1 1
+eta 1.8
+roughness 0.75
+sheen 0
+
+Sphere
+id 100
+position 0 -8 10
+material 100
+radius 1
+medium false
+
+Material[Dielectric]
+id 101
+albedo 1 1 1
+eta 1.8
+roughness 0.8
+sheen 0
+
+Sphere
+id 101
+position 0 -8 12
+material 101
+radius 1
+medium false
+
+Material[Dielectric]
+id 102
+albedo 1 1 1
+eta 1.8
+roughness 0.85
+sheen 0
+
+Sphere
+id 102
+position 0 -8 14
+material 102
+radius 1
+medium false
+
+Material[Dielectric]
+id 103
+albedo 1 1 1
+eta 1.8
+roughness 0.9
+sheen 0
+
+Sphere
+id 103
+position 0 -8 16
+material 103
+radius 1
+medium false
+
+Material[Dielectric]
+id 104
+albedo 1 1 1
+eta 1.8
+roughness 0.95
+sheen 0
+
+Sphere
+id 104
+position 0 -8 18
+material 104
+radius 1
+medium false
+
+Material[Dielectric]
+id 105
+albedo 1 1 1
+eta 1.8
+roughness 1
+sheen 0
+
+Sphere
+id 105
+position 0 -8 20
+material 105
+radius 1
+medium false
+
+Material[Dielectric]
+id 106
+albedo 1 1 1
+eta 2
+roughness 0.0001
+sheen 0
+
+Sphere
+id 106
+position 0 -10 -20
+material 106
+radius 1
+medium false
+
+Material[Dielectric]
+id 107
+albedo 1 1 1
+eta 2
+roughness 0.05
+sheen 0
+
+Sphere
+id 107
+position 0 -10 -18
+material 107
+radius 1
+medium false
+
+Material[Dielectric]
+id 108
+albedo 1 1 1
+eta 2
+roughness 0.1
+sheen 0
+
+Sphere
+id 108
+position 0 -10 -16
+material 108
+radius 1
+medium false
+
+Material[Dielectric]
+id 109
+albedo 1 1 1
+eta 2
+roughness 0.15
+sheen 0
+
+Sphere
+id 109
+position 0 -10 -14
+material 109
+radius 1
+medium false
+
+Material[Dielectric]
+id 110
+albedo 1 1 1
+eta 2
+roughness 0.2
+sheen 0
+
+Sphere
+id 110
+position 0 -10 -12
+material 110
+radius 1
+medium false
+
+Material[Dielectric]
+id 111
+albedo 1 1 1
+eta 2
+roughness 0.25
+sheen 0
+
+Sphere
+id 111
+position 0 -10 -10
+material 111
+radius 1
+medium false
+
+Material[Dielectric]
+id 112
+albedo 1 1 1
+eta 2
+roughness 0.3
+sheen 0
+
+Sphere
+id 112
+position 0 -10 -8
+material 112
+radius 1
+medium false
+
+Material[Dielectric]
+id 113
+albedo 1 1 1
+eta 2
+roughness 0.35
+sheen 0
+
+Sphere
+id 113
+position 0 -10 -6
+material 113
+radius 1
+medium false
+
+Material[Dielectric]
+id 114
+albedo 1 1 1
+eta 2
+roughness 0.4
+sheen 0
+
+Sphere
+id 114
+position 0 -10 -4
+material 114
+radius 1
+medium false
+
+Material[Dielectric]
+id 115
+albedo 1 1 1
+eta 2
+roughness 0.45
+sheen 0
+
+Sphere
+id 115
+position 0 -10 -2
+material 115
+radius 1
+medium false
+
+Material[Dielectric]
+id 116
+albedo 1 1 1
+eta 2
+roughness 0.5
+sheen 0
+
+Sphere
+id 116
+position 0 -10 0
+material 116
+radius 1
+medium false
+
+Material[Dielectric]
+id 117
+albedo 1 1 1
+eta 2
+roughness 0.55
+sheen 0
+
+Sphere
+id 117
+position 0 -10 2
+material 117
+radius 1
+medium false
+
+Material[Dielectric]
+id 118
+albedo 1 1 1
+eta 2
+roughness 0.6
+sheen 0
+
+Sphere
+id 118
+position 0 -10 4
+material 118
+radius 1
+medium false
+
+Material[Dielectric]
+id 119
+albedo 1 1 1
+eta 2
+roughness 0.65
+sheen 0
+
+Sphere
+id 119
+position 0 -10 6
+material 119
+radius 1
+medium false
+
+Material[Dielectric]
+id 120
+albedo 1 1 1
+eta 2
+roughness 0.7
+sheen 0
+
+Sphere
+id 120
+position 0 -10 8
+material 120
+radius 1
+medium false
+
+Material[Dielectric]
+id 121
+albedo 1 1 1
+eta 2
+roughness 0.75
+sheen 0
+
+Sphere
+id 121
+position 0 -10 10
+material 121
+radius 1
+medium false
+
+Material[Dielectric]
+id 122
+albedo 1 1 1
+eta 2
+roughness 0.8
+sheen 0
+
+Sphere
+id 122
+position 0 -10 12
+material 122
+radius 1
+medium false
+
+Material[Dielectric]
+id 123
+albedo 1 1 1
+eta 2
+roughness 0.85
+sheen 0
+
+Sphere
+id 123
+position 0 -10 14
+material 123
+radius 1
+medium false
+
+Material[Dielectric]
+id 124
+albedo 1 1 1
+eta 2
+roughness 0.9
+sheen 0
+
+Sphere
+id 124
+position 0 -10 16
+material 124
+radius 1
+medium false
+
+Material[Dielectric]
+id 125
+albedo 1 1 1
+eta 2
+roughness 0.95
+sheen 0
+
+Sphere
+id 125
+position 0 -10 18
+material 125
+radius 1
+medium false
+
+Material[Dielectric]
+id 126
+albedo 1 1 1
+eta 2
+roughness 1
+sheen 0
+
+Sphere
+id 126
+position 0 -10 20
+material 126
+radius 1
+medium false
+
+Material[Dielectric]
+id 127
+albedo 1 1 1
+eta 2.2
+roughness 0.0001
+sheen 0
+
+Sphere
+id 127
+position 0 -12 -20
+material 127
+radius 1
+medium false
+
+Material[Dielectric]
+id 128
+albedo 1 1 1
+eta 2.2
+roughness 0.05
+sheen 0
+
+Sphere
+id 128
+position 0 -12 -18
+material 128
+radius 1
+medium false
+
+Material[Dielectric]
+id 129
+albedo 1 1 1
+eta 2.2
+roughness 0.1
+sheen 0
+
+Sphere
+id 129
+position 0 -12 -16
+material 129
+radius 1
+medium false
+
+Material[Dielectric]
+id 130
+albedo 1 1 1
+eta 2.2
+roughness 0.15
+sheen 0
+
+Sphere
+id 130
+position 0 -12 -14
+material 130
+radius 1
+medium false
+
+Material[Dielectric]
+id 131
+albedo 1 1 1
+eta 2.2
+roughness 0.2
+sheen 0
+
+Sphere
+id 131
+position 0 -12 -12
+material 131
+radius 1
+medium false
+
+Material[Dielectric]
+id 132
+albedo 1 1 1
+eta 2.2
+roughness 0.25
+sheen 0
+
+Sphere
+id 132
+position 0 -12 -10
+material 132
+radius 1
+medium false
+
+Material[Dielectric]
+id 133
+albedo 1 1 1
+eta 2.2
+roughness 0.3
+sheen 0
+
+Sphere
+id 133
+position 0 -12 -8
+material 133
+radius 1
+medium false
+
+Material[Dielectric]
+id 134
+albedo 1 1 1
+eta 2.2
+roughness 0.35
+sheen 0
+
+Sphere
+id 134
+position 0 -12 -6
+material 134
+radius 1
+medium false
+
+Material[Dielectric]
+id 135
+albedo 1 1 1
+eta 2.2
+roughness 0.4
+sheen 0
+
+Sphere
+id 135
+position 0 -12 -4
+material 135
+radius 1
+medium false
+
+Material[Dielectric]
+id 136
+albedo 1 1 1
+eta 2.2
+roughness 0.45
+sheen 0
+
+Sphere
+id 136
+position 0 -12 -2
+material 136
+radius 1
+medium false
+
+Material[Dielectric]
+id 137
+albedo 1 1 1
+eta 2.2
+roughness 0.5
+sheen 0
+
+Sphere
+id 137
+position 0 -12 0
+material 137
+radius 1
+medium false
+
+Material[Dielectric]
+id 138
+albedo 1 1 1
+eta 2.2
+roughness 0.55
+sheen 0
+
+Sphere
+id 138
+position 0 -12 2
+material 138
+radius 1
+medium false
+
+Material[Dielectric]
+id 139
+albedo 1 1 1
+eta 2.2
+roughness 0.6
+sheen 0
+
+Sphere
+id 139
+position 0 -12 4
+material 139
+radius 1
+medium false
+
+Material[Dielectric]
+id 140
+albedo 1 1 1
+eta 2.2
+roughness 0.65
+sheen 0
+
+Sphere
+id 140
+position 0 -12 6
+material 140
+radius 1
+medium false
+
+Material[Dielectric]
+id 141
+albedo 1 1 1
+eta 2.2
+roughness 0.7
+sheen 0
+
+Sphere
+id 141
+position 0 -12 8
+material 141
+radius 1
+medium false
+
+Material[Dielectric]
+id 142
+albedo 1 1 1
+eta 2.2
+roughness 0.75
+sheen 0
+
+Sphere
+id 142
+position 0 -12 10
+material 142
+radius 1
+medium false
+
+Material[Dielectric]
+id 143
+albedo 1 1 1
+eta 2.2
+roughness 0.8
+sheen 0
+
+Sphere
+id 143
+position 0 -12 12
+material 143
+radius 1
+medium false
+
+Material[Dielectric]
+id 144
+albedo 1 1 1
+eta 2.2
+roughness 0.85
+sheen 0
+
+Sphere
+id 144
+position 0 -12 14
+material 144
+radius 1
+medium false
+
+Material[Dielectric]
+id 145
+albedo 1 1 1
+eta 2.2
+roughness 0.9
+sheen 0
+
+Sphere
+id 145
+position 0 -12 16
+material 145
+radius 1
+medium false
+
+Material[Dielectric]
+id 146
+albedo 1 1 1
+eta 2.2
+roughness 0.95
+sheen 0
+
+Sphere
+id 146
+position 0 -12 18
+material 146
+radius 1
+medium false
+
+Material[Dielectric]
+id 147
+albedo 1 1 1
+eta 2.2
+roughness 1
+sheen 0
+
+Sphere
+id 147
+position 0 -12 20
+material 147
+radius 1
+medium false
+
+Material[Dielectric]
+id 148
+albedo 1 1 1
+eta 2.4
+roughness 0.0001
+sheen 0
+
+Sphere
+id 148
+position 0 -14 -20
+material 148
+radius 1
+medium false
+
+Material[Dielectric]
+id 149
+albedo 1 1 1
+eta 2.4
+roughness 0.05
+sheen 0
+
+Sphere
+id 149
+position 0 -14 -18
+material 149
+radius 1
+medium false
+
+Material[Dielectric]
+id 150
+albedo 1 1 1
+eta 2.4
+roughness 0.1
+sheen 0
+
+Sphere
+id 150
+position 0 -14 -16
+material 150
+radius 1
+medium false
+
+Material[Dielectric]
+id 151
+albedo 1 1 1
+eta 2.4
+roughness 0.15
+sheen 0
+
+Sphere
+id 151
+position 0 -14 -14
+material 151
+radius 1
+medium false
+
+Material[Dielectric]
+id 152
+albedo 1 1 1
+eta 2.4
+roughness 0.2
+sheen 0
+
+Sphere
+id 152
+position 0 -14 -12
+material 152
+radius 1
+medium false
+
+Material[Dielectric]
+id 153
+albedo 1 1 1
+eta 2.4
+roughness 0.25
+sheen 0
+
+Sphere
+id 153
+position 0 -14 -10
+material 153
+radius 1
+medium false
+
+Material[Dielectric]
+id 154
+albedo 1 1 1
+eta 2.4
+roughness 0.3
+sheen 0
+
+Sphere
+id 154
+position 0 -14 -8
+material 154
+radius 1
+medium false
+
+Material[Dielectric]
+id 155
+albedo 1 1 1
+eta 2.4
+roughness 0.35
+sheen 0
+
+Sphere
+id 155
+position 0 -14 -6
+material 155
+radius 1
+medium false
+
+Material[Dielectric]
+id 156
+albedo 1 1 1
+eta 2.4
+roughness 0.4
+sheen 0
+
+Sphere
+id 156
+position 0 -14 -4
+material 156
+radius 1
+medium false
+
+Material[Dielectric]
+id 157
+albedo 1 1 1
+eta 2.4
+roughness 0.45
+sheen 0
+
+Sphere
+id 157
+position 0 -14 -2
+material 157
+radius 1
+medium false
+
+Material[Dielectric]
+id 158
+albedo 1 1 1
+eta 2.4
+roughness 0.5
+sheen 0
+
+Sphere
+id 158
+position 0 -14 0
+material 158
+radius 1
+medium false
+
+Material[Dielectric]
+id 159
+albedo 1 1 1
+eta 2.4
+roughness 0.55
+sheen 0
+
+Sphere
+id 159
+position 0 -14 2
+material 159
+radius 1
+medium false
+
+Material[Dielectric]
+id 160
+albedo 1 1 1
+eta 2.4
+roughness 0.6
+sheen 0
+
+Sphere
+id 160
+position 0 -14 4
+material 160
+radius 1
+medium false
+
+Material[Dielectric]
+id 161
+albedo 1 1 1
+eta 2.4
+roughness 0.65
+sheen 0
+
+Sphere
+id 161
+position 0 -14 6
+material 161
+radius 1
+medium false
+
+Material[Dielectric]
+id 162
+albedo 1 1 1
+eta 2.4
+roughness 0.7
+sheen 0
+
+Sphere
+id 162
+position 0 -14 8
+material 162
+radius 1
+medium false
+
+Material[Dielectric]
+id 163
+albedo 1 1 1
+eta 2.4
+roughness 0.75
+sheen 0
+
+Sphere
+id 163
+position 0 -14 10
+material 163
+radius 1
+medium false
+
+Material[Dielectric]
+id 164
+albedo 1 1 1
+eta 2.4
+roughness 0.8
+sheen 0
+
+Sphere
+id 164
+position 0 -14 12
+material 164
+radius 1
+medium false
+
+Material[Dielectric]
+id 165
+albedo 1 1 1
+eta 2.4
+roughness 0.85
+sheen 0
+
+Sphere
+id 165
+position 0 -14 14
+material 165
+radius 1
+medium false
+
+Material[Dielectric]
+id 166
+albedo 1 1 1
+eta 2.4
+roughness 0.9
+sheen 0
+
+Sphere
+id 166
+position 0 -14 16
+material 166
+radius 1
+medium false
+
+Material[Dielectric]
+id 167
+albedo 1 1 1
+eta 2.4
+roughness 0.95
+sheen 0
+
+Sphere
+id 167
+position 0 -14 18
+material 167
+radius 1
+medium false
+
+Material[Dielectric]
+id 168
+albedo 1 1 1
+eta 2.4
+roughness 1
+sheen 0
+
+Sphere
+id 168
+position 0 -14 20
+material 168
+radius 1
+medium false
+
+Material[Dielectric]
+id 169
+albedo 1 1 1
+eta 2.6
+roughness 0.0001
+sheen 0
+
+Sphere
+id 169
+position 0 -16 -20
+material 169
+radius 1
+medium false
+
+Material[Dielectric]
+id 170
+albedo 1 1 1
+eta 2.6
+roughness 0.05
+sheen 0
+
+Sphere
+id 170
+position 0 -16 -18
+material 170
+radius 1
+medium false
+
+Material[Dielectric]
+id 171
+albedo 1 1 1
+eta 2.6
+roughness 0.1
+sheen 0
+
+Sphere
+id 171
+position 0 -16 -16
+material 171
+radius 1
+medium false
+
+Material[Dielectric]
+id 172
+albedo 1 1 1
+eta 2.6
+roughness 0.15
+sheen 0
+
+Sphere
+id 172
+position 0 -16 -14
+material 172
+radius 1
+medium false
+
+Material[Dielectric]
+id 173
+albedo 1 1 1
+eta 2.6
+roughness 0.2
+sheen 0
+
+Sphere
+id 173
+position 0 -16 -12
+material 173
+radius 1
+medium false
+
+Material[Dielectric]
+id 174
+albedo 1 1 1
+eta 2.6
+roughness 0.25
+sheen 0
+
+Sphere
+id 174
+position 0 -16 -10
+material 174
+radius 1
+medium false
+
+Material[Dielectric]
+id 175
+albedo 1 1 1
+eta 2.6
+roughness 0.3
+sheen 0
+
+Sphere
+id 175
+position 0 -16 -8
+material 175
+radius 1
+medium false
+
+Material[Dielectric]
+id 176
+albedo 1 1 1
+eta 2.6
+roughness 0.35
+sheen 0
+
+Sphere
+id 176
+position 0 -16 -6
+material 176
+radius 1
+medium false
+
+Material[Dielectric]
+id 177
+albedo 1 1 1
+eta 2.6
+roughness 0.4
+sheen 0
+
+Sphere
+id 177
+position 0 -16 -4
+material 177
+radius 1
+medium false
+
+Material[Dielectric]
+id 178
+albedo 1 1 1
+eta 2.6
+roughness 0.45
+sheen 0
+
+Sphere
+id 178
+position 0 -16 -2
+material 178
+radius 1
+medium false
+
+Material[Dielectric]
+id 179
+albedo 1 1 1
+eta 2.6
+roughness 0.5
+sheen 0
+
+Sphere
+id 179
+position 0 -16 0
+material 179
+radius 1
+medium false
+
+Material[Dielectric]
+id 180
+albedo 1 1 1
+eta 2.6
+roughness 0.55
+sheen 0
+
+Sphere
+id 180
+position 0 -16 2
+material 180
+radius 1
+medium false
+
+Material[Dielectric]
+id 181
+albedo 1 1 1
+eta 2.6
+roughness 0.6
+sheen 0
+
+Sphere
+id 181
+position 0 -16 4
+material 181
+radius 1
+medium false
+
+Material[Dielectric]
+id 182
+albedo 1 1 1
+eta 2.6
+roughness 0.65
+sheen 0
+
+Sphere
+id 182
+position 0 -16 6
+material 182
+radius 1
+medium false
+
+Material[Dielectric]
+id 183
+albedo 1 1 1
+eta 2.6
+roughness 0.7
+sheen 0
+
+Sphere
+id 183
+position 0 -16 8
+material 183
+radius 1
+medium false
+
+Material[Dielectric]
+id 184
+albedo 1 1 1
+eta 2.6
+roughness 0.75
+sheen 0
+
+Sphere
+id 184
+position 0 -16 10
+material 184
+radius 1
+medium false
+
+Material[Dielectric]
+id 185
+albedo 1 1 1
+eta 2.6
+roughness 0.8
+sheen 0
+
+Sphere
+id 185
+position 0 -16 12
+material 185
+radius 1
+medium false
+
+Material[Dielectric]
+id 186
+albedo 1 1 1
+eta 2.6
+roughness 0.85
+sheen 0
+
+Sphere
+id 186
+position 0 -16 14
+material 186
+radius 1
+medium false
+
+Material[Dielectric]
+id 187
+albedo 1 1 1
+eta 2.6
+roughness 0.9
+sheen 0
+
+Sphere
+id 187
+position 0 -16 16
+material 187
+radius 1
+medium false
+
+Material[Dielectric]
+id 188
+albedo 1 1 1
+eta 2.6
+roughness 0.95
+sheen 0
+
+Sphere
+id 188
+position 0 -16 18
+material 188
+radius 1
+medium false
+
+Material[Dielectric]
+id 189
+albedo 1 1 1
+eta 2.6
+roughness 1
+sheen 0
+
+Sphere
+id 189
+position 0 -16 20
+material 189
+radius 1
+medium false
+
+Material[Dielectric]
+id 190
+albedo 1 1 1
+eta 2.8
+roughness 0.0001
+sheen 0
+
+Sphere
+id 190
+position 0 -18 -20
+material 190
+radius 1
+medium false
+
+Material[Dielectric]
+id 191
+albedo 1 1 1
+eta 2.8
+roughness 0.05
+sheen 0
+
+Sphere
+id 191
+position 0 -18 -18
+material 191
+radius 1
+medium false
+
+Material[Dielectric]
+id 192
+albedo 1 1 1
+eta 2.8
+roughness 0.1
+sheen 0
+
+Sphere
+id 192
+position 0 -18 -16
+material 192
+radius 1
+medium false
+
+Material[Dielectric]
+id 193
+albedo 1 1 1
+eta 2.8
+roughness 0.15
+sheen 0
+
+Sphere
+id 193
+position 0 -18 -14
+material 193
+radius 1
+medium false
+
+Material[Dielectric]
+id 194
+albedo 1 1 1
+eta 2.8
+roughness 0.2
+sheen 0
+
+Sphere
+id 194
+position 0 -18 -12
+material 194
+radius 1
+medium false
+
+Material[Dielectric]
+id 195
+albedo 1 1 1
+eta 2.8
+roughness 0.25
+sheen 0
+
+Sphere
+id 195
+position 0 -18 -10
+material 195
+radius 1
+medium false
+
+Material[Dielectric]
+id 196
+albedo 1 1 1
+eta 2.8
+roughness 0.3
+sheen 0
+
+Sphere
+id 196
+position 0 -18 -8
+material 196
+radius 1
+medium false
+
+Material[Dielectric]
+id 197
+albedo 1 1 1
+eta 2.8
+roughness 0.35
+sheen 0
+
+Sphere
+id 197
+position 0 -18 -6
+material 197
+radius 1
+medium false
+
+Material[Dielectric]
+id 198
+albedo 1 1 1
+eta 2.8
+roughness 0.4
+sheen 0
+
+Sphere
+id 198
+position 0 -18 -4
+material 198
+radius 1
+medium false
+
+Material[Dielectric]
+id 199
+albedo 1 1 1
+eta 2.8
+roughness 0.45
+sheen 0
+
+Sphere
+id 199
+position 0 -18 -2
+material 199
+radius 1
+medium false
+
+Material[Dielectric]
+id 200
+albedo 1 1 1
+eta 2.8
+roughness 0.5
+sheen 0
+
+Sphere
+id 200
+position 0 -18 0
+material 200
+radius 1
+medium false
+
+Material[Dielectric]
+id 201
+albedo 1 1 1
+eta 2.8
+roughness 0.55
+sheen 0
+
+Sphere
+id 201
+position 0 -18 2
+material 201
+radius 1
+medium false
+
+Material[Dielectric]
+id 202
+albedo 1 1 1
+eta 2.8
+roughness 0.6
+sheen 0
+
+Sphere
+id 202
+position 0 -18 4
+material 202
+radius 1
+medium false
+
+Material[Dielectric]
+id 203
+albedo 1 1 1
+eta 2.8
+roughness 0.65
+sheen 0
+
+Sphere
+id 203
+position 0 -18 6
+material 203
+radius 1
+medium false
+
+Material[Dielectric]
+id 204
+albedo 1 1 1
+eta 2.8
+roughness 0.7
+sheen 0
+
+Sphere
+id 204
+position 0 -18 8
+material 204
+radius 1
+medium false
+
+Material[Dielectric]
+id 205
+albedo 1 1 1
+eta 2.8
+roughness 0.75
+sheen 0
+
+Sphere
+id 205
+position 0 -18 10
+material 205
+radius 1
+medium false
+
+Material[Dielectric]
+id 206
+albedo 1 1 1
+eta 2.8
+roughness 0.8
+sheen 0
+
+Sphere
+id 206
+position 0 -18 12
+material 206
+radius 1
+medium false
+
+Material[Dielectric]
+id 207
+albedo 1 1 1
+eta 2.8
+roughness 0.85
+sheen 0
+
+Sphere
+id 207
+position 0 -18 14
+material 207
+radius 1
+medium false
+
+Material[Dielectric]
+id 208
+albedo 1 1 1
+eta 2.8
+roughness 0.9
+sheen 0
+
+Sphere
+id 208
+position 0 -18 16
+material 208
+radius 1
+medium false
+
+Material[Dielectric]
+id 209
+albedo 1 1 1
+eta 2.8
+roughness 0.95
+sheen 0
+
+Sphere
+id 209
+position 0 -18 18
+material 209
+radius 1
+medium false
+
+Material[Dielectric]
+id 210
+albedo 1 1 1
+eta 2.8
+roughness 1
+sheen 0
+
+Sphere
+id 210
+position 0 -18 20
+material 210
+radius 1
+medium false
+
+Material[Dielectric]
+id 211
+albedo 1 1 1
+eta 3
+roughness 0.0001
+sheen 0
+
+Sphere
+id 211
+position 0 -20 -20
+material 211
+radius 1
+medium false
+
+Material[Dielectric]
+id 212
+albedo 1 1 1
+eta 3
+roughness 0.05
+sheen 0
+
+Sphere
+id 212
+position 0 -20 -18
+material 212
+radius 1
+medium false
+
+Material[Dielectric]
+id 213
+albedo 1 1 1
+eta 3
+roughness 0.1
+sheen 0
+
+Sphere
+id 213
+position 0 -20 -16
+material 213
+radius 1
+medium false
+
+Material[Dielectric]
+id 214
+albedo 1 1 1
+eta 3
+roughness 0.15
+sheen 0
+
+Sphere
+id 214
+position 0 -20 -14
+material 214
+radius 1
+medium false
+
+Material[Dielectric]
+id 215
+albedo 1 1 1
+eta 3
+roughness 0.2
+sheen 0
+
+Sphere
+id 215
+position 0 -20 -12
+material 215
+radius 1
+medium false
+
+Material[Dielectric]
+id 216
+albedo 1 1 1
+eta 3
+roughness 0.25
+sheen 0
+
+Sphere
+id 216
+position 0 -20 -10
+material 216
+radius 1
+medium false
+
+Material[Dielectric]
+id 217
+albedo 1 1 1
+eta 3
+roughness 0.3
+sheen 0
+
+Sphere
+id 217
+position 0 -20 -8
+material 217
+radius 1
+medium false
+
+Material[Dielectric]
+id 218
+albedo 1 1 1
+eta 3
+roughness 0.35
+sheen 0
+
+Sphere
+id 218
+position 0 -20 -6
+material 218
+radius 1
+medium false
+
+Material[Dielectric]
+id 219
+albedo 1 1 1
+eta 3
+roughness 0.4
+sheen 0
+
+Sphere
+id 219
+position 0 -20 -4
+material 219
+radius 1
+medium false
+
+Material[Dielectric]
+id 220
+albedo 1 1 1
+eta 3
+roughness 0.45
+sheen 0
+
+Sphere
+id 220
+position 0 -20 -2
+material 220
+radius 1
+medium false
+
+Material[Dielectric]
+id 221
+albedo 1 1 1
+eta 3
+roughness 0.5
+sheen 0
+
+Sphere
+id 221
+position 0 -20 0
+material 221
+radius 1
+medium false
+
+Material[Dielectric]
+id 222
+albedo 1 1 1
+eta 3
+roughness 0.55
+sheen 0
+
+Sphere
+id 222
+position 0 -20 2
+material 222
+radius 1
+medium false
+
+Material[Dielectric]
+id 223
+albedo 1 1 1
+eta 3
+roughness 0.6
+sheen 0
+
+Sphere
+id 223
+position 0 -20 4
+material 223
+radius 1
+medium false
+
+Material[Dielectric]
+id 224
+albedo 1 1 1
+eta 3
+roughness 0.65
+sheen 0
+
+Sphere
+id 224
+position 0 -20 6
+material 224
+radius 1
+medium false
+
+Material[Dielectric]
+id 225
+albedo 1 1 1
+eta 3
+roughness 0.7
+sheen 0
+
+Sphere
+id 225
+position 0 -20 8
+material 225
+radius 1
+medium false
+
+Material[Dielectric]
+id 226
+albedo 1 1 1
+eta 3
+roughness 0.75
+sheen 0
+
+Sphere
+id 226
+position 0 -20 10
+material 226
+radius 1
+medium false
+
+Material[Dielectric]
+id 227
+albedo 1 1 1
+eta 3
+roughness 0.8
+sheen 0
+
+Sphere
+id 227
+position 0 -20 12
+material 227
+radius 1
+medium false
+
+Material[Dielectric]
+id 228
+albedo 1 1 1
+eta 3
+roughness 0.85
+sheen 0
+
+Sphere
+id 228
+position 0 -20 14
+material 228
+radius 1
+medium false
+
+Material[Dielectric]
+id 229
+albedo 1 1 1
+eta 3
+roughness 0.9
+sheen 0
+
+Sphere
+id 229
+position 0 -20 16
+material 229
+radius 1
+medium false
+
+Material[Dielectric]
+id 230
+albedo 1 1 1
+eta 3
+roughness 0.95
+sheen 0
+
+Sphere
+id 230
+position 0 -20 18
+material 230
+radius 1
+medium false
+
+Material[Dielectric]
+id 231
+albedo 1 1 1
+eta 3
+roughness 1
+sheen 0
+
+Sphere
+id 231
+position 0 -20 20
+material 231
+radius 1
+medium false

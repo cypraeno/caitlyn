@@ -7,8 +7,13 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
     file = std::ifstream(filePath);
     std::string line;
     std::map<std::string, std::shared_ptr<material>> materials;
+    std::map<std::string, std::shared_ptr<emissive>> emissives;
     std::map<std::string, std::shared_ptr<texture>> textures;
     std::map<std::string, std::shared_ptr<Primitive>> primitives;
+    std::map<std::string, std::shared_ptr<Primitive>> medium_primitives;
+
+    std::map<std::string, std::shared_ptr<Medium>> mediums;
+    std::map<std::string, std::shared_ptr<Volume>> volumes;
     
     if (!file.is_open() || !file.good()) {
         rtcReleaseDevice(device);
@@ -27,19 +32,23 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
 
     while (getNextLine(file, line)) {
         line = trim(line);
-        if (startsWith(line, "Material")) {
+        if (startsWith(line, "Sky")) {
+            std::string top, bottom;
+            getNextLine(file, top); getNextLine(file, bottom);
+            scene_ptr->set_sky_colour(readXYZProperty(bottom), readXYZProperty(top));
+        } else if (startsWith(line, "Material")) {
             // Extract material ID from brackets (e.g., Material[Lambertian] -> Lambertian)
             auto idStart = line.find('[') + 1;
             auto idEnd = line.find(']');
             std::string materialType = line.substr(idStart, idEnd - idStart);
-            if (materialType == "Lambertian") {
+            if (materialType == "Diffuse") {
                 std::string materialId, texture;
                 getNextLine(file, materialId); getNextLine(file, texture);
                 std::string texture_id = readStringProperty(texture);
                 if (texture_id == "no") {
-                    std::string albedo;
-                    getNextLine(file, albedo);
-                    materials[readStringProperty(materialId)] = std::make_shared<lambertian>(readXYZProperty(albedo));  
+                    std::string albedo, roughness;
+                    getNextLine(file, albedo); getNextLine(file, roughness);
+                    materials[readStringProperty(materialId)] = std::make_shared<OrenNayar>(readXYZProperty(albedo), readDoubleProperty(roughness));  
                 } else {
                     std::shared_ptr<PixelImageTexture> plamb = std::dynamic_pointer_cast<PixelImageTexture>(textures[texture_id]);
                     if (plamb) { // texture is a pixel lambert
@@ -49,17 +58,41 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
                     }
                 }
             } else if (materialType == "Metal") {
-                std::string materialId, albedo, fuzz;
-                getNextLine(file, materialId); getNextLine(file, albedo); getNextLine(file, fuzz);
-                materials[readStringProperty(materialId)] = std::make_shared<metal>(readXYZProperty(albedo), readDoubleProperty(fuzz));
+                std::string materialId, albedo, roughness;
+                getNextLine(file, materialId); getNextLine(file, albedo); getNextLine(file, roughness);
+                materials[readStringProperty(materialId)] = std::make_shared<CookTorrance>(readXYZProperty(albedo), readDoubleProperty(roughness));
             } else if (materialType == "Dielectric") {
-                std::string materialId, ir;
-                getNextLine(file, materialId); getNextLine(file, ir);
-                materials[readStringProperty(materialId)] = std::make_shared<dielectric>(readDoubleProperty(ir));
+                std::string materialId, albedo, eta, roughness, sheen;
+                getNextLine(file, materialId); getNextLine(file, albedo); getNextLine(file, eta); getNextLine(file, roughness); getNextLine(file, sheen);
+                materials[readStringProperty(materialId)] = std::make_shared<CookTorranceDielectric>(
+                    readXYZProperty(albedo), readDoubleProperty(eta), readDoubleProperty(roughness), (int)readDoubleProperty(sheen)
+                );
             } else if (materialType == "Emissive") {
                 std::string materialId, rgb, strength;
                 getNextLine(file, materialId); getNextLine(file, rgb); getNextLine(file, strength);
                 materials[readStringProperty(materialId)] = std::make_shared<emissive>( (readDoubleProperty(strength) * readXYZProperty(rgb)) );
+                // emissives[readStringProperty(materialId)] = std::make_shared<emissive>( (readDoubleProperty(strength) * readXYZProperty(rgb)) );
+            } else if (materialType == "Mixture") {
+                std::vector<float> weights;
+                std::vector<std::shared_ptr<material>> mats;
+                std::string materialId, number;
+                getNextLine(file, materialId); getNextLine(file, number);
+                int num_mats = (int)readDoubleProperty(number);
+                for (int i=0; i<num_mats; i++) {
+                    std::string mixed, weight;
+                    getNextLine(file, mixed); getNextLine(file, weight);
+                    weights.push_back(readDoubleProperty(weight));
+                    mats.push_back(materials[readStringProperty(mixed)]);
+                }
+                materials[readStringProperty(materialId)] = make_shared<MixtureBSDF>(weights, mats);
+            } else if (materialType == "Layered") {
+                std::string materialId, top, bottom, medium;
+                getNextLine(file, materialId); getNextLine(file, top); getNextLine(file, bottom); getNextLine(file, medium);
+                materials[readStringProperty(materialId)] = make_shared<LayeredBSDF>(
+                    materials[readStringProperty(top)],
+                    materials[readStringProperty(bottom)],
+                    (readStringProperty(medium) == "no") ? nullptr : mediums[readStringProperty(medium)]
+                );
             } else {
                 rtcReleaseDevice(device);
                 throw std::runtime_error("Material type UNDEFINED: Material[Lambertian|Metal|Dielectric|Emissive]");
@@ -86,23 +119,47 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
                 throw std::runtime_error("Texture type UNDEFINED: Texture[Checker|Image|Noise]");
             }
         } else if (startsWith(line, "Sphere")) {
-            std::string id, position, material, radius;
+            std::string id, position, material, radius, medium;
             getNextLine(file, id); getNextLine(file, position); getNextLine(file, material); getNextLine(file, radius);
-            auto sphere = make_shared<SpherePrimitive>(readXYZProperty(position), materials[readStringProperty(material)], readDoubleProperty(radius), device);
-            primitives[readStringProperty(id)] = sphere;
-            scene_ptr->add_primitive(sphere);
+            getNextLine(file, medium);
+            // bool usesEmissive = (emissives.find(readStringProperty(material)) != emissives.end());
+            auto sphere = make_shared<SpherePrimitive>(
+                readXYZProperty(position), 
+                // usesEmissive ? emissives[readStringProperty(material)] : 
+                materials[readStringProperty(material)], 
+                readDoubleProperty(radius), device
+            );
+            if (!readBooleanProperty(medium)) { 
+                primitives[readStringProperty(id)] = sphere;
+                scene_ptr->add_primitive(sphere);
+            } else {
+                medium_primitives[readStringProperty(id)] = sphere;
+            }
+            // if (usesEmissive) { scene_ptr->add_physical_light(sphere); }
         } else if (startsWith(line, "Quad")) {
             std::string id, position, u, v, material;
             getNextLine(file, id); getNextLine(file, position); getNextLine(file, u); getNextLine(file, v); getNextLine(file, material);
-            auto quad = make_shared<QuadPrimitive>(readXYZProperty(position), readXYZProperty(u), readXYZProperty(v), materials[readStringProperty(material)], device);
+            // bool usesEmissive = (emissives.find(readStringProperty(material)) != emissives.end());
+            auto quad = make_shared<QuadPrimitive>(
+                readXYZProperty(position), readXYZProperty(u), readXYZProperty(v), 
+                // usesEmissive ? emissives[readStringProperty(material)] : 
+                materials[readStringProperty(material)], 
+                device
+            );
             primitives[readStringProperty(id)] = quad;
             scene_ptr->add_primitive(quad);
+            // if (usesEmissive) { scene_ptr->add_physical_light(quad); }
         } else if (startsWith(line, "Box")) {
-            std::string id, position, a, b, c, material;
+            std::string id, position, a, b, c, material, medium;
             getNextLine(file, id); getNextLine(file, position); getNextLine(file, a); getNextLine(file, b); getNextLine(file, c); getNextLine(file, material);
+            getNextLine(file, medium);
             auto box = make_shared<BoxPrimitive>(readXYZProperty(position), readXYZProperty(a), readXYZProperty(b), readXYZProperty(c), materials[readStringProperty(material)], device);
-            primitives[readStringProperty(id)] = box;
-            scene_ptr->add_primitive(box);
+            if (!readBooleanProperty(medium)) { 
+                primitives[readStringProperty(id)] = box;
+                scene_ptr->add_primitive(box);
+            } else {
+                medium_primitives[readStringProperty(id)] = box;
+            }
         } else if (startsWith(line, "Instance")) {
             auto idStart = line.find('[') + 1;
             auto idEnd = line.find(']');
@@ -140,25 +197,40 @@ std::shared_ptr<Scene> CSRParser::parseCSR(std::string& filePath, RTCDevice devi
                 auto instance = make_shared<QuadPrimitiveInstance>(instance_ptr, transform, device);
                 scene_ptr->add_primitive_instance(instance, device);
             } else if (instanceType == "BoxPrimitive") {
-                    std::string prim_id, translate;
-                    getNextLine(file, prim_id); getNextLine(file, translate);
-                    vec3 translateVector = readXYZProperty(translate);
-                    float transform[12] = {
-                        1, 0, 0, translateVector.x(),
-                        0, 1, 0, translateVector.y(),
-                        0, 0, 1, translateVector.z()
-                    };
-                    std::shared_ptr<BoxPrimitive> instance_ptr = std::dynamic_pointer_cast<BoxPrimitive>(primitives[readStringProperty(prim_id)]);
-                    if (!instance_ptr) {
-                        rtcReleaseDevice(device);
-                        throw std::runtime_error("Instance key ERROR: " + readStringProperty(prim_id) + " is not a BoxPrimitive!");
-                    }
-                    auto instance = make_shared<BoxPrimitiveInstance>(instance_ptr, transform, device);
-                    scene_ptr->add_primitive_instance(instance, device);
+                std::string prim_id, translate;
+                getNextLine(file, prim_id); getNextLine(file, translate);
+                vec3 translateVector = readXYZProperty(translate);
+                float transform[12] = {
+                    1, 0, 0, translateVector.x(),
+                    0, 1, 0, translateVector.y(),
+                    0, 0, 1, translateVector.z()
+                };
+                std::shared_ptr<BoxPrimitive> instance_ptr = std::dynamic_pointer_cast<BoxPrimitive>(primitives[readStringProperty(prim_id)]);
+                if (!instance_ptr) {
+                    rtcReleaseDevice(device);
+                    throw std::runtime_error("Instance key ERROR: " + readStringProperty(prim_id) + " is not a BoxPrimitive!");
+                }
+                auto instance = make_shared<BoxPrimitiveInstance>(instance_ptr, transform, device);
+                scene_ptr->add_primitive_instance(instance, device);
             } else {
                 rtcReleaseDevice(device);
                 throw std::runtime_error("Instance type UNDEFINED: Instance[SpherePrimitive|QuadPrimitive|BoxPrimitive]");
             }
+        } else if (startsWith(line, "Medium")) {
+            std::string medium_id, density, albedo;
+            getNextLine(file, medium_id); getNextLine(file, density); getNextLine(file, albedo);
+            auto medium = make_shared<Medium>(readDoubleProperty(density), make_shared<isotropic>(readXYZProperty(albedo)));
+            mediums[readStringProperty(medium_id)] = medium;
+        } else if (startsWith(line, "Volume")) {
+            std::string volume_id, medium_id, prim_id;
+            getNextLine(file, volume_id); getNextLine(file, medium_id); getNextLine(file, prim_id);
+            auto volume = make_shared<Volume>(
+                mediums[readStringProperty(medium_id)],
+                medium_primitives[readStringProperty(prim_id)],
+                device
+            );
+            volumes[readStringProperty(volume_id)] = volume;
+            scene_ptr->add_volume(volume);
         }
     }
 

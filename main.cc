@@ -20,4 +20,3 @@ int main(int argc, char* argv[]) {
 
     output(render_data, scene_ptr->cam, scene_ptr, config);
 }
-

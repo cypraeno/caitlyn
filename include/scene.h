@@ -5,9 +5,12 @@
 #include <map>
 #include "camera.h"
 #include "material.h"
+#include "light.h"
 #include "sphere_primitive.h"
 #include "instances.h"
+#include "volume.h"
 #include "hit_info.hh"
+#include "color.h"
 
 // SCENE INTERFACE
 // The scene class object covers all relevant objects in a scene:
@@ -30,6 +33,17 @@ class Scene {
     std::map<unsigned int, std::shared_ptr<Geometry>> geom_map;
     RTCScene rtc_scene;
 
+    // Sky Colours
+    color sky_bottom;
+    color sky_top;
+
+    // Lights
+    std::vector<std::shared_ptr<Geometry>> physical_lights;
+    std::vector<std::shared_ptr<Light>> lights;
+
+    // Relevant storage
+    std::vector<std::shared_ptr<Volume>> volumes; // used to check initial mediums
+
     // Default Constructor
     // requires a device to initialize RTCScene
     Scene(RTCDevice device, Camera cam);
@@ -37,7 +51,12 @@ class Scene {
     void commitScene();
     void releaseScene();
     unsigned int add_primitive(std::shared_ptr<Primitive> prim);
+    unsigned int add_volume(std::shared_ptr<Volume> vol);
+
+    void add_physical_light(std::shared_ptr<Geometry> geom_ptr);
     unsigned int add_primitive_instance(std::shared_ptr<PrimitiveInstance> pi_ptr, RTCDevice device);
+
+    void set_sky_colour(color bottom, color top);
 };
 
 void add_sphere(RTCDevice device, RTCScene scene);

@@ -71,6 +71,7 @@ vec3 operator/(vec3 v, float t);
 // vector multiplication
 float dot(const vec3 &u, const vec3 &v);
 vec3 cross(const vec3 &u, const vec3 &v);
+vec3 mix(vec3 x, vec3 y, float a);
 
 /** @brief overloads std::ostream& operator<< to support vec3s */
 std::ostream& operator<<(std::ostream &out, const vec3 &v);
@@ -80,9 +81,14 @@ vec3 random_unit_vector();
 vec3 random_in_unit_sphere();
 vec3 random_in_hemisphere(const vec3& normal);
 vec3 random_in_unit_disk();
+vec3 random_cosine_direction();
 
 // reflection and refraction
+
+// reflects the incoming vector v across the normal n. v is not outward.
 vec3 reflect(const vec3& v, const vec3& n);
+
+// refracts the incoming vector v across the normal n. v is not outward.
 vec3 refract(const vec3& uv, const vec3& n, float etai_over_etat);
 
 #endif

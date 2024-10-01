@@ -2,7 +2,7 @@
 
 emissive::emissive(color emission_color) : emission_color{emission_color} {}
 
-bool emissive::scatter(const ray& r_in, const HitInfo& rec, color& attenuation, ray& scattered) const {
+bool emissive::scatter(const ray& r_in, HitInfo& rec, color& attenuation, ray& scattered) const {
     return false;
 }
 

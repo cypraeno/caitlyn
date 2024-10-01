@@ -16,8 +16,12 @@ class SpherePrimitive : public Primitive {
 
     HitInfo getHitInfo(const ray& r, const vec3& p, const float t, unsigned int geomID) const override;
 
+    point3 sample(const HitInfo& rec) const override;
+    double pdf(const HitInfo& rec, ray sample_ray) const override;
+
     private:
     static void get_sphere_uv(const point3& p, double& u, double& v);
+    static vec3 random_to_sphere(double radius, double distance_squared);
 };
 
 #endif

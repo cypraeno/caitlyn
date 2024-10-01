@@ -18,6 +18,18 @@ unsigned int Scene::add_primitive(std::shared_ptr<Primitive> prim) {
     return primID;
 }
 
+unsigned int Scene::add_volume(std::shared_ptr<Volume> vol) {
+    volumes.push_back(vol);
+    unsigned int primID = rtcAttachGeometry(rtc_scene, vol->geom);
+    rtcReleaseGeometry(vol->geom);
+    geom_map[primID] = vol;
+    return primID;
+}
+
+void Scene::add_physical_light(std::shared_ptr<Geometry> geom_ptr) {
+    physical_lights.push_back(geom_ptr);
+}
+
 unsigned int Scene::add_primitive_instance(std::shared_ptr<PrimitiveInstance> pi_ptr, RTCDevice device) {
     RTCGeometry instance_geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_INSTANCE);
     rtcSetGeometryInstancedScene(instance_geom, pi_ptr->instance_scene);
@@ -86,4 +98,9 @@ void add_triangle(RTCDevice device, RTCScene scene) {
     rtcCommitGeometry(geom);
     unsigned int triangleID = rtcAttachGeometry(scene, geom);
     rtcReleaseGeometry(geom);
+}
+
+void Scene::set_sky_colour(color bottom, color top) {
+    sky_bottom = bottom;
+    sky_top = top;
 }
