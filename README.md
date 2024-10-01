@@ -1,5 +1,5 @@
 <h1 align="center">The Caitlyn Renderer :camera:</h1>
-<p align="center"><img width="600" alt="Render1" src="https://github.com/cypraeno/caitlyn/assets/25397938/9f93e7a7-37d0-43e4-bea1-e81859f75f00"></p>
+<p align="center"><img width="600" alt="Render1" src="https://github.com/user-attachments/assets/a61be07b-fab8-4af2-a34e-0a4faac66713"></p>
 
 
 Caitlyn is an reverse path tracer built for implementing raytracing lighting to 'pixellax' 3D visuals. It is built in C++ by a team of students from the University of Waterloo and Wilfrid Laurier University. 
