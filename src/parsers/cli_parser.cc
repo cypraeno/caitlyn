@@ -20,7 +20,7 @@ void outputHelpGuide(std::ostream& out) {
         << " -h,  --help                           Show this help message.\n"
         << " -V,  --verbose                        Enables more descriptive messages of scenes and rendering process.\n"
         << " -T,  --threads <amt>                  If multithreading is enabled, sets amount of threads used.\n"
-        << " -Vx, --vectorization <batch_size>     Set SIMD vectorization batch size [0|4|8|16]. If NONE = 0, do not enable the flag.\n";
+        << " -Vx, --vectorization <batch_size>     [UNSUPPORTED/DEPRECATED] Set SIMD vectorization batch size [0|4|8|16]. If NONE = 0, do not enable the flag.\n";
     exit(0);
 }
 
@@ -102,9 +102,11 @@ Config parseArguments(int argc, char* argv[]) {
         } 
 
         else if(arg == "-Vx" || arg == "--vectorization") {
-            int choice = checkValidIntegerInput(i, argc, argv, "-Vx/--vectorization");
-            if (choice == 0 || choice == 4 || choice == 8 || choice == 16) config.vectorization = choice;
-            else throw std::invalid_argument("Error: Invalid option for --vectorization [1|4|8|16]. Use '--help' for more information.");
+            throw std::runtime_error("Error (DEPRECATION): -Vx/--vectorization not supported in v0.1.5.");
+            // CURRENTLY DEPRECATED AND NEEDS UPDATE TO 0.1.5
+            // int choice = checkValidIntegerInput(i, argc, argv, "-Vx/--vectorization");
+            // if (choice == 0 || choice == 4 || choice == 8 || choice == 16) config.vectorization = choice;
+            // else throw std::invalid_argument("Error: Invalid option for --vectorization [1|4|8|16]. Use '--help' for more information.");
         } 
 
         else if(arg == "-v" || arg == "--version") {
