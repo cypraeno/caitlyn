@@ -1,0 +1,137 @@
+version 0.1.5
+
+Camera
+lookfrom 20 8 0
+lookat 0 4 0
+vup 0 1 0
+vfov 50
+aspect_ratio 16/9
+aperture 0.0001
+focus_dist 10.0
+
+Sky
+top 0.4 0.4 0.4
+bottom 0.4 0.4 0.4
+
+# Scene Setup with red ground
+Material[Diffuse]
+id gray_ground
+texture no
+albedo 0.8 0.4 0.4
+roughness 0.0001
+
+Sphere
+id ground
+position 0 -5000 0
+material gray_ground
+radius 5000
+medium false
+
+# Emissive
+Material[Emissive]
+id key_light
+rgb 1.0 1.0 1.0
+strength 10
+
+Sphere
+id key_sphere
+position 30 25 -30
+material key_light
+radius 10
+medium false
+
+Material[Metal]
+id m0
+albedo 1.0 1.0 1.0
+roughness 0.0
+
+Sphere
+id sphere_0
+position 0 2 14
+material m0
+radius 1.75
+medium false
+
+Material[Metal]
+id m0.01
+albedo 1.0 1.0 1.0
+roughness 0.01
+
+Sphere
+id sphere_1
+position 0 2 10
+material m0.01
+radius 1.75
+medium false
+
+Material[Metal]
+id m0.05
+albedo 1.0 1.0 1.0
+roughness 0.05
+
+Sphere
+id sphere_2
+position 0 2 6
+material m0.05
+radius 1.75
+medium false
+
+Material[Metal]
+id m0.1
+albedo 1.0 1.0 1.0
+roughness 0.1
+
+Sphere
+id sphere_3
+position 0 2 2
+material m0.1
+radius 1.75
+medium false
+
+Material[Metal]
+id m0.15
+albedo 1.0 1.0 1.0
+roughness 0.15
+
+Sphere
+id sphere_4
+position 0 2 -2
+material m0.15
+radius 1.75
+medium false
+
+Material[Metal]
+id m0.2
+albedo 1.0 1.0 1.0
+roughness 0.2
+
+Sphere
+id sphere_5
+position 0 2 -6
+material m0.2
+radius 1.75
+medium false
+
+Material[Metal]
+id m0.25
+albedo 1.0 1.0 1.0
+roughness 0.25
+
+Sphere
+id sphere_6
+position 0 2 -10
+material m0.25
+radius 1.75
+medium false
+
+Material[Metal]
+id m0.3
+albedo 1.0 1.0 1.0
+roughness 0.3
+
+Sphere
+id sphere_7
+position 0 2 -14
+material m0.3
+radius 1.75
+medium false

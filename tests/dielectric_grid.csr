@@ -10,8 +10,8 @@ aperture 0.0001
 focus_dist 10.0
 
 Sky
-top 1.0 0.2 0.2
-bottom 0.2 0.2 1.0
+top 1.0 0.1 0.1
+bottom 0.1 1.0 0.1
 
 
 Material[Dielectric]
