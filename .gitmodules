@@ -1,0 +1,3 @@
+[submodule "csr-schema"]
+	path = csr-schema
+	url = https://github.com/cypraeno/csr-schema.git

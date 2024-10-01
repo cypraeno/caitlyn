@@ -28,3 +28,9 @@
 
 # Images
 *.ppm
+
+# CMake Build Directory
+build/
+
+# Allow devcontainer.json
+!devcontainer.json

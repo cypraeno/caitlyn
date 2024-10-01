@@ -1,0 +1,29 @@
+version 0.1.5
+
+Camera
+lookfrom 0 0 12
+lookat 0 0 0
+vup 0 1 0
+vfov 20
+aspect_ratio 16/9
+aperture 0.0001
+focus_dist 10.0
+
+Sky
+top 0.5 0.7 1.0
+bottom 1.0 1.0 1.0
+
+Texture[Image]
+id earth_texture
+transparency false
+path earthmap.jpg
+
+Material[Diffuse]
+id earth_surface
+texture earth_texture
+
+Sphere
+id earth
+position 0 0 0
+material earth_surface
+radius 2

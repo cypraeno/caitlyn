@@ -1,0 +1,59 @@
+version 0.1.5
+
+Camera
+lookfrom 26 3 6
+lookat 0 2 0
+vup 0 1 0
+vfov 20
+aspect_ratio 16/9
+aperture 0.0001
+focus_dist 10.0
+
+Sky
+top 0.5 0.7 1.0
+bottom 1.0 1.0 1.0
+
+Material[Diffuse]
+id red
+texture no
+albedo 1.0 0.2 0.2
+roughness 0.0001
+
+Material[Diffuse]
+id green
+texture no
+albedo 0.2 1.0 0.2
+roughness 0.0001
+
+Sphere
+id 1
+position 0 -1000 0
+material red
+radius 1000
+medium false
+
+Sphere
+id 2
+position 0 2 0
+material green
+radius 2
+medium false
+
+Material[Emissive]
+id light_material
+rgb 1 1 1
+strength 6
+
+Sphere
+id lightsphere
+position 0 7 0
+material light_material
+radius 2
+medium false
+
+Quad
+id lightquad
+position 3 1 -2
+u 2 0 0
+v 0 2 0
+material light_material
